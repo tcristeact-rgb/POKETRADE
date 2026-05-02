@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>PokeTrade – Intercambia tus cartas Pokémon</title>
-  <meta name="description" content="Plataforma de intercambio de cartas Pokémon. Conecta con coleccionistas, publica tus tradeos y encuentra las cartas que buscas." />
-  <link rel="stylesheet" href="css/estilos.css" />
-  <link rel="stylesheet" href="css/index.css" />
+  <meta name="description" content="Plataforma de intercambio de cartas Pokémon. Conecta con coleccionistas, publica tus tradeos y encuentra las cartas que buscas.">
+  <link rel="stylesheet" href="css/estilos.css">
+  <link rel="stylesheet" href="css/index.css">
 </head>
 <body>
 
@@ -21,7 +21,7 @@
       <a href="index.html" class="logo" aria-label="PokeTrade – Inicio">🃏 PokeTrade</a>
 
       <!-- Links principales -->
-      <ul class="nav-links" role="list">
+      <ul class="nav-links">
         <li><a href="pages/novedades.html">Novedades</a></li>
         <li><a href="pages/mas-vendido.html">Más Vendido</a></li>
         <li><a href="pages/catalogo.html">Catálogo</a></li>
@@ -105,13 +105,13 @@
       Mientras carga se muestran con clase .skeleton (animación shimmer)
       Flujo AJAX: Petición → JSON → actualizarDOM (cargarEstadisticas en index.js)
     -->
-    <div class="hero-stats" id="hero-stats" aria-live="polite" aria-label="Estadísticas de la plataforma">
+    <div class="hero-stats" id="hero-stats" aria-live="polite" role="status">
       <div class="stat-item skeleton" id="stat-cartas">
-        <span class="stat-numero" aria-label="Cargando">—</span>
+        <span class="stat-numero">—</span>
         <span class="stat-label">Cartas disponibles</span>
       </div>
       <div class="stat-item skeleton" id="stat-tradeos">
-        <span class="stat-numero" aria-label="Cargando">—</span>
+        <span class="stat-numero">—</span>
         <span class="stat-label">Tradeos activos</span>
       </div>
     </div>
@@ -200,15 +200,15 @@
        FOOTER
        Prototipo p.2: columnas de info, navegación, legal y contacto
   ════════════════════════════════════════════════ -->
-  <footer role="contentinfo">
+  <footer>
     <div class="footer-grid">
       <div class="footer-col">
-        <h4>🃏 PokeTrade</h4>
+        <h3>🃏 PokeTrade</h3>
         <p>Plataforma de intercambio de cartas Pokémon para coleccionistas de toda España.</p>
         <p style="margin-top:0.75rem;">IES El Cañaveral · Granada</p>
       </div>
       <div class="footer-col">
-        <h4>Navegación</h4>
+        <h3>Navegación</h3>
         <ul>
           <li><a href="pages/novedades.html">Novedades</a></li>
           <li><a href="pages/catalogo.html">Catálogo</a></li>
@@ -217,7 +217,7 @@
         </ul>
       </div>
       <div class="footer-col">
-        <h4>Legal</h4>
+        <h3>Legal</h3>
         <ul>
           <li><a href="pages/aviso-legal.html">Aviso Legal</a></li>
           <li><a href="pages/privacidad.html">Privacidad</a></li>
@@ -225,7 +225,7 @@
         </ul>
       </div>
       <div class="footer-col">
-        <h4>Contacto</h4>
+        <h3>Contacto</h3>
         <p>poketrade@iescanaveral.es</p>
         <p style="margin-top:0.5rem;">Daniel Leal &amp; Teo Cristea</p>
       </div>
