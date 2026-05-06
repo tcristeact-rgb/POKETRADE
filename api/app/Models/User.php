@@ -38,4 +38,14 @@ class User extends Authenticatable implements JWTSubject
     {
         return [];
     }
+
+    public function inventario()
+    {
+        return $this->hasMany(Inventario::class, 'user_id');
+    }
+
+    public function tradeos()
+    {
+        return $this->hasMany(Tradeo::class, 'user_id');
+    }
 }
