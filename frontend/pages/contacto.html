@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contacto - PokeTrade</title>
+    <link rel="stylesheet" href="../css/estilos.css">
+    <style>
+        .contacto-contenedor {
+            max-width: 620px;
+            margin: 2.5rem auto;
+            padding: 0 2rem 4rem;
+        }
+        .contacto-contenedor h1 {
+            font-family: var(--font-display);
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.35rem;
+            color: var(--texto);
+        }
+        .contacto-contenedor .subtitulo {
+            color: var(--muted);
+            font-size: 0.925rem;
+            margin-bottom: 2rem;
+        }
+        .contacto-card {
+            background: var(--fondo-card);
+            border: 1px solid var(--borde);
+            border-radius: var(--radius-lg);
+            padding: 2rem 2.25rem;
+            box-shadow: var(--sombra);
+        }
+        .form-grupo {
+            margin-bottom: 1.25rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .form-grupo label {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--texto);
+        }
+        .form-grupo input,
+        .form-grupo textarea,
+        .form-grupo select {
+            padding: 0.65rem 0.95rem;
+            border: 1.5px solid var(--borde);
+            border-radius: var(--radius-sm);
+            font-family: var(--font-body);
+            font-size: 0.925rem;
+            color: var(--texto);
+            background: var(--fondo);
+            transition: border-color var(--trans), box-shadow var(--trans), background var(--trans);
+            resize: vertical;
+        }
+        .form-grupo input:focus,
+        .form-grupo textarea:focus,
+        .form-grupo select:focus {
+            outline: none;
+            border-color: var(--primario);
+            box-shadow: 0 0 0 3px var(--primario-soft);
+            background: white;
+        }
+        .form-grupo textarea { min-height: 130px; }
+        .btn-enviar {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--primario);
+            color: white;
+            border: none;
+            border-radius: var(--radius);
+            font-family: var(--font-body);
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            letter-spacing: 0.01em;
+            transition: background var(--trans), transform var(--trans), box-shadow var(--trans);
+            margin-top: 0.5rem;
+        }
+        .btn-enviar:hover {
+            background: var(--primario-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(231,76,60,0.3);
+        }
+        .contacto-info {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--borde);
+        }
+        .contacto-info p {
+            color: var(--muted);
+            font-size: 0.9rem;
+            line-height: 1.65;
+        }
+        .contacto-info a { color: var(--primario); text-decoration: underline; }
+        .contacto-info a:hover { color: var(--primario-hover); }
+    </style>
+</head>
+<body>
+    <div id="app-header"></div>
+
+    <main>
+        <div class="contacto-contenedor">
+            <h1>Contacto</h1>
+            <p class="subtitulo">¿Tienes alguna duda o sugerencia? Escríbenos.</p>
+
+            <div class="contacto-card">
+                <div id="alerta" class="alerta" role="alert"></div>
+
+                <form id="form-contacto" onsubmit="enviarFormulario(event)" novalidate>
+                    <div class="form-grupo">
+                        <label for="nombre">Nombre</label>
+                        <input type="text" id="nombre" name="nombre" placeholder="Tu nombre" required autocomplete="name" />
+                    </div>
+                    <div class="form-grupo">
+                        <label for="email">Correo electrónico</label>
+                        <input type="email" id="email" name="email" placeholder="tu@correo.com" required autocomplete="email" />
+                    </div>
+                    <div class="form-grupo">
+                        <label for="asunto">Asunto</label>
+                        <select id="asunto" name="asunto" required>
+                            <option value="">Selecciona un asunto...</option>
+                            <option value="error">Reportar un error</option>
+                            <option value="sugerencia">Sugerencia de mejora</option>
+                            <option value="cuenta">Problema con mi cuenta</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+                    <div class="form-grupo">
+                        <label for="mensaje">Mensaje</label>
+                        <textarea id="mensaje" name="mensaje" placeholder="Describe tu consulta..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn-enviar">Enviar mensaje</button>
+                </form>
+
+                <div class="contacto-info">
+                    <p>También puedes escribirnos directamente a <a href="mailto:poketrade@iesellago.es">poketrade@iesellago.es</a>.</p>
+                    <p style="margin-top:0.5rem;">IES El Lago · Madrid · Daniel Leal &amp; Teo Cristea</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>© 2026 PokeTrade · <a href="aviso-legal.html">Aviso legal</a> · <a href="privacidad.html">Privacidad</a> · <a href="contacto.html">Contacto</a></p>
+    </footer>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/header.js"></script>
+    <script>
+        function enviarFormulario(e) {
+            e.preventDefault();
+            const nombre  = document.getElementById('nombre').value.trim();
+            const email   = document.getElementById('email').value.trim();
+            const asunto  = document.getElementById('asunto').value;
+            const mensaje = document.getElementById('mensaje').value.trim();
+            const alerta  = document.getElementById('alerta');
+
+            if (!nombre || !email || !asunto || !mensaje) {
+                alerta.className = 'alerta error';
+                alerta.textContent = 'Por favor, rellena todos los campos.';
+                return;
+            }
+
+            // Proyecto académico: simula el envío sin backend real
+            alerta.className = 'alerta exito';
+            alerta.textContent = '¡Mensaje enviado! Te responderemos lo antes posible.';
+            document.getElementById('form-contacto').reset();
+
+            setTimeout(() => { alerta.className = 'alerta'; alerta.textContent = ''; }, 5000);
+        }
+    </script>
+</body>
+</html>

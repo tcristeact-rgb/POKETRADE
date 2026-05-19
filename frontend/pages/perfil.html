@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Perfil - PokeTrade</title>
+    <meta name="description" content="Edita tu perfil y cambia tu contraseña en PokeTrade.">
+    <link rel="stylesheet" href="../css/estilos.css">
+    <style>
+        .perfil-contenedor {
+            max-width: 600px;
+            margin: 2.5rem auto;
+            padding: 0 2rem;
+        }
+        .perfil-contenedor h1 {
+            font-family: var(--font-display);
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            color: var(--texto);
+        }
+        .avatar-preview {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--borde);
+            margin-bottom: 0.75rem;
+            box-shadow: var(--sombra-sm);
+        }
+        .avatar-placeholder {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            background: linear-gradient(160deg, #f5f7fa 0%, #e8ecf0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.2rem;
+            margin-bottom: 0.75rem;
+            border: 3px solid var(--borde);
+            box-shadow: var(--sombra-sm);
+        }
+        .btn-secundario-accion {
+            background: white;
+            color: var(--primario);
+            border: 1.5px solid var(--primario);
+            padding: 0.62rem 1.4rem;
+            border-radius: var(--radius);
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 0.5rem;
+            transition: background var(--trans), transform var(--trans);
+        }
+        .btn-secundario-accion:hover { background: var(--primario-soft); transform: translateY(-1px); }
+    </style>
+</head>
+<body>
+    <div id="app-header"></div>
+
+    <main>
+        <div class="perfil-contenedor">
+            <h1>⚙️ Mi Perfil</h1>
+
+            <!-- Datos personales -->
+            <div class="seccion-card">
+                <h2>Datos personales</h2>
+
+                <div id="alerta-perfil" class="alerta"></div>
+
+                <div style="text-align:center; margin-bottom:1rem;">
+                    <div id="avatar-container">
+                        <div class="avatar-placeholder">👤</div>
+                    </div>
+                </div>
+
+                <div class="formulario-grupo">
+                    <label for="nombre">Nombre</label>
+                    <input type="text" id="nombre" placeholder="Tu nombre" />
+                </div>
+
+                <div class="formulario-grupo">
+                    <label for="apellido">Apellido</label>
+                    <input type="text" id="apellido" placeholder="Tu apellido" />
+                </div>
+
+                <div class="formulario-grupo">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" placeholder="tu@email.com" disabled style="background:#f5f5f5; color:#888;" />
+                </div>
+
+                <div class="formulario-grupo">
+                    <label for="nacionalidad">Nacionalidad</label>
+                    <input type="text" id="nacionalidad" placeholder="Ej: España" />
+                </div>
+
+                <div class="formulario-grupo">
+                    <label for="fecha_nacimiento">Fecha de nacimiento</label>
+                    <input type="date" id="fecha_nacimiento" />
+                </div>
+
+                <div class="formulario-grupo">
+                    <label for="avatar_url">URL de avatar</label>
+                    <input type="url" id="avatar_url" placeholder="https://..." oninput="previsualizarAvatar()" />
+                </div>
+
+                <button class="btn-formulario" onclick="guardarPerfil()">Guardar cambios</button>
+            </div>
+
+            <!-- Cambiar contraseña -->
+            <div class="seccion-card">
+                <h2>Cambiar contraseña</h2>
+
+                <div id="alerta-password" class="alerta"></div>
+
+                <div class="formulario-grupo">
+                    <label for="password_actual">Contraseña actual</label>
+                    <input type="password" id="password_actual" placeholder="••••••" />
+                </div>
+
+                <div class="formulario-grupo">
+                    <label for="password_nueva">Nueva contraseña</label>
+                    <input type="password" id="password_nueva" placeholder="Mínimo 6 caracteres" />
+                </div>
+
+                <div class="formulario-grupo">
+                    <label for="password_confirmar">Confirmar nueva contraseña</label>
+                    <input type="password" id="password_confirmar" placeholder="Repite la nueva contraseña" />
+                </div>
+
+                <button class="btn-formulario" onclick="cambiarPassword()">Cambiar contraseña</button>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>© 2026 PokeTrade · <a href="aviso-legal.html">Aviso legal</a> · <a href="privacidad.html">Privacidad</a> · <a href="contacto.html">Contacto</a></p>
+    </footer>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/header.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/perfil.js"></script>
+</body>
+</html>

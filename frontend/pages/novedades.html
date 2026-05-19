@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Novedades - PokeTrade</title>
+    <meta name="description" content="Descubre las últimas cartas Pokémon disponibles en PokeTrade.">
+    <link rel="stylesheet" href="../css/estilos.css">
+    <style>
+        .novedades-contenedor {
+            max-width: 1200px;
+            margin: 2.5rem auto;
+            padding: 0 2rem;
+        }
+        .novedades-contenedor h1 {
+            font-family: var(--font-display);
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.35rem;
+            color: var(--texto);
+        }
+        .novedades-contenedor .subtitulo {
+            color: var(--muted);
+            margin-bottom: 2rem;
+            font-size: 0.925rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="app-header"></div>
+
+    <main>
+        <div class="novedades-contenedor">
+            <h1>Últimas novedades</h1>
+            <p class="subtitulo">Todas las cartas disponibles en el catálogo, ordenadas por incorporación.</p>
+
+            <div id="error-novedades" class="alerta-error" hidden>
+                <span id="error-novedades-msg">No se pudieron cargar las novedades.</span>
+                <button class="btn-reintentar" onclick="cargarNovedades()">Reintentar</button>
+            </div>
+
+            <div id="grid-novedades" class="grid-cartas">
+                <div class="carta-card skeleton" aria-hidden="true"></div>
+                <div class="carta-card skeleton" aria-hidden="true"></div>
+                <div class="carta-card skeleton" aria-hidden="true"></div>
+                <div class="carta-card skeleton" aria-hidden="true"></div>
+                <div class="carta-card skeleton" aria-hidden="true"></div>
+                <div class="carta-card skeleton" aria-hidden="true"></div>
+                <div class="carta-card skeleton" aria-hidden="true"></div>
+                <div class="carta-card skeleton" aria-hidden="true"></div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>© 2026 PokeTrade · <a href="aviso-legal.html">Aviso legal</a> · <a href="privacidad.html">Privacidad</a> · <a href="contacto.html">Contacto</a></p>
+    </footer>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/header.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/novedades.js"></script>
+</body>
+</html>

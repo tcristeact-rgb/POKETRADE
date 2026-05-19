@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catálogo - PokeTrade</title>
+      <meta name="description" content="Explora el catálogo de cartas Pokémon de PokeTrade y filtra por nombre, tipo o rareza para encontrar la carta que buscas.">
+    <link rel="stylesheet" href="../css/estilos.css">
+</head>
+<body>
+    <div id="app-header"></div>
+
+    <main>
+        <div class="catalogo-contenedor">
+            <h1>Catálogo de cartas</h1>
+
+            <!-- Filtros -->
+            <div class="filtros">
+                <input type="text" id="filtro-nombre" placeholder="Buscar por nombre..." oninput="filtrar()" />
+                <select id="filtro-tipo" onchange="filtrar()">
+                    <option value="">Todos los tipos</option>
+                    <option value="Fuego">Fuego</option>
+                    <option value="Agua">Agua</option>
+                    <option value="Planta">Planta</option>
+                    <option value="Eléctrico">Eléctrico</option>
+                    <option value="Psíquico">Psíquico</option>
+                    <option value="Normal">Normal</option>
+                    <option value="Fantasma">Fantasma</option>
+                    <option value="Dragón">Dragón</option>
+                </select>
+                <select id="filtro-rareza" onchange="filtrar()">
+                    <option value="">Todas las rarezas</option>
+                    <option value="Común">Común</option>
+                    <option value="Poco común">Poco común</option>
+                    <option value="Rara">Rara</option>
+                    <option value="Rara Holo">Rara Holo</option>
+                    <option value="Ultra Rara">Ultra Rara</option>
+                </select>
+            </div>
+
+            <!-- Grid de cartas -->
+            <div id="grid-cartas" class="grid-cartas">
+                <p>Cargando cartas...</p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>© 2026 PokeTrade · <a href="aviso-legal.html">Aviso legal</a> · <a href="privacidad.html">Privacidad</a> · <a href="contacto.html">Contacto</a></p>
+    </footer>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/header.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/catalogo.js"></script>
+</body>
+</html>

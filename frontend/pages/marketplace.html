@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marketplace - PokeTrade</title>
+    <meta name="description" content="Explora todos los tradeos activos de la comunidad PokeTrade y encuentra el intercambio perfecto.">
+    <link rel="stylesheet" href="../css/estilos.css">
+    <style>
+        /* ── Hero marketplace ── */
+        .marketplace-hero {
+            background: linear-gradient(135deg, var(--header-bg) 0%, #2c3e50 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        .marketplace-hero h1 {
+            font-family: var(--font-display);
+            font-size: 2rem;
+            font-weight: 800;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+        .marketplace-hero p {
+            color: rgba(255,255,255,0.72);
+            margin-bottom: 1.5rem;
+            font-size: 0.95rem;
+        }
+        .barra-busqueda {
+            display: flex;
+            gap: 0.75rem;
+            max-width: 600px;
+            margin: 0 auto;
+            flex-wrap: wrap;
+        }
+        .barra-busqueda input {
+            flex: 1;
+            min-width: 200px;
+            padding: 0.65rem 1rem;
+            border: none;
+            border-radius: var(--radius);
+            font-family: var(--font-body);
+            font-size: 0.925rem;
+            outline: none;
+        }
+        .barra-busqueda input:focus { box-shadow: 0 0 0 3px rgba(231,76,60,0.4); }
+        .barra-busqueda select {
+            padding: 0.65rem 1rem;
+            border: none;
+            border-radius: var(--radius);
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            background: white;
+            cursor: pointer;
+        }
+
+        /* ── Contenedor ── */
+        .marketplace-contenedor {
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+        .marketplace-toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+        .contador-resultados {
+            color: var(--muted);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* ── Grid tradeos ── */
+        .grid-tradeos {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* ── Tarjeta de tradeo ── */
+        .tradeo-card {
+            background: var(--fondo-card);
+            border: 1px solid var(--borde);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+            transition: box-shadow var(--trans), transform var(--trans), border-color var(--trans);
+            display: flex;
+            flex-direction: column;
+            box-shadow: var(--sombra-card);
+        }
+        .tradeo-card:hover {
+            box-shadow: var(--sombra-hover);
+            transform: translateY(-3px);
+            border-color: var(--borde-hover);
+        }
+        .tradeo-card-header {
+            background: var(--fondo);
+            padding: 0.85rem 1.1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--borde);
+        }
+        .usuario-info {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+        }
+        .usuario-avatar {
+            width: 34px;
+            height: 34px;
+            background: var(--primario);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-family: var(--font-display);
+            font-weight: 700;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .usuario-nombre {
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: var(--texto);
+        }
+        .tradeo-fecha {
+            font-size: 0.775rem;
+            color: var(--muted);
+        }
+        .tradeo-card-body {
+            padding: 1rem 1.1rem;
+            flex: 1;
+        }
+        .intercambio {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        .intercambio-lado {
+            flex: 1;
+            min-width: 0;
+        }
+        .intercambio-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        .label-ofrece { color: var(--exito); }
+        .label-busca  { color: var(--primario); }
+        .flecha-intercambio {
+            font-size: 1.2rem;
+            color: var(--borde-hover);
+            align-self: center;
+            flex-shrink: 0;
+            margin-top: 1rem;
+        }
+        .tradeo-descripcion {
+            margin-top: 0.85rem;
+            font-size: 0.85rem;
+            color: var(--muted);
+            font-style: italic;
+            border-top: 1px solid var(--borde);
+            padding-top: 0.75rem;
+            line-height: 1.5;
+        }
+        .tradeo-card-footer {
+            padding: 0.85rem 1.1rem;
+            border-top: 1px solid var(--borde);
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        /* ── Botones de tradeo ── */
+        .btn-contactar {
+            flex: 1;
+            background: var(--primario);
+            color: white;
+            border: none;
+            padding: 0.6rem 1rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-body);
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+            transition: background var(--trans), transform var(--trans);
+        }
+        .btn-contactar:hover { background: var(--primario-hover); transform: translateY(-1px); }
+        .btn-propio {
+            background: #b0bec5;
+            cursor: not-allowed;
+        }
+        .badge-aceptado {
+            flex: 1;
+            background: var(--exito-soft);
+            color: var(--exito);
+            border: 1.5px solid var(--exito-borde);
+            padding: 0.6rem 1rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        /* ── Skeleton ── */
+        .skeleton-card {
+            background: white;
+            border: 1px solid var(--borde);
+            border-radius: var(--radius-lg);
+            overflow: hidden;
+        }
+        .skeleton-block {
+            background: linear-gradient(90deg, #eff1f3 25%, #e4e7ea 50%, #eff1f3 75%);
+            background-size: 400% 100%;
+            animation: shimmer-mkt 1.4s ease-in-out infinite;
+        }
+        @keyframes shimmer-mkt {
+            0%   { background-position: 100% 0; }
+            100% { background-position: -100% 0; }
+        }
+
+        /* ── CTA publicar ── */
+        .cta-publicar {
+            background: var(--primario-light);
+            border: 2px dashed rgba(231,76,60,0.35);
+            border-radius: var(--radius-lg);
+            padding: 1.75rem 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .cta-publicar p {
+            color: var(--muted);
+            margin-bottom: 1rem;
+            font-size: 0.925rem;
+        }
+
+        /* ── Toast ── */
+        .toast-mkt {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--exito);
+            color: white;
+            padding: 0.85rem 1.5rem;
+            border-radius: var(--radius-lg);
+            font-family: var(--font-body);
+            font-size: 0.925rem;
+            font-weight: 600;
+            z-index: 200;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+            max-width: 90vw;
+            text-align: center;
+        }
+
+        /* ── Modal ── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15,23,42,0.6);
+            z-index: 150;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            backdrop-filter: blur(2px);
+        }
+        .modal-caja {
+            background: white;
+            border-radius: var(--radius-lg);
+            width: 100%;
+            max-width: 520px;
+            max-height: 90vh;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 24px 60px rgba(0,0,0,0.2);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.25rem 1.5rem;
+            border-bottom: 1px solid var(--borde);
+        }
+        .modal-header h3 {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--texto);
+        }
+        .modal-contenido { padding: 1.25rem 1.5rem; flex: 1; }
+        .modal-seccion { margin-bottom: 1.25rem; }
+        .modal-seccion-titulo {
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.4rem;
+            border-bottom: 2px solid;
+        }
+        .modal-seccion-titulo.recibiras { color: var(--exito);   border-color: var(--exito-borde); }
+        .modal-seccion-titulo.daras     { color: var(--primario); border-color: rgba(231,76,60,0.3); }
+        .modal-carta-fila {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid var(--borde);
+        }
+        .modal-carta-fila:last-child { border-bottom: none; }
+        .modal-carta-fila img,
+        .modal-carta-placeholder {
+            width: 44px;
+            height: 44px;
+            object-fit: contain;
+            border-radius: var(--radius-sm);
+            flex-shrink: 0;
+        }
+        .modal-carta-placeholder {
+            background: linear-gradient(160deg, #f5f7fa 0%, #e8ecf0 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: #c8d0da;
+        }
+        .modal-carta-info { flex: 1; min-width: 0; }
+        .modal-carta-info strong {
+            display: block;
+            font-size: 0.875rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--texto);
+        }
+        .modal-carta-info span { font-size: 0.775rem; color: var(--muted); }
+        .modal-check { font-size: 0.8rem; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
+        .modal-check.exito { color: var(--exito); }
+        .modal-check.error { color: var(--primario); }
+        .modal-vacio { color: var(--muted); font-size: 0.875rem; font-style: italic; }
+        .modal-estado {
+            padding: 0.65rem 0.9rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            border-left: 3px solid;
+        }
+        .modal-estado.exito { background: var(--exito-soft);   color: var(--exito);   border-color: var(--exito); }
+        .modal-estado.error { background: var(--primario-light); color: var(--primario); border-color: var(--primario); }
+        .modal-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid var(--borde);
+            display: flex;
+            gap: 0.75rem;
+            justify-content: flex-end;
+        }
+        .btn-cancelar-modal {
+            background: white;
+            color: var(--muted);
+            border: 1.5px solid var(--borde);
+            padding: 0.6rem 1.25rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background var(--trans), border-color var(--trans);
+        }
+        .btn-cancelar-modal:hover { background: var(--fondo); border-color: var(--borde-hover); }
+        .btn-confirmar-modal {
+            background: var(--exito);
+            color: white;
+            border: none;
+            padding: 0.6rem 1.5rem;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-body);
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background var(--trans), transform var(--trans);
+        }
+        .btn-confirmar-modal:hover:not(:disabled) { background: #15803d; transform: translateY(-1px); }
+        .btn-confirmar-modal:disabled { background: #b0bec5; cursor: not-allowed; }
+    </style>
+</head>
+<body>
+
+    <div id="app-header"></div>
+
+    <!-- Hero con buscador -->
+    <section class="marketplace-hero">
+        <h1>🔄 Marketplace de Tradeos</h1>
+        <p>Encuentra el intercambio perfecto entre coleccionistas de toda la comunidad</p>
+        <div class="barra-busqueda">
+            <input
+                type="text"
+                id="buscar-carta"
+                placeholder="Buscar por carta (ofrece o busca)..."
+                oninput="filtrar()"
+            />
+            <select id="filtro-tipo" onchange="filtrar()">
+                <option value="">Todos los tipos</option>
+                <option value="Fuego">Fuego</option>
+                <option value="Agua">Agua</option>
+                <option value="Planta">Planta</option>
+                <option value="Eléctrico">Eléctrico</option>
+                <option value="Psíquico">Psíquico</option>
+                <option value="Normal">Normal</option>
+                <option value="Fantasma">Fantasma</option>
+                <option value="Dragón">Dragón</option>
+            </select>
+        </div>
+    </section>
+
+    <main class="marketplace-contenedor">
+
+        <!-- CTA publicar tradeo -->
+        <div class="cta-publicar" id="cta-publicar" hidden>
+            <p>¿Tienes cartas para intercambiar? Publica tu tradeo y llega a toda la comunidad.</p>
+            <a href="publicar-tradeo.html" class="btn-primario">+ Publicar mi tradeo</a>
+        </div>
+
+        <!-- Error de red -->
+        <div id="error-box" class="alerta-error" hidden>
+            <span id="error-msg">No se pudieron cargar los tradeos.</span>
+            <button onclick="cargarTradeos()" style="background:#c0392b;color:white;border:none;padding:0.4rem 0.9rem;border-radius:4px;cursor:pointer;">Reintentar</button>
+        </div>
+
+        <!-- Toolbar: contador y orden -->
+        <div class="marketplace-toolbar">
+            <span class="contador-resultados" id="contador">Cargando tradeos...</span>
+        </div>
+
+        <!-- Grid de tradeos -->
+        <div class="grid-tradeos" id="grid-tradeos">
+            <!-- Skeletons iniciales -->
+            <div class="skeleton-card">
+                <div class="skeleton-block" style="height:52px;margin:0;border-radius:0;"></div>
+                <div style="padding:1rem;">
+                    <div class="skeleton-block" style="height:70px;"></div>
+                    <div class="skeleton-block" style="height:16px;margin-top:0.75rem;width:80%;"></div>
+                </div>
+                <div class="skeleton-block" style="height:44px;margin:0;border-radius:0;"></div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-block" style="height:52px;margin:0;border-radius:0;"></div>
+                <div style="padding:1rem;">
+                    <div class="skeleton-block" style="height:70px;"></div>
+                    <div class="skeleton-block" style="height:16px;margin-top:0.75rem;width:60%;"></div>
+                </div>
+                <div class="skeleton-block" style="height:44px;margin:0;border-radius:0;"></div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-block" style="height:52px;margin:0;border-radius:0;"></div>
+                <div style="padding:1rem;">
+                    <div class="skeleton-block" style="height:70px;"></div>
+                </div>
+                <div class="skeleton-block" style="height:44px;margin:0;border-radius:0;"></div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer>
+        <p>© 2026 PokeTrade · <a href="aviso-legal.html">Aviso legal</a> · <a href="contacto.html">Contacto</a></p>
+    </footer>
+
+    <!-- Modal: aceptar tradeo -->
+    <div id="modal-aceptar" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-titulo" hidden>
+        <div class="modal-caja">
+            <div class="modal-header">
+                <h3 id="modal-titulo">Aceptar tradeo</h3>
+                <button class="btn-cerrar-modal" onclick="cerrarModal()" aria-label="Cerrar">✕</button>
+            </div>
+            <div class="modal-contenido">
+                <div id="modal-cuerpo"></div>
+                <p id="modal-estado" class="modal-estado" role="status"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancelar-modal" onclick="cerrarModal()">Cancelar</button>
+                <button id="btn-confirmar" class="btn-confirmar-modal" onclick="confirmarAceptar()" disabled>
+                    Confirmar intercambio
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast de éxito -->
+    <div id="toast-mkt" class="toast-mkt" role="alert" hidden></div>
+
+    <script src="../js/auth.js"></script>
+    <script src="../js/header.js"></script>
+    <script src="../js/utils.js"></script>
+    <script src="../js/marketplace.js"></script>
+</body>
+</html>
