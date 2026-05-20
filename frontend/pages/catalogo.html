@@ -15,9 +15,10 @@
             <h1>Catálogo de cartas</h1>
 
             <!-- Filtros -->
-            <div class="filtros">
-                <input type="text" id="filtro-nombre" placeholder="Buscar por nombre..." oninput="filtrar()" />
-                <select id="filtro-tipo" onchange="filtrar()">
+            <div class="filtros" role="search" aria-label="Filtros del catálogo">
+                <input type="text" id="filtro-nombre" placeholder="Buscar por nombre..."
+                       oninput="filtrar()" aria-label="Buscar carta por nombre" />
+                <select id="filtro-tipo" onchange="filtrar()" aria-label="Filtrar por tipo">
                     <option value="">Todos los tipos</option>
                     <option value="Fuego">Fuego</option>
                     <option value="Agua">Agua</option>
@@ -28,7 +29,7 @@
                     <option value="Fantasma">Fantasma</option>
                     <option value="Dragón">Dragón</option>
                 </select>
-                <select id="filtro-rareza" onchange="filtrar()">
+                <select id="filtro-rareza" onchange="filtrar()" aria-label="Filtrar por rareza">
                     <option value="">Todas las rarezas</option>
                     <option value="Común">Común</option>
                     <option value="Poco común">Poco común</option>

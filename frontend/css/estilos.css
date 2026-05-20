@@ -91,6 +91,41 @@ img  { max-width: 100%; height: auto; display: block; }
   border-radius: 4px;
 }
 
+/* ── Accesibilidad: contenido solo para lectores de pantalla ── */
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Accesibilidad: enlace para saltar al contenido (WCAG 2.4.1) ── */
+.skip-link {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2000;
+  background: var(--primario);
+  color: #ffffff;
+  padding: 0.7rem 1.2rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 var(--radius) 0;
+  transform: translateY(-150%);
+  transition: transform 0.18s ease;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+/* main recibe foco al usar el enlace de salto, sin contorno permanente */
+main:focus { outline: none; }
+
 /* ══════════════════════════════════════════════════
    HEADER / NAV
 ══════════════════════════════════════════════════ */
@@ -366,7 +401,7 @@ nav {
 ══════════════════════════════════════════════════ */
 footer {
   background: var(--header-bg);
-  color: #64748b;
+  color: #94a3b8; /* contraste 6.1:1 sobre fondo oscuro (WCAG 1.4.3 AA) */
   padding: 1.5rem 2rem;
   font-size: 0.85rem;
   margin-top: auto;
@@ -629,6 +664,8 @@ footer a:hover { color: white; }
   text-overflow: ellipsis;
   margin: 0;
 }
+.carta-info h3 a { color: inherit; text-decoration: none; }
+.carta-info h3 a:hover { text-decoration: underline; }
 .carta-tipo {
   display: inline-block;
   padding: 0.15rem 0.55rem;
@@ -636,7 +673,7 @@ footer a:hover { color: white; }
   font-size: 0.72rem;
   font-weight: 600;
   background: var(--fondo);
-  color: var(--muted);
+  color: var(--texto-sec); /* contraste suficiente sobre fondo gris (WCAG 1.4.3) */
   width: fit-content;
 }
 .carta-rareza {

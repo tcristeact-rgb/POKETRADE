@@ -420,14 +420,15 @@
     <section class="marketplace-hero">
         <h1>🔄 Marketplace de Tradeos</h1>
         <p>Encuentra el intercambio perfecto entre coleccionistas de toda la comunidad</p>
-        <div class="barra-busqueda">
+        <div class="barra-busqueda" role="search" aria-label="Búsqueda de tradeos">
             <input
                 type="text"
                 id="buscar-carta"
                 placeholder="Buscar por carta (ofrece o busca)..."
                 oninput="filtrar()"
+                aria-label="Buscar tradeo por carta"
             />
-            <select id="filtro-tipo" onchange="filtrar()">
+            <select id="filtro-tipo" onchange="filtrar()" aria-label="Filtrar por tipo de carta">
                 <option value="">Todos los tipos</option>
                 <option value="Fuego">Fuego</option>
                 <option value="Agua">Agua</option>

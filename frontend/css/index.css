@@ -317,7 +317,7 @@ footer {
 
 .footer-col p,
 .footer-col ul {
-  color: #64748b;
+  color: #94a3b8; /* contraste 6.1:1 sobre fondo oscuro (WCAG 1.4.3 AA) */
   font-size: 0.85rem;
   line-height: 1.7;
   margin: 0;
@@ -329,7 +329,7 @@ footer {
 }
 .footer-col ul li { margin-bottom: 0.4rem; }
 .footer-col ul a {
-  color: #64748b;
+  color: #94a3b8; /* contraste 6.1:1 sobre fondo oscuro (WCAG 1.4.3 AA) */
   text-decoration: none;
   transition: color var(--trans, 0.2s ease);
 }
@@ -340,7 +340,7 @@ footer {
   padding: 1.25rem 2rem;
   text-align: center;
   font-size: 0.8rem;
-  color: #475569;
+  color: #94a3b8; /* contraste 6.1:1 sobre fondo oscuro (WCAG 1.4.3 AA) */
   max-width: 1200px;
   margin: 0 auto;
 }

@@ -35,9 +35,11 @@
   }
 
   mount.outerHTML =
+    '<a href="#contenido-principal" class="skip-link">Saltar al contenido principal</a>' +
     '<header>' +
       '<nav aria-label="Navegación principal">' +
-        '<a href="' + rIndex + '" class="logo" aria-label="PokeTrade – Inicio">🃏 PokeTrade</a>' +
+        '<a href="' + rIndex + '" class="logo" aria-label="PokeTrade – Inicio">' +
+          '<span aria-hidden="true">🃏</span> PokeTrade</a>' +
         '<ul class="nav-links">' +
           '<li><a href="' + rNovedades   + '"' + activa(rNovedades)   + '>Novedades</a></li>' +
           '<li><a href="' + rMasVendido  + '"' + activa(rMasVendido)  + '>Más Vendido</a></li>' +
@@ -56,9 +58,10 @@
       '</nav>' +
     '</header>' +
     '<div id="drawer-backdrop" class="drawer-backdrop" aria-hidden="true"></div>' +
-    '<aside id="nav-drawer" class="nav-drawer" aria-hidden="true" aria-label="Menú de navegación" role="dialog">' +
+    '<aside id="nav-drawer" class="nav-drawer" aria-hidden="true" aria-label="Menú de navegación" role="dialog" aria-modal="true">' +
       '<div class="drawer-cabecera">' +
-        '<a href="' + rIndex + '" class="logo">🃏 PokeTrade</a>' +
+        '<a href="' + rIndex + '" class="logo" aria-label="PokeTrade – Inicio">' +
+          '<span aria-hidden="true">🃏</span> PokeTrade</a>' +
         '<button id="btn-drawer-cerrar" class="drawer-btn-cerrar" aria-label="Cerrar menú">✕</button>' +
       '</div>' +
       '<div class="buscador-contenedor drawer-buscador" role="search">' +
@@ -76,6 +79,13 @@
       '<hr class="drawer-hr" />' +
       '<div id="drawer-auth" class="drawer-auth"></div>' +
     '</aside>';
+
+  // El enlace de salto necesita un destino enfocable (WCAG 2.4.1)
+  var main = document.querySelector('main');
+  if (main) {
+    if (!main.id) main.id = 'contenido-principal';
+    main.setAttribute('tabindex', '-1');
+  }
 
   // Poblar el menú-usuario del header (auth.js lo expone)
   if (typeof renderizarMenu === 'function') renderizarMenu();
@@ -124,8 +134,23 @@
   hamburguesa.addEventListener('click', abrirDrawer);
   btnCerrar.addEventListener('click', cerrarDrawer);
   backdrop.addEventListener('click', cerrarDrawer);
+
+  // Cierre con Escape y retención del foco dentro del drawer (WCAG 2.1.2 / 2.4.3)
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && drawer.classList.contains('abierto')) cerrarDrawer();
+    if (!drawer.classList.contains('abierto')) return;
+    if (e.key === 'Escape') { cerrarDrawer(); return; }
+    if (e.key !== 'Tab') return;
+    var f = Array.prototype.filter.call(
+      drawer.querySelectorAll('a[href], button:not([disabled]), input:not([disabled])'),
+      function (el) { return el.getClientRects().length > 0; }
+    );
+    if (!f.length) return;
+    var primero = f[0], ultimo = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === primero) {
+      e.preventDefault(); ultimo.focus();
+    } else if (!e.shiftKey && document.activeElement === ultimo) {
+      e.preventDefault(); primero.focus();
+    }
   });
   drawer.querySelectorAll('a[href]').forEach(function (a) {
     a.addEventListener('click', cerrarDrawer);

@@ -130,6 +130,9 @@ async function abrirModalAceptar(tradeoId) {
     document.getElementById('btn-confirmar').disabled = true;
     document.getElementById('modal-estado').textContent = '';
 
+    // Accesibilidad: foco al modal, retención de Tab y cierre con Escape
+    abrirModalAccesible(document.getElementById('modal-aceptar'), cerrarModal);
+
     try {
         const res = await fetch(`${API_URL}/inventario`, { headers: headersAuth() });
         if (!res.ok) throw new Error();
@@ -233,6 +236,8 @@ function cerrarModal() {
     document.getElementById('modal-aceptar').hidden = true;
     tradeoEnCurso = null;
     inventarioUsuario = [];
+    // Accesibilidad: devuelve el foco al botón que abrió el modal
+    cerrarModalAccesible();
 }
 
 function marcarTradeoAceptado(tradeoId) {
