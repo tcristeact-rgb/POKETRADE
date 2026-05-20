@@ -1,7 +1,14 @@
+// inicio.js — Lógica de la página principal
+
 document.addEventListener('DOMContentLoaded', () => {
     const btnTradeo = document.querySelector('#btn-hero-tradeo');
     if (btnTradeo && !estaLogueado()) {
         btnTradeo.href = 'pages/login.html';
+    }
+
+    const ctaSeccion = document.getElementById('cta-seccion');
+    if (ctaSeccion && estaLogueado()) {
+        ctaSeccion.hidden = true;
     }
 
     cargarNovedades();
@@ -11,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnReintentar) btnReintentar.addEventListener('click', cargarNovedades);
 });
 
-// ─── Novedades ────────────────────────────────────────
+// ─── Novedades: los 8 Pokémon más recientes con imagen oficial ────────────
 
 async function cargarNovedades() {
     const grid     = document.getElementById('grid-novedades');
@@ -24,30 +31,36 @@ async function cargarNovedades() {
     errorBox.hidden = true;
 
     try {
-        const res = await fetch(`${API_URL}/cartas`);
-        if (!res.ok) throw new Error(`HTTP_${res.status}`);
+        // Pedimos el total para calcular el offset desde el final
+        const resTotal = await fetch('https://pokeapi.co/api/v2/pokemon?limit=1');
+        if (!resTotal.ok) throw new Error('Error al conectar con la PokeAPI');
+        const datosTotales = await resTotal.json();
+        const total = datosTotales.count;
 
-        const datos  = await res.json();
-        const cartas = Array.isArray(datos) ? datos.slice(0, 8) : (datos.data ?? []).slice(0, 8);
+        // Cogemos los últimos 40 para tener margen de filtrar los sin imagen
+        const offset = Math.max(0, total - 40);
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=40&offset=${offset}`);
+        if (!res.ok) throw new Error('Error al conectar con la PokeAPI');
+        const datos = await res.json();
 
-        if (!cartas.length) {
-            grid.innerHTML = '<p class="sin-resultados">No hay novedades disponibles aún.</p>';
-            return;
-        }
+        // Invertimos para mostrar del más nuevo al más antiguo
+        const listaInvertida = [...datos.results].reverse();
 
-        grid.innerHTML = cartas.map(c => tarjetaCarta(c)).join('');
+        // Cargamos datos completos en paralelo
+        const promesas = listaInvertida.map(p => fetch(p.url).then(r => r.json()));
+        const pokemons = await Promise.all(promesas);
+
+        // Filtramos los que tienen artwork oficial y cogemos los primeros 8
+        const conImagen = pokemons
+            .filter(p => p.sprites?.other?.['official-artwork']?.front_default)
+            .slice(0, 8);
+
+        grid.innerHTML = conImagen.map(p => tarjetaCarta(pokemonACarta(p))).join('');
 
     } catch (error) {
         grid.innerHTML = '';
         errorBox.hidden = false;
-
-        if (error.message.includes('HTTP_404')) {
-            errorMsg.textContent = 'El catálogo no está disponible en este momento.';
-        } else if (error.message.includes('HTTP_5')) {
-            errorMsg.textContent = 'Error en el servidor. Inténtalo más tarde.';
-        } else {
-            errorMsg.textContent = 'Sin conexión con el servidor. ¿Está activo el backend?';
-        }
+        errorMsg.textContent = 'No se pudieron cargar las novedades. Inténtalo más tarde.';
     }
 }
 
@@ -55,16 +68,16 @@ async function cargarNovedades() {
 
 async function cargarEstadisticas() {
     try {
-        const [resCartas, resTradeos] = await Promise.all([
-            fetch(`${API_URL}/cartas`),
+        const [resPoke, resTradeos] = await Promise.all([
+            fetch('https://pokeapi.co/api/v2/pokemon?limit=1'),
             fetch(`${API_URL}/tradeos`)
         ]);
 
-        const cartas  = resCartas.ok  ? await resCartas.json()  : [];
-        const tradeos = resTradeos.ok ? await resTradeos.json() : [];
+        const datosPoke = resPoke.ok ? await resPoke.json() : null;
+        const tradeos   = resTradeos.ok ? await resTradeos.json() : [];
 
-        const totalCartas  = Array.isArray(cartas)  ? cartas.length  : (cartas.data?.length  ?? 0);
-        const totalTradeos = Array.isArray(tradeos) ? tradeos.length : (tradeos.data?.length ?? 0);
+        const totalCartas  = datosPoke?.count ?? 0;
+        const totalTradeos = Array.isArray(tradeos) ? tradeos.length : 0;
 
         const statCartas  = document.querySelector('#stat-cartas  .stat-numero');
         const statTradeos = document.querySelector('#stat-tradeos .stat-numero');
@@ -73,7 +86,7 @@ async function cargarEstadisticas() {
         if (statTradeos) statTradeos.textContent = totalTradeos.toLocaleString('es-ES');
 
     } catch (_) {
-        // Estadísticas decorativas; si fallan no bloquean la página
+        // Las estadísticas son decorativas
     } finally {
         document.querySelectorAll('.stat-item').forEach(el => el.classList.remove('skeleton'));
     }

@@ -89,7 +89,7 @@ PokeTrade se compone de **15 páginas** que comparten una hoja de estilos global
 - **Marketplace (`marketplace.html`)** — Rejilla de tradeos publicados por la comunidad, con buscador, tarjetas de intercambio y modal de aceptación.
 - **Más demandadas (`mas-vendido.html`)** y **Novedades (`novedades.html`)** — Listados de cartas en formato rejilla.
 - **Detalle de carta (`detalle-carta.html`)** — Ficha individual de una carta.
-- **Páginas legales** — Aviso legal, Política de privacidad y formulario de Contacto.
+- **Páginas legales** — Aviso legal, Política de privacidad y formulario de Soporte.
 
 **Páginas privadas (requieren sesión JWT)**
 
@@ -134,7 +134,7 @@ Resultado de la inspección frente a los 10 principios de Nielsen. La gravedad s
 | H7 | Flexibilidad y eficiencia de uso | El buscador solo existía en la página de inicio. En el resto de páginas no había forma rápida de buscar una carta. | 3 |
 | H8 | Diseño estético y minimalista | El formulario de registro presentaba 7 campos **sin distinguir** cuáles eran obligatorios y cuáles opcionales, aumentando la carga cognitiva. | 2 |
 | H9 | Ayudar a reconocer y recuperarse de errores | Los mensajes de error eran genéricos («Error al registrarse») y se mostraban **todos en un único punto**, sin señalar el campo concreto. | 3 |
-| H10 | Ayuda y documentación | Existen páginas de aviso legal, privacidad y un formulario de contacto. Adecuado para el alcance académico. | 1 |
+| H10 | Ayuda y documentación | Existen páginas de aviso legal, privacidad y un formulario de Soporte. Adecuado para el alcance académico. | 1 |
 
 **Conclusión de la evaluación heurística:** se identifican **cuatro problemas de gravedad alta (4)** —control del usuario en móvil, consistencia de la cabecera y prevención de errores en formularios— que deben priorizarse, y varios problemas de gravedad media (2–3) sobre realimentación y mensajes de error.
 
