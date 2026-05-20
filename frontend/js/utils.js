@@ -48,9 +48,6 @@ function tarjetaCarta(carta) {
 }
 
 // ─── Accesibilidad: gestión de foco en ventanas modales ──
-// Mueve el foco al modal, lo retiene dentro (Tab cíclico),
-// cierra con Escape y devuelve el foco al elemento disparador.
-// (WCAG 2.1.2 Sin trampas de teclado, 2.4.3 Orden de foco)
 let _focoPrevioModal = null;
 let _trampaFocoModal = null;
 
@@ -104,4 +101,68 @@ function miniaturas(cartas) {
             <span>${escapeHtml(c.nombre)}</span>
         </div>`
     ).join('');
+}
+
+// ─── Funciones para la PokeAPI ────────────────────────────
+
+// Convierte un objeto de la PokeAPI al formato que usa tarjetaCarta()
+function pokemonACarta(p) {
+    return {
+        id:            p.id,
+        nombre:        capitalizarNombre(p.name),
+        tipo:          p.types?.[0]?.type?.name
+                           ? traducirTipo(p.types[0].type.name) : null,
+        rareza:        calcularRareza(p.base_experience),
+        imagen_url:    p.sprites?.other?.['official-artwork']?.front_default
+                           || p.sprites?.front_default
+                           || null,
+        set_expansion: `Gen ${calcularGeneracion(p.id)}`,
+        // Datos extra para la página de detalle
+        stats:         p.stats,
+        altura:        p.height,
+        peso:          p.weight,
+        tipos:         p.types,         // Todos los tipos (algunos tienen 2)
+        habilidades:   p.abilities,
+    };
+}
+
+// Capitaliza el nombre del Pokémon (ej: "charizard" → "Charizard")
+function capitalizarNombre(nombre) {
+    return nombre.charAt(0).toUpperCase() + nombre.slice(1);
+}
+
+// Traduce los tipos de inglés a español
+function traducirTipo(tipo) {
+    const tipos = {
+        fire: 'Fuego', water: 'Agua', grass: 'Planta',
+        electric: 'Eléctrico', psychic: 'Psíquico', ice: 'Hielo',
+        dragon: 'Dragón', dark: 'Siniestro', fairy: 'Hada',
+        normal: 'Normal', fighting: 'Lucha', flying: 'Volador',
+        poison: 'Veneno', ground: 'Tierra', rock: 'Roca',
+        bug: 'Bicho', ghost: 'Fantasma', steel: 'Acero',
+    };
+    return tipos[tipo] || tipo;
+}
+
+// Calcula la rareza según la experiencia base del Pokémon
+function calcularRareza(exp) {
+    if (!exp)       return 'Común';
+    if (exp >= 250) return 'Ultra Rara';
+    if (exp >= 150) return 'Rara Holo';
+    if (exp >= 100) return 'Rara';
+    if (exp >= 50)  return 'Poco común';
+    return 'Común';
+}
+
+// Calcula la generación según el ID del Pokémon
+function calcularGeneracion(id) {
+    if (id <= 151)  return 'I';
+    if (id <= 251)  return 'II';
+    if (id <= 386)  return 'III';
+    if (id <= 493)  return 'IV';
+    if (id <= 649)  return 'V';
+    if (id <= 721)  return 'VI';
+    if (id <= 809)  return 'VII';
+    if (id <= 905)  return 'VIII';
+    return 'IX';
 }

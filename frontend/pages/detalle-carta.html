@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,6 +13,7 @@
             margin: 2.5rem auto;
             padding: 0 2rem;
         }
+
         .detalle-card {
             background: var(--fondo-card);
             border: 1px solid var(--borde);
@@ -22,6 +24,7 @@
             flex-wrap: wrap;
             box-shadow: var(--sombra);
         }
+
         .detalle-imagen {
             flex-shrink: 0;
             display: flex;
@@ -29,6 +32,7 @@
             align-items: center;
             gap: 1rem;
         }
+
         .detalle-imagen img {
             width: 210px;
             height: 210px;
@@ -38,6 +42,7 @@
             padding: 1rem;
             border: 1px solid var(--borde);
         }
+
         .sin-imagen-grande {
             width: 210px;
             height: 210px;
@@ -50,7 +55,12 @@
             color: #c8d0da;
             border: 1px solid var(--borde);
         }
-        .detalle-info { flex: 1; min-width: 220px; }
+
+        .detalle-info {
+            flex: 1;
+            min-width: 220px;
+        }
+
         .detalle-info h1 {
             font-family: var(--font-display);
             font-size: 1.85rem;
@@ -59,8 +69,21 @@
             color: var(--texto);
             letter-spacing: -0.02em;
         }
-        .atributos { display: flex; flex-direction: column; gap: 0.65rem; margin-bottom: 1.5rem; }
-        .atributo-fila { display: flex; gap: 0.75rem; align-items: center; font-size: 0.9rem; }
+
+        .atributos {
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .atributo-fila {
+            display: flex;
+            gap: 0.75rem;
+            align-items: center;
+            font-size: 0.9rem;
+        }
+
         .atributo-label {
             font-weight: 600;
             color: var(--muted);
@@ -69,6 +92,7 @@
             text-transform: uppercase;
             letter-spacing: 0.07em;
         }
+
         .badge-tipo {
             padding: 0.2rem 0.75rem;
             border-radius: 20px;
@@ -78,6 +102,7 @@
             color: var(--texto-sec);
             border: 1px solid var(--borde);
         }
+
         .badge-rareza {
             padding: 0.2rem 0.75rem;
             border-radius: 20px;
@@ -86,6 +111,7 @@
             background: var(--primario-soft);
             color: var(--primario);
         }
+
         .descripcion-carta {
             color: var(--muted);
             font-size: 0.925rem;
@@ -96,7 +122,13 @@
             border-radius: var(--radius);
             border-left: 3px solid var(--borde-hover);
         }
-        .acciones-carta { display: flex; gap: 0.75rem; flex-wrap: wrap; }
+
+        .acciones-carta {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
         .btn-inventario {
             background: var(--exito);
             color: white;
@@ -109,15 +141,36 @@
             cursor: pointer;
             transition: background var(--trans), transform var(--trans), box-shadow var(--trans);
         }
+
         .btn-inventario:hover {
             background: #15803d;
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(22,163,74,0.3);
+            box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
         }
-        .btn-inventario:disabled { background: #b0bec5; cursor: default; transform: none; box-shadow: none; }
-        .breadcrumb { margin-bottom: 1.25rem; font-size: 0.875rem; color: var(--muted); }
-        .breadcrumb a { color: var(--primario); text-decoration: none; font-weight: 500; }
-        .breadcrumb a:hover { text-decoration: underline; }
+
+        .btn-inventario:disabled {
+            background: #b0bec5;
+            cursor: default;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .breadcrumb {
+            margin-bottom: 1.25rem;
+            font-size: 0.875rem;
+            color: var(--muted);
+        }
+
+        .breadcrumb a {
+            color: var(--primario);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .breadcrumb a:hover {
+            text-decoration: underline;
+        }
+
         .skeleton-detalle {
             background: linear-gradient(90deg, #e8eaed 25%, #f3f4f6 50%, #e8eaed 75%);
             background-size: 1200px 100%;
@@ -125,29 +178,125 @@
             border-radius: var(--radius-lg);
             height: 300px;
         }
+
         @keyframes shimmer {
-            0%   { background-position: -600px 0; }
-            100% { background-position:  600px 0; }
+            0% {
+                background-position: -600px 0;
+            }
+
+            100% {
+                background-position: 600px 0;
+            }
         }
+
         @media (max-width: 600px) {
-            .detalle-contenedor { padding: 0 1rem; margin: 1.5rem auto; }
-            .detalle-card { padding: 1.5rem; gap: 1.5rem; }
-            .detalle-imagen { width: 100%; }
-            .detalle-imagen img, .sin-imagen-grande { width: 160px; height: 160px; }
-            .detalle-info { min-width: 0; }
-            .detalle-info h1 { font-size: 1.5rem; }
-            .acciones-carta { width: 100%; }
-            .acciones-carta .btn-inventario { width: 100%; }
+            .detalle-contenedor {
+                padding: 0 1rem;
+                margin: 1.5rem auto;
+            }
+
+            .detalle-card {
+                padding: 1.5rem;
+                gap: 1.5rem;
+            }
+
+            .detalle-imagen {
+                width: 100%;
+            }
+
+            .detalle-imagen img,
+            .sin-imagen-grande {
+                width: 160px;
+                height: 160px;
+            }
+
+            .detalle-info {
+                min-width: 0;
+            }
+
+            .detalle-info h1 {
+                font-size: 1.5rem;
+            }
+
+            .acciones-carta {
+                width: 100%;
+            }
+
+            .acciones-carta .btn-inventario {
+                width: 100%;
+            }
+        }
+
+        /* Stats del Pokémon */
+        .stats-seccion {
+            background: var(--fondo-card);
+            border: 1px solid var(--borde);
+            border-radius: var(--radius-lg);
+            padding: 1.75rem 2.5rem;
+            margin-top: 1.5rem;
+            box-shadow: var(--sombra);
+        }
+
+        .stats-titulo {
+            font-family: var(--font-display);
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            color: var(--texto);
+        }
+
+        .stats-lista {
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+        }
+
+        .stat-fila {
+            display: grid;
+            grid-template-columns: 110px 40px 1fr;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+        }
+
+        .stat-nombre {
+            font-weight: 600;
+            color: var(--muted);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .stat-valor {
+            font-weight: 700;
+            color: var(--texto);
+            text-align: right;
+        }
+
+        .stat-barra-fondo {
+            height: 8px;
+            background: var(--fondo);
+            border-radius: 99px;
+            overflow: hidden;
+            border: 1px solid var(--borde);
+        }
+
+        .stat-barra {
+            height: 100%;
+            border-radius: 99px;
+            transition: width 0.6s ease;
         }
     </style>
 </head>
+
 <body>
     <div id="app-header"></div>
 
     <main>
         <div class="detalle-contenedor">
             <div class="breadcrumb">
-                <a href="../index.html">Inicio</a> › <a href="catalogo.html">Catálogo</a> › <span id="breadcrumb-nombre">Carta</span>
+                <a href="../index.html">Inicio</a> › <a href="catalogo.html">Catálogo</a> › <span
+                    id="breadcrumb-nombre">Carta</span>
             </div>
 
             <div id="alerta" class="alerta"></div>
@@ -159,7 +308,8 @@
     </main>
 
     <footer>
-        <p>© 2026 PokeTrade · <a href="aviso-legal.html">Aviso legal</a> · <a href="privacidad.html">Privacidad</a> · <a href="contacto.html">Contacto</a></p>
+        <p>© 2026 PokeTrade · <a href="aviso-legal.html">Aviso legal</a> · <a href="privacidad.html">Privacidad</a> · <a
+                href="contacto.html">Contacto</a></p>
     </footer>
 
     <script src="../js/auth.js"></script>
@@ -167,4 +317,5 @@
     <script src="../js/utils.js"></script>
     <script src="../js/detalle-carta.js"></script>
 </body>
+
 </html>
