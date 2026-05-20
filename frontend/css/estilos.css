@@ -487,6 +487,41 @@ footer a:hover { color: white; }
 }
 .formulario-pie a:hover { text-decoration: underline; }
 
+/* ── Ayudas contextuales, errores por campo y validación ── */
+.formulario-intro {
+  font-size: 0.875rem;
+  color: var(--muted);
+  text-align: center;
+  margin: -1rem 0 1.5rem;
+  line-height: 1.5;
+}
+.campo-ayuda {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+.campo-error {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--error);
+  font-weight: 500;
+  margin-top: 0.25rem;
+  min-height: 1rem;
+}
+.formulario-grupo input.invalido {
+  border-color: var(--error);
+  background: #fff7f7;
+}
+.formulario-grupo input.invalido:focus {
+  box-shadow: 0 0 0 3px rgba(220,38,38,0.12);
+}
+.formulario-grupo input.valido { border-color: var(--exito); }
+.formulario-grupo input.valido:focus {
+  box-shadow: 0 0 0 3px rgba(22,163,74,0.12);
+}
+.obligatorio { color: var(--primario); font-weight: 700; }
+
 /* ══════════════════════════════════════════════════
    CATÁLOGO / CONTENEDOR GENERAL
 ══════════════════════════════════════════════════ */
@@ -1013,7 +1048,15 @@ footer a:hover { color: white; }
 }
 .drawer-buscador input { flex: 1; min-width: 0; width: 100%; }
 
-.drawer-nav { flex-shrink: 0; }
+/* Reset de las reglas globales de `nav` (display:flex, max-width, padding) */
+.drawer-nav {
+  flex-shrink: 0;
+  display: block;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
 .drawer-nav ul { list-style: none; padding: 0; margin: 0; }
 .drawer-nav ul li a {
   display: flex;

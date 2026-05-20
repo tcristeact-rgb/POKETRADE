@@ -22,23 +22,9 @@
 }
 
 /* ════════════════════════════════════════
-   HEADER  (override para home extendido)
-════════════════════════════════════════ */
-nav {
-  gap: 1.25rem;
-  padding: 0 2rem;
-}
-
-/* Botón Registro en nav */
-.btn-primario.btn-nav {
-  margin-left: 0.15rem;
-  padding: 0.42rem 1.1rem !important;
-  font-size: 0.875rem !important;
-}
-
-/* ════════════════════════════════════════
    HERO PRINCIPAL
    Pokéball gradient + stats AJAX
+   (El header es 100% global: estilos.css + header.js)
 ════════════════════════════════════════ */
 .hero {
   position: relative;

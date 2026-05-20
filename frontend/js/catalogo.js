@@ -10,7 +10,16 @@ async function cargarCartas() {
         const res = await fetch(`${API_URL}/cartas`);
         if (!res.ok) throw new Error(manejarErrorHTTP(res.status));
         todasLasCartas = await res.json();
-        mostrarCartas(todasLasCartas);
+
+        // Búsqueda inicial desde el parámetro ?q= (buscador del header unificado)
+        const q = new URLSearchParams(window.location.search).get('q');
+        if (q) {
+            const inputNombre = document.getElementById('filtro-nombre');
+            if (inputNombre) inputNombre.value = q;
+            filtrar();
+        } else {
+            mostrarCartas(todasLasCartas);
+        }
     } catch (e) {
         grid.innerHTML = `<p class="error-texto" style="grid-column:1/-1;padding:2rem;text-align:center;">Error al cargar las cartas: ${e.message}</p>`;
     }
