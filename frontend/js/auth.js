@@ -237,14 +237,23 @@ function renderizarMenu() {
           👤 ${usuario?.nombre || 'Usuario'} ▾
         </button>
         <ul class="dropdown-menu">
-          <li><a href="${paginaUrl('pages/catalogo.html')}">Catálogo</a></li>
           <li><a href="${paginaUrl('pages/inventario.html')}">📦 Inventario</a></li>
           <li><a href="${paginaUrl('pages/tradeos.html')}">🔄 Mis Tradeos</a></li>
+          <li><a href="${paginaUrl('pages/perfil.html')}">⚙️ Perfil</a></li>
           <li><hr/></li>
           <li><button onclick="cerrarSesion()">🚪 Cerrar sesión</button></li>
         </ul>
       </div>
     `;
+
+    // Cierra el dropdown al hacer clic fuera
+    document.addEventListener('click', function cerrarFuera(e) {
+      const dropdown = menu.querySelector('.dropdown');
+      if (dropdown && !dropdown.contains(e.target)) {
+        dropdown.classList.remove('abierto');
+      }
+    });
+
   } else {
     menu.innerHTML = `
       <a href="${paginaUrl('pages/login.html')}">Iniciar sesión</a>

@@ -1218,3 +1218,28 @@ body.nav-drawer-abierto { overflow: hidden; }
   .alerta-error { flex-direction: column; align-items: flex-start; }
   .grid-cartas { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 }
+
+/* ── Fix dropdown menú usuario ── */
+.dropdown-menu li a,
+.dropdown-menu li button {
+  color: var(--texto) !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.55rem !important;
+  width: 100% !important;
+  padding: 0.6rem 0.85rem !important;
+  text-decoration: none !important;
+  background: none !important;
+  border: none !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  border-radius: var(--radius-sm) !important;
+  transition: background var(--trans), color var(--trans) !important;
+}
+.dropdown-menu li a:hover,
+.dropdown-menu li button:hover {
+  background: var(--fondo) !important;
+  color: var(--primario) !important;
+}

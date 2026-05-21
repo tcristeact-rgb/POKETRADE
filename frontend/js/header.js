@@ -17,16 +17,16 @@
     return r;
   }
 
-  var rIndex       = ruta('index.html');
-  var rNovedades   = ruta('pages/novedades.html');
-  var rMasVendido  = ruta('pages/mas-vendido.html');
-  var rCatalogo    = ruta('pages/catalogo.html');
+  var rIndex = ruta('index.html');
+  var rNovedades = ruta('pages/novedades.html');
+  var rMasVendido = ruta('pages/mas-vendido.html');
+  var rCatalogo = ruta('pages/catalogo.html');
   var rMarketplace = ruta('pages/marketplace.html');
-  var rLogin       = ruta('pages/login.html');
-  var rRegistro    = ruta('pages/registro.html');
-  var rInventario  = ruta('pages/inventario.html');
-  var rTradeos     = ruta('pages/tradeos.html');
-  var rPerfil      = ruta('pages/perfil.html');
+  var rLogin = ruta('pages/login.html');
+  var rRegistro = ruta('pages/registro.html');
+  var rInventario = ruta('pages/inventario.html');
+  var rTradeos = ruta('pages/tradeos.html');
+  var rPerfil = ruta('pages/perfil.html');
 
   // Detectar la página activa para aria-current
   var paginaActual = window.location.pathname.split('/').pop() || 'index.html';
@@ -37,47 +37,47 @@
   mount.outerHTML =
     '<a href="#contenido-principal" class="skip-link">Saltar al contenido principal</a>' +
     '<header>' +
-      '<nav aria-label="Navegación principal">' +
-        '<a href="' + rIndex + '" class="logo" aria-label="PokeTrade – Inicio">' +
-          '<span aria-hidden="true">🃏</span> PokeTrade</a>' +
-        '<ul class="nav-links">' +
-          '<li><a href="' + rNovedades   + '"' + activa(rNovedades)   + '>Novedades</a></li>' +
-          '<li><a href="' + rMasVendido  + '"' + activa(rMasVendido)  + '>Más Vendido</a></li>' +
-          '<li><a href="' + rCatalogo    + '"' + activa(rCatalogo)    + '>Catálogo</a></li>' +
-          '<li><a href="' + rMarketplace + '"' + activa(rMarketplace) + '>Marketplace</a></li>' +
-        '</ul>' +
-        '<div class="buscador-contenedor" role="search">' +
-          '<input type="search" id="buscador" placeholder="Buscar carta..." autocomplete="off" aria-label="Buscar carta" />' +
-          '<button id="btn-buscar" aria-label="Buscar">🔍</button>' +
-        '</div>' +
-        '<div id="menu-usuario"></div>' +
-        '<button id="btn-hamburguesa" class="btn-hamburguesa"' +
-          ' aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="nav-drawer">' +
-          '<span></span><span></span><span></span>' +
-        '</button>' +
-      '</nav>' +
+    '<nav aria-label="Navegación principal">' +
+    '<a href="' + rIndex + '" class="logo" aria-label="PokeTrade – Inicio">' +
+    '<span aria-hidden="true">🃏</span> PokeTrade</a>' +
+    '<ul class="nav-links">' +
+    '<li><a href="' + rNovedades + '"' + activa(rNovedades) + '>Novedades</a></li>' +
+    '<li><a href="' + rMasVendido + '"' + activa(rMasVendido) + '>Más Vendido</a></li>' +
+    '<li><a href="' + rCatalogo + '"' + activa(rCatalogo) + '>Catálogo</a></li>' +
+    '<li><a href="' + rMarketplace + '"' + activa(rMarketplace) + '>Marketplace</a></li>' +
+    '</ul>' +
+    '<div class="buscador-contenedor" role="search">' +
+    '<input type="search" id="buscador" placeholder="Buscar carta..." autocomplete="off" aria-label="Buscar carta" />' +
+    '<button id="btn-buscar" aria-label="Buscar">🔍</button>' +
+    '</div>' +
+    '<div id="menu-usuario"></div>' +
+    '<button id="btn-hamburguesa" class="btn-hamburguesa"' +
+    ' aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="nav-drawer">' +
+    '<span></span><span></span><span></span>' +
+    '</button>' +
+    '</nav>' +
     '</header>' +
     '<div id="drawer-backdrop" class="drawer-backdrop" aria-hidden="true"></div>' +
     '<aside id="nav-drawer" class="nav-drawer" aria-hidden="true" aria-label="Menú de navegación" role="dialog" aria-modal="true">' +
-      '<div class="drawer-cabecera">' +
-        '<a href="' + rIndex + '" class="logo" aria-label="PokeTrade – Inicio">' +
-          '<span aria-hidden="true">🃏</span> PokeTrade</a>' +
-        '<button id="btn-drawer-cerrar" class="drawer-btn-cerrar" aria-label="Cerrar menú">✕</button>' +
-      '</div>' +
-      '<div class="buscador-contenedor drawer-buscador" role="search">' +
-        '<input type="search" id="buscador-drawer" placeholder="Buscar carta..." autocomplete="off" aria-label="Buscar carta" />' +
-        '<button id="btn-buscar-drawer" aria-label="Buscar">🔍</button>' +
-      '</div>' +
-      '<nav class="drawer-nav" aria-label="Secciones">' +
-        '<ul>' +
-          '<li><a href="' + rNovedades   + '">Novedades</a></li>' +
-          '<li><a href="' + rMasVendido  + '">Más Vendido</a></li>' +
-          '<li><a href="' + rCatalogo    + '">Catálogo</a></li>' +
-          '<li><a href="' + rMarketplace + '">Marketplace</a></li>' +
-        '</ul>' +
-      '</nav>' +
-      '<hr class="drawer-hr" />' +
-      '<div id="drawer-auth" class="drawer-auth"></div>' +
+    '<div class="drawer-cabecera">' +
+    '<a href="' + rIndex + '" class="logo" aria-label="PokeTrade – Inicio">' +
+    '<span aria-hidden="true">🃏</span> PokeTrade</a>' +
+    '<button id="btn-drawer-cerrar" class="drawer-btn-cerrar" aria-label="Cerrar menú">✕</button>' +
+    '</div>' +
+    '<div class="buscador-contenedor drawer-buscador" role="search">' +
+    '<input type="search" id="buscador-drawer" placeholder="Buscar carta..." autocomplete="off" aria-label="Buscar carta" />' +
+    '<button id="btn-buscar-drawer" aria-label="Buscar">🔍</button>' +
+    '</div>' +
+    '<nav class="drawer-nav" aria-label="Secciones">' +
+    '<ul>' +
+    '<li><a href="' + rNovedades + '">Novedades</a></li>' +
+    '<li><a href="' + rMasVendido + '">Más Vendido</a></li>' +
+    '<li><a href="' + rCatalogo + '">Catálogo</a></li>' +
+    '<li><a href="' + rMarketplace + '">Marketplace</a></li>' +
+    '</ul>' +
+    '</nav>' +
+    '<hr class="drawer-hr" />' +
+    '<div id="drawer-auth" class="drawer-auth"></div>' +
     '</aside>';
 
   // El enlace de salto necesita un destino enfocable (WCAG 2.4.1)
@@ -98,21 +98,21 @@
       drawerAuth.innerHTML =
         '<div class="drawer-usuario">👤 ' + (u && u.nombre ? u.nombre : 'Usuario') + '</div>' +
         '<a href="' + rInventario + '" class="drawer-enlace">📦 Inventario</a>' +
-        '<a href="' + rTradeos    + '" class="drawer-enlace">🔄 Mis Tradeos</a>' +
-        '<a href="' + rPerfil     + '" class="drawer-enlace">⚙️ Perfil</a>' +
+        '<a href="' + rTradeos + '" class="drawer-enlace">🔄 Mis Tradeos</a>' +
+        '<a href="' + rPerfil + '" class="drawer-enlace">⚙️ Perfil</a>' +
         '<button class="drawer-btn-logout" onclick="cerrarSesion()">🚪 Cerrar sesión</button>';
     } else {
       drawerAuth.innerHTML =
-        '<a href="' + rLogin    + '" class="drawer-enlace">Iniciar sesión</a>' +
+        '<a href="' + rLogin + '" class="drawer-enlace">Iniciar sesión</a>' +
         '<a href="' + rRegistro + '" class="btn-primario drawer-btn-registro">Registrarse</a>';
     }
   }
 
   // ── Lógica del drawer (apertura / cierre) ──────────
   var hamburguesa = document.getElementById('btn-hamburguesa');
-  var backdrop    = document.getElementById('drawer-backdrop');
-  var drawer      = document.getElementById('nav-drawer');
-  var btnCerrar   = document.getElementById('btn-drawer-cerrar');
+  var backdrop = document.getElementById('drawer-backdrop');
+  var drawer = document.getElementById('nav-drawer');
+  var btnCerrar = document.getElementById('btn-drawer-cerrar');
 
   function abrirDrawer() {
     drawer.classList.add('abierto');
@@ -159,12 +159,16 @@
   // ── Buscadores (header + drawer) ───────────────────
   function lanzarBusqueda(termino) {
     var q = encodeURIComponent((termino || '').trim());
-    if (q) window.location.href = rCatalogo + '?q=' + q;
+    if (!q) return;
+    // Calculamos la ruta al catálogo desde cualquier página
+    var enPages = window.location.pathname.includes('/pages/');
+    var urlCatalogo = enPages ? 'catalogo.html' : 'pages/catalogo.html';
+    window.location.href = urlCatalogo + '?q=' + q;
   }
-  var bHdr  = document.getElementById('buscador');
-  var btnH  = document.getElementById('btn-buscar');
-  var bDrw  = document.getElementById('buscador-drawer');
-  var btnD  = document.getElementById('btn-buscar-drawer');
+  var bHdr = document.getElementById('buscador');
+  var btnH = document.getElementById('btn-buscar');
+  var bDrw = document.getElementById('buscador-drawer');
+  var btnD = document.getElementById('btn-buscar-drawer');
   if (bHdr && btnH) {
     bHdr.addEventListener('keydown', function (e) { if (e.key === 'Enter') lanzarBusqueda(bHdr.value); });
     btnH.addEventListener('click', function () { lanzarBusqueda(bHdr.value); });
