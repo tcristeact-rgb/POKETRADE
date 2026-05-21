@@ -9,13 +9,6 @@ let todasLasCartas      = [];       // Cache de todas las cartas ya cargadas
 let cargandoTodo        = false;    // Indica si está cargando en segundo plano
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Comprobamos si hay búsqueda desde el buscador del header (?q=)
-    const q = new URLSearchParams(window.location.search).get('q');
-    if (q) {
-        const inputNombre = document.getElementById('filtro-nombre');
-        if (inputNombre) inputNombre.value = q;
-    }
-
     iniciarCatalogo();
 });
 
@@ -33,14 +26,22 @@ async function iniciarCatalogo() {
         totalPokemon = Math.min(datosTotales.count, 1010);
 
         // Cargamos la primera página
-        await cargarPagina(paginaActual);
+        await cargarPagina(1);
 
-        // Si hay búsqueda activa la aplicamos
+        // Si hay búsqueda desde el header (?q=) la aplicamos DESPUÉS de cargar
         const q = new URLSearchParams(window.location.search).get('q');
-        if (q) filtrar();
-
-        // Cargamos el resto en segundo plano para que los filtros funcionen con todo
-        cargarTodoEnSegundoPlano();
+        if (q) {
+            const inputNombre = document.getElementById('filtro-nombre');
+            if (inputNombre) {
+                inputNombre.value = q;
+                // Cargamos todo en segundo plano antes de filtrar
+                await cargarTodoEnSegundoPlano();
+                filtrar();
+            }
+        } else {
+            // Sin búsqueda cargamos el resto en segundo plano
+            cargarTodoEnSegundoPlano();
+        }
 
     } catch (e) {
         grid.innerHTML = `<p class="error-texto" style="grid-column:1/-1;padding:2rem;text-align:center;">Error al cargar las cartas: ${e.message}</p>`;
@@ -78,7 +79,7 @@ async function cargarPagina(pagina) {
     document.querySelector('.catalogo-contenedor')?.scrollIntoView({ behavior: 'smooth' });
 }
 
-// Carga todos los Pokémon en segundo plano para que los filtros funcionen con todo
+// Carga todos los Pokémon en segundo plano sin bloquear la UI
 async function cargarTodoEnSegundoPlano() {
     if (cargandoTodo) return;
     cargandoTodo = true;
@@ -86,9 +87,8 @@ async function cargarTodoEnSegundoPlano() {
     const totalPaginas = Math.ceil(totalPokemon / CARTAS_POR_PAGINA);
 
     for (let p = 1; p <= totalPaginas; p++) {
-        // Saltamos las que ya están en cache
-        const offset = (p - 1) * CARTAS_POR_PAGINA;
-        const yaEnCache = todasLasCartas.some(c => c.id === offset + 1);
+        const offset     = (p - 1) * CARTAS_POR_PAGINA;
+        const yaEnCache  = todasLasCartas.some(c => c.id === offset + 1);
         if (yaEnCache) continue;
 
         try {
@@ -130,34 +130,28 @@ function actualizarPaginacion(ocultar = false) {
 
     const totalPaginas = Math.ceil(totalPokemon / CARTAS_POR_PAGINA);
 
-    // Calculamos el rango de páginas a mostrar (máximo 5 botones)
     let inicio = Math.max(1, paginaActual - 2);
     let fin    = Math.min(totalPaginas, inicio + 4);
     if (fin - inicio < 4) inicio = Math.max(1, fin - 4);
 
     let html = '';
 
-    // Botón anterior
     html += `<button class="btn-pagina" onclick="irAPagina(${paginaActual - 1})" ${paginaActual === 1 ? 'disabled' : ''}>← Ant</button>`;
 
-    // Primera página si no está en el rango
     if (inicio > 1) {
         html += `<button class="btn-pagina" onclick="irAPagina(1)">1</button>`;
         if (inicio > 2) html += `<span style="color:var(--muted);padding:0 0.25rem;">…</span>`;
     }
 
-    // Páginas del rango
     for (let i = inicio; i <= fin; i++) {
         html += `<button class="btn-pagina ${i === paginaActual ? 'activa' : ''}" onclick="irAPagina(${i})">${i}</button>`;
     }
 
-    // Última página si no está en el rango
     if (fin < totalPaginas) {
         if (fin < totalPaginas - 1) html += `<span style="color:var(--muted);padding:0 0.25rem;">…</span>`;
         html += `<button class="btn-pagina" onclick="irAPagina(${totalPaginas})">${totalPaginas}</button>`;
     }
 
-    // Botón siguiente
     html += `<button class="btn-pagina" onclick="irAPagina(${paginaActual + 1})" ${paginaActual === totalPaginas ? 'disabled' : ''}>Sig →</button>`;
 
     contenedor.innerHTML = html;
@@ -174,7 +168,6 @@ async function irAPagina(pagina) {
     const totalPaginas = Math.ceil(totalPokemon / CARTAS_POR_PAGINA);
     if (pagina < 1 || pagina > totalPaginas) return;
 
-    // Si hay filtros activos paginamos sobre los resultados filtrados
     const nombre = document.getElementById('filtro-nombre')?.value.toLowerCase() || '';
     const tipo   = document.getElementById('filtro-tipo')?.value || '';
     const rareza = document.getElementById('filtro-rareza')?.value || '';
@@ -223,11 +216,11 @@ function mostrarPaginaFiltrada() {
 
     mostrarCartas(pagina);
 
-    // Paginación para los filtrados
     const contenedor = document.getElementById('paginacion');
     if (contenedor) {
-        if (totPags <= 1) { contenedor.innerHTML = ''; }
-        else {
+        if (totPags <= 1) {
+            contenedor.innerHTML = '';
+        } else {
             let html = '';
             html += `<button class="btn-pagina" onclick="irAPagina(${paginaActual - 1})" ${paginaActual === 1 ? 'disabled' : ''}>← Ant</button>`;
             for (let i = 1; i <= Math.min(totPags, 10); i++) {
