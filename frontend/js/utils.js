@@ -1,23 +1,25 @@
 // utils.js – Funciones compartidas entre todas las páginas
-// Cargado después de auth.js (depende de paginaUrl)
+// Módulo ES6: importa paginaUrl de auth.js y exporta utilidades.
 
-function escapeHtml(str) {
+import { paginaUrl } from './auth.js';
+
+export function escapeHtml(str) {
     if (!str) return '';
-    return str
+    return String(str)
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;');
 }
 
-function formatearFecha(iso) {
+export function formatearFecha(iso) {
     if (!iso) return '';
     return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
 // Uso: mostrarAlerta(msg, tipo)              → muestra en #alerta
 //      mostrarAlerta(msg, tipo, elementoId)  → muestra en #elementoId
-function mostrarAlerta(msg, tipo, elementoId = 'alerta') {
+export function mostrarAlerta(msg, tipo, elementoId = 'alerta') {
     const el = document.getElementById(elementoId);
     if (!el) return;
     el.className = `alerta ${tipo}`;
@@ -25,33 +27,34 @@ function mostrarAlerta(msg, tipo, elementoId = 'alerta') {
     setTimeout(() => { el.className = 'alerta'; el.textContent = ''; }, 4000);
 }
 
-// Tarjeta de carta compartida por catálogo, novedades, inicio y más vendidas
-function tarjetaCarta(carta) {
+// Tarjeta de carta compartida por catálogo, novedades, inicio y más vendidas.
+// Toda la tarjeta es un enlace <a>: accesible con teclado de forma nativa
+// (sin manejadores onclick en línea ni botones redundantes).
+export function tarjetaCarta(carta) {
     const nombre = carta.nombre || 'Sin nombre';
     const id     = carta.id || 0;
     const url    = paginaUrl(`pages/detalle-carta.html?id=${id}`);
     const nombreSeguro = escapeHtml(nombre);
     const imgHTML = carta.imagen_url
-        ? `<img src="${carta.imagen_url}" alt="${nombreSeguro}" loading="lazy" />`
-        : `<div class="carta-sin-imagen" aria-hidden="true">🃏</div>`;
+        ? `<img src="${escapeHtml(carta.imagen_url)}" alt="${nombreSeguro}" loading="lazy" />`
+        : `<div class="carta-sin-imagen" aria-hidden="true"><img class="icono" src="${paginaUrl('img/icons/carta.svg')}" alt="" /></div>`;
     return `
-        <article class="carta-card" onclick="window.location.href='${url}'" style="cursor:pointer;">
+        <a class="carta-card" href="${url}" aria-label="Ver detalle de ${nombreSeguro}">
             ${imgHTML}
             <div class="carta-info">
-                <h3><a href="${url}">${nombreSeguro}</a></h3>
+                <h3>${nombreSeguro}</h3>
                 ${carta.tipo          ? `<span class="carta-tipo">${escapeHtml(carta.tipo)}</span>`         : ''}
                 ${carta.rareza        ? `<span class="carta-rareza">${escapeHtml(carta.rareza)}</span>`     : ''}
                 ${carta.set_expansion ? `<span class="carta-set">${escapeHtml(carta.set_expansion)}</span>` : ''}
-                <button class="btn-ver-detalle" onclick="event.stopPropagation();window.location.href='${url}'" aria-label="Ver detalle de ${nombreSeguro}">+ Info</button>
             </div>
-        </article>`;
+        </a>`;
 }
 
 // ─── Accesibilidad: gestión de foco en ventanas modales ──
 let _focoPrevioModal = null;
 let _trampaFocoModal = null;
 
-function abrirModalAccesible(modal, cerrarFn) {
+export function abrirModalAccesible(modal, cerrarFn) {
     if (!modal) return;
     _focoPrevioModal = document.activeElement;
 
@@ -79,7 +82,7 @@ function abrirModalAccesible(modal, cerrarFn) {
     document.addEventListener('keydown', _trampaFocoModal);
 }
 
-function cerrarModalAccesible() {
+export function cerrarModalAccesible() {
     if (_trampaFocoModal) {
         document.removeEventListener('keydown', _trampaFocoModal);
         _trampaFocoModal = null;
@@ -91,12 +94,12 @@ function cerrarModalAccesible() {
 }
 
 // Miniaturas de cartas para tarjetas de tradeo (marketplace y mis tradeos)
-function miniaturas(cartas) {
-    if (!cartas?.length) return '<span style="color:#aaa;font-size:0.8rem;">—</span>';
+export function miniaturas(cartas) {
+    if (!cartas?.length) return '<span class="miniaturas-vacio">—</span>';
     return cartas.map(c => `
         <div class="miniatura">
             ${c.imagen_url
-                ? `<img src="${c.imagen_url}" alt="${escapeHtml(c.nombre)}" loading="lazy" />`
+                ? `<img src="${escapeHtml(c.imagen_url)}" alt="${escapeHtml(c.nombre)}" loading="lazy" />`
                 : `<div class="miniatura-sin-img" aria-hidden="true">?</div>`}
             <span>${escapeHtml(c.nombre)}</span>
         </div>`
@@ -106,7 +109,7 @@ function miniaturas(cartas) {
 // ─── Funciones para la PokeAPI ────────────────────────────
 
 // Convierte un objeto de la PokeAPI al formato que usa tarjetaCarta()
-function pokemonACarta(p) {
+export function pokemonACarta(p) {
     return {
         id:            p.id,
         nombre:        capitalizarNombre(p.name),
@@ -127,12 +130,12 @@ function pokemonACarta(p) {
 }
 
 // Capitaliza el nombre del Pokémon (ej: "charizard" → "Charizard")
-function capitalizarNombre(nombre) {
+export function capitalizarNombre(nombre) {
     return nombre.charAt(0).toUpperCase() + nombre.slice(1);
 }
 
 // Traduce los tipos de inglés a español
-function traducirTipo(tipo) {
+export function traducirTipo(tipo) {
     const tipos = {
         fire: 'Fuego', water: 'Agua', grass: 'Planta',
         electric: 'Eléctrico', psychic: 'Psíquico', ice: 'Hielo',
@@ -145,7 +148,7 @@ function traducirTipo(tipo) {
 }
 
 // Calcula la rareza según la experiencia base del Pokémon
-function calcularRareza(exp) {
+export function calcularRareza(exp) {
     if (!exp)       return 'Común';
     if (exp >= 250) return 'Ultra Rara';
     if (exp >= 150) return 'Rara Holo';
@@ -155,7 +158,7 @@ function calcularRareza(exp) {
 }
 
 // Calcula la generación según el ID del Pokémon
-function calcularGeneracion(id) {
+export function calcularGeneracion(id) {
     if (id <= 151)  return 'I';
     if (id <= 251)  return 'II';
     if (id <= 386)  return 'III';

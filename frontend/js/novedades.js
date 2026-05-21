@@ -1,6 +1,12 @@
-// novedades.js — Pokémon más recientes de la PokeAPI con imagen oficial
+// novedades.js — Pokémon más recientes de la PokeAPI (módulo ES6)
 
-document.addEventListener('DOMContentLoaded', cargarNovedades);
+import { tarjetaCarta, pokemonACarta } from './utils.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('btn-reintentar-novedades')
+        ?.addEventListener('click', cargarNovedades);
+    cargarNovedades();
+});
 
 async function cargarNovedades() {
     const grid     = document.getElementById('grid-novedades');
@@ -36,7 +42,7 @@ async function cargarNovedades() {
             .slice(0, 20);
 
         if (!conImagen.length) {
-            grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#888;">No hay novedades disponibles.</p>';
+            grid.innerHTML = '<p class="grid-mensaje">No hay novedades disponibles.</p>';
             return;
         }
 

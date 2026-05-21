@@ -1,9 +1,33 @@
-let todosLosTradeos  = [];
+// marketplace.js — Listado público de tradeos activos (módulo ES6)
+
+import { API_URL, estaLogueado, obtenerUsuario, headersAuth, parsearRespuesta } from './auth.js';
+import { formatearFecha, escapeHtml, miniaturas, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
+
+let todosLosTradeos   = [];
 let inventarioUsuario = [];
 let tradeoEnCurso     = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     mostrarCtaPublicar();
+
+    // Filtros y reintento (sin manejadores en línea)
+    document.getElementById('buscar-carta')?.addEventListener('input', filtrar);
+    document.getElementById('filtro-tipo')?.addEventListener('change', filtrar);
+    document.getElementById('btn-reintentar-mkt')?.addEventListener('click', cargarTradeos);
+
+    // Delegación de eventos para las tarjetas de tradeo
+    document.getElementById('grid-tradeos')?.addEventListener('click', (e) => {
+        const el = e.target.closest('[data-accion]');
+        if (!el) return;
+        if (el.dataset.accion === 'aceptar') abrirModalAceptar(Number(el.dataset.tradeoId));
+        else if (el.dataset.accion === 'limpiar') limpiarFiltros();
+    });
+
+    // Modal de aceptar tradeo
+    document.getElementById('btn-cerrar-aceptar')?.addEventListener('click', cerrarModal);
+    document.getElementById('btn-cancelar-aceptar')?.addEventListener('click', cerrarModal);
+    document.getElementById('btn-confirmar')?.addEventListener('click', confirmarAceptar);
+
     cargarTradeos();
 });
 
@@ -36,9 +60,9 @@ function filtrar() {
     const tipo  = document.getElementById('filtro-tipo').value;
 
     const filtrados = todosLosTradeos.filter(t => {
-        const todasLasCartas = [...(t.cartas_ofrece || []), ...(t.cartas_busca || [])];
-        const coincideTexto  = !texto || todasLasCartas.some(c => c.nombre.toLowerCase().includes(texto));
-        const coincideTipo   = !tipo  || todasLasCartas.some(c => c.tipo === tipo);
+        const cartas        = [...(t.cartas_ofrece || []), ...(t.cartas_busca || [])];
+        const coincideTexto = !texto || cartas.some(c => c.nombre.toLowerCase().includes(texto));
+        const coincideTipo  = !tipo  || cartas.some(c => c.tipo === tipo);
         return coincideTexto && coincideTipo;
     });
 
@@ -59,7 +83,7 @@ function renderizarTradeos(tradeos) {
         grid.innerHTML = `
             <div class="vacio-msg">
                 <p>No hay tradeos que coincidan con tu búsqueda.</p>
-                <button class="btn-secundario" onclick="limpiarFiltros()">Limpiar filtros</button>
+                <button class="btn-secundario" type="button" data-accion="limpiar">Limpiar filtros</button>
             </div>`;
         return;
     }
@@ -68,9 +92,9 @@ function renderizarTradeos(tradeos) {
 }
 
 function tarjetaTradeo(t) {
-    const fecha       = formatearFecha(t.created_at);
-    const inicial     = (t.usuario?.nombre?.[0] || '?').toUpperCase();
-    const nombreUser  = t.usuario ? `${t.usuario.nombre} ${t.usuario.apellido}` : 'Usuario';
+    const fecha         = formatearFecha(t.created_at);
+    const inicial       = (t.usuario?.nombre?.[0] || '?').toUpperCase();
+    const nombreUser    = t.usuario ? `${t.usuario.nombre} ${t.usuario.apellido}` : 'Usuario';
     const usuarioActual = obtenerUsuario();
     const esPropioTradeo = usuarioActual && t.usuario?.id === usuarioActual.id;
 
@@ -84,16 +108,16 @@ function tarjetaTradeo(t) {
     if (!estaLogueado()) {
         botonAccion = `<a href="login.html" class="btn-contactar">Inicia sesión para aceptar</a>`;
     } else if (esPropioTradeo) {
-        botonAccion = `<button class="btn-contactar btn-propio" disabled>Tu propio tradeo</button>`;
+        botonAccion = `<button class="btn-contactar btn-propio" type="button" disabled>Tu propio tradeo</button>`;
     } else {
-        botonAccion = `<button class="btn-contactar" onclick="abrirModalAceptar(${t.id})">Aceptar tradeo</button>`;
+        botonAccion = `<button class="btn-contactar" type="button" data-accion="aceptar" data-tradeo-id="${t.id}">Aceptar tradeo</button>`;
     }
 
     return `
     <div class="tradeo-card" id="tradeo-card-${t.id}">
         <div class="tradeo-card-header">
             <div class="usuario-info">
-                <div class="usuario-avatar">${inicial}</div>
+                <div class="usuario-avatar" aria-hidden="true">${escapeHtml(inicial)}</div>
                 <span class="usuario-nombre">${escapeHtml(nombreUser)}</span>
             </div>
             <span class="tradeo-fecha">${fecha}</span>
@@ -104,7 +128,7 @@ function tarjetaTradeo(t) {
                     <div class="intercambio-label label-ofrece">Ofrece</div>
                     <div class="cartas-miniaturas">${miniaturasOfrece}</div>
                 </div>
-                <div class="flecha-intercambio">⇄</div>
+                <div class="flecha-intercambio" aria-hidden="true">⇄</div>
                 <div class="intercambio-lado">
                     <div class="intercambio-label label-busca">Busca</div>
                     <div class="cartas-miniaturas">${miniaturasBusca}</div>
@@ -125,8 +149,8 @@ async function abrirModalAceptar(tradeoId) {
     if (!tradeoEnCurso) return;
 
     document.getElementById('modal-aceptar').hidden = false;
-    document.getElementById('modal-cuerpo').innerHTML = `
-        <p style="text-align:center;color:#888;padding:2rem;">Comprobando tu inventario...</p>`;
+    document.getElementById('modal-cuerpo').innerHTML =
+        `<p class="modal-cargando">Comprobando tu inventario...</p>`;
     document.getElementById('btn-confirmar').disabled = true;
     document.getElementById('modal-estado').textContent = '';
 
@@ -155,13 +179,13 @@ function renderizarModalAceptar(tradeo) {
         return { carta, itemInventario, tienes: !!itemInventario };
     });
 
-    const cartasRecibidas = tradeo.cartas_ofrece || [];
+    const cartasRecibidas  = tradeo.cartas_ofrece || [];
     const todasDisponibles = cartasNecesarias.every(c => c.tienes);
-    const faltantes = cartasNecesarias.filter(c => !c.tienes);
+    const faltantes        = cartasNecesarias.filter(c => !c.tienes);
 
     const filaRecibiras = cartasRecibidas.map(c => `
         <div class="modal-carta-fila">
-            ${c.imagen_url ? `<img src="${c.imagen_url}" alt="${escapeHtml(c.nombre)}" />` : '<div class="modal-carta-placeholder">?</div>'}
+            ${c.imagen_url ? `<img src="${escapeHtml(c.imagen_url)}" alt="${escapeHtml(c.nombre)}" />` : '<div class="modal-carta-placeholder" aria-hidden="true">?</div>'}
             <div class="modal-carta-info">
                 <strong>${escapeHtml(c.nombre)}</strong>
                 <span>${escapeHtml(c.tipo || '')} ${c.rareza ? '· ' + escapeHtml(c.rareza) : ''}</span>
@@ -171,7 +195,7 @@ function renderizarModalAceptar(tradeo) {
 
     const filasDaras = cartasNecesarias.map(({ carta, tienes }) => `
         <div class="modal-carta-fila">
-            ${carta.imagen_url ? `<img src="${carta.imagen_url}" alt="${escapeHtml(carta.nombre)}" />` : '<div class="modal-carta-placeholder">?</div>'}
+            ${carta.imagen_url ? `<img src="${escapeHtml(carta.imagen_url)}" alt="${escapeHtml(carta.nombre)}" />` : '<div class="modal-carta-placeholder" aria-hidden="true">?</div>'}
             <div class="modal-carta-info">
                 <strong>${escapeHtml(carta.nombre)}</strong>
                 <span>${escapeHtml(carta.tipo || '')} ${carta.rareza ? '· ' + escapeHtml(carta.rareza) : ''}</span>
@@ -189,7 +213,7 @@ function renderizarModalAceptar(tradeo) {
             ${filasDaras || '<p class="modal-vacio">Sin cartas requeridas</p>'}
         </div>`;
 
-    const estadoEl    = document.getElementById('modal-estado');
+    const estadoEl     = document.getElementById('modal-estado');
     const btnConfirmar = document.getElementById('btn-confirmar');
 
     if (todasDisponibles) {
@@ -244,16 +268,14 @@ function marcarTradeoAceptado(tradeoId) {
     const card = document.getElementById(`tradeo-card-${tradeoId}`);
     if (!card) return;
 
-    card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-    card.style.opacity    = '0';
-    card.style.transform  = 'scale(0.95)';
+    card.classList.add('tradeo-card-saliendo');
 
     setTimeout(() => {
         card.remove();
         todosLosTradeos = todosLosTradeos.filter(t => t.id !== tradeoId);
 
-        const grid    = document.getElementById('grid-tradeos');
-        const activos = grid.querySelectorAll('.tradeo-card').length;
+        const grid     = document.getElementById('grid-tradeos');
+        const activos  = grid.querySelectorAll('.tradeo-card').length;
         const contador = document.getElementById('contador');
         contador.textContent = activos === 1 ? '1 tradeo activo' : `${activos} tradeos activos`;
 
@@ -261,7 +283,7 @@ function marcarTradeoAceptado(tradeoId) {
             grid.innerHTML = `
                 <div class="vacio-msg">
                     <p>No hay tradeos que coincidan con tu búsqueda.</p>
-                    <button class="btn-secundario" onclick="limpiarFiltros()">Limpiar filtros</button>
+                    <button class="btn-secundario" type="button" data-accion="limpiar">Limpiar filtros</button>
                 </div>`;
         }
     }, 400);

@@ -1,8 +1,11 @@
 // ===================================================
-// registro.js — Alta de usuario con validación
-// preventiva: feedback por campo, ayuda contextual
-// y bloqueo del botón para evitar envíos duplicados.
+// registro.js — Alta de usuario (módulo ES6)
+// Validación preventiva por campo y reutilización de
+// la función registro() de auth.js (sin duplicar la
+// petición de red).
 // ===================================================
+
+import { registro } from './auth.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('form-registro');
@@ -93,25 +96,12 @@ async function registrarse(e) {
   boton.textContent = 'Creando cuenta…';
 
   try {
-    const respuesta = await fetch(`${API_URL}/auth/registro`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(datos)
-    });
-
-    const resp = await respuesta.json().catch(() => ({}));
-
-    if (!respuesta.ok) {
-      errorMensaje.textContent = resp.error || 'No se pudo completar el registro. Revisa tus datos.';
-      boton.disabled = false;
-      boton.textContent = textoOriginal;
-      return;
-    }
-
+    // Reutilizamos registro() de auth.js (una única definición de la petición)
+    await registro(datos);
     // Éxito: avisamos en el login mediante el parámetro ?registro=ok
     window.location.href = 'login.html?registro=ok';
   } catch (error) {
-    errorMensaje.textContent = 'Error de conexión con el servidor. Inténtalo de nuevo en unos instantes.';
+    errorMensaje.textContent = error.message || 'No se pudo completar el registro. Revisa tus datos.';
     boton.disabled = false;
     boton.textContent = textoOriginal;
   }

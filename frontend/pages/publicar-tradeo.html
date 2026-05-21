@@ -5,150 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Publicar Tradeo - PokeTrade</title>
     <meta name="description" content="Publica un nuevo tradeo de cartas Pokémon en PokeTrade.">
+    <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
-    <style>
-        .publicar-contenedor {
-            max-width: 800px;
-            margin: 2.5rem auto;
-            padding: 0 2rem;
-        }
-        .publicar-contenedor h1 {
-            font-family: var(--font-display);
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin-bottom: 2rem;
-            color: var(--texto);
-        }
-        .seccion-card p.descripcion-seccion {
-            font-size: 0.875rem;
-            color: var(--muted);
-            margin-bottom: 1.25rem;
-            line-height: 1.55;
-        }
-        .grid-seleccion {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 0.75rem;
-            max-height: 350px;
-            overflow-y: auto;
-            padding: 0.25rem;
-        }
-        .grid-seleccion::-webkit-scrollbar { width: 5px; }
-        .grid-seleccion::-webkit-scrollbar-track { background: var(--fondo); border-radius: 4px; }
-        .grid-seleccion::-webkit-scrollbar-thumb { background: var(--borde-hover); border-radius: 4px; }
-        .seleccionadas-preview {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin-top: 1rem;
-            min-height: 44px;
-            padding: 0.5rem 0.75rem;
-            background: var(--fondo);
-            border-radius: var(--radius-sm);
-            border: 1px dashed var(--borde-hover);
-            align-items: center;
-        }
-        .chip-carta {
-            background: var(--primario);
-            color: white;
-            padding: 0.25rem 0.65rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.35rem;
-        }
-        .chip-carta button {
-            background: none;
-            border: none;
-            color: white;
-            cursor: pointer;
-            font-size: 0.95rem;
-            line-height: 1;
-            padding: 0;
-            opacity: 0.75;
-            transition: opacity var(--trans);
-        }
-        .chip-carta button:hover { opacity: 1; }
-        .buscar-modal-input {
-            width: 100%;
-            padding: 0.62rem 0.95rem;
-            border: 1.5px solid var(--borde);
-            border-radius: var(--radius-sm);
-            margin-bottom: 1rem;
-            font-family: var(--font-body);
-            font-size: 0.9rem;
-            background: var(--fondo);
-            transition: border-color var(--trans), box-shadow var(--trans), background var(--trans);
-        }
-        .buscar-modal-input:focus {
-            outline: none;
-            border-color: var(--primario);
-            box-shadow: 0 0 0 3px var(--primario-soft);
-            background: white;
-        }
-        .resumen-tradeo {
-            background: var(--fondo);
-            border-radius: var(--radius-sm);
-            padding: 1rem;
-            margin-bottom: 1rem;
-            border: 1px solid var(--borde);
-        }
-        .resumen-fila {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0.4rem 0;
-            border-bottom: 1px solid var(--borde);
-            font-size: 0.875rem;
-            color: var(--texto);
-        }
-        .resumen-fila:last-child { border-bottom: none; }
-        textarea {
-            width: 100%;
-            padding: 0.65rem 0.95rem;
-            border: 1.5px solid var(--borde);
-            border-radius: var(--radius-sm);
-            font-family: var(--font-body);
-            font-size: 0.95rem;
-            resize: vertical;
-            background: white;
-            transition: border-color var(--trans), box-shadow var(--trans);
-        }
-        textarea:focus {
-            outline: none;
-            border-color: var(--primario);
-            box-shadow: 0 0 0 3px var(--primario-soft);
-        }
-        .contador { font-size: 0.8rem; color: var(--muted); text-align: right; margin-top: 0.25rem; }
-        .vacio-seccion {
-            text-align: center;
-            color: var(--muted);
-            padding: 2rem 1.5rem;
-            font-size: 0.9rem;
-            font-style: italic;
-            border: 1px dashed var(--borde-hover);
-            border-radius: var(--radius-sm);
-            background: var(--fondo);
-        }
-
-        /* ── Responsive ── */
-        @media (max-width: 768px) {
-            .publicar-contenedor { padding: 0 1rem; margin: 1.5rem auto; }
-            .seccion-card { padding: 1.25rem; }
-        }
-        @media (max-width: 480px) {
-            .grid-seleccion { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
-        }
-    </style>
 </head>
 <body>
     <div id="app-header"></div>
 
     <main>
         <div class="publicar-contenedor">
-            <h1>📢 Publicar Tradeo</h1>
+            <h1><img class="icono" src="../img/icons/publicar.svg" alt="" /> Publicar Tradeo</h1>
 
             <div id="alerta" class="alerta"></div>
 
@@ -162,7 +27,7 @@
                 </div>
 
                 <div class="seleccionadas-preview" id="preview-ofrece">
-                    <span style="color:#aaa; font-size:0.85rem;">Ninguna seleccionada</span>
+                    <span class="preview-vacio">Ninguna seleccionada</span>
                 </div>
             </div>
 
@@ -171,46 +36,43 @@
                 <h2>2. ¿Qué cartas buscas?</h2>
                 <p class="descripcion-seccion">Selecciona las cartas del catálogo que te gustaría recibir.</p>
 
-                <input type="text" class="buscar-modal-input" id="buscar-busca" placeholder="Filtrar por nombre..." oninput="filtrarBusca()" />
+                <input type="text" class="buscar-modal-input" id="buscar-busca" placeholder="Filtrar por nombre..."
+                       aria-label="Filtrar cartas del catálogo por nombre" />
 
                 <div id="grid-busca" class="grid-seleccion">
                     <p class="vacio-seccion">Cargando catálogo...</p>
                 </div>
 
                 <div class="seleccionadas-preview" id="preview-busca">
-                    <span style="color:#aaa; font-size:0.85rem;">Ninguna seleccionada</span>
+                    <span class="preview-vacio">Ninguna seleccionada</span>
                 </div>
             </div>
 
             <!-- Paso 3: Descripción opcional -->
             <div class="seccion-card">
                 <h2>3. Descripción (opcional)</h2>
-                <div class="formulario-grupo" style="margin-bottom:0.25rem;">
+                <div class="formulario-grupo">
+                    <label for="descripcion" class="sr-only">Descripción del tradeo</label>
                     <textarea id="descripcion" rows="3" maxlength="500"
-                        placeholder="Añade detalles sobre el estado de las cartas, condiciones del intercambio..."
-                        oninput="actualizarContador()"></textarea>
+                        placeholder="Añade detalles sobre el estado de las cartas, condiciones del intercambio..."></textarea>
                 </div>
                 <p class="contador"><span id="contador-chars">0</span>/500</p>
             </div>
 
             <!-- Botón publicar -->
-            <button class="btn-primario" style="width:100%; padding:0.9rem; font-size:1rem;" onclick="publicarTradeo()">
+            <button class="btn-primario btn-publicar" id="btn-publicar" type="button">
                 Publicar tradeo
             </button>
 
-            <p style="text-align:center; margin-top:1rem;">
-                <a href="tradeos.html" style="color:#888; font-size:0.9rem;">← Volver a mis tradeos</a>
+            <p class="publicar-volver">
+                <a href="tradeos.html">← Volver a mis tradeos</a>
             </p>
         </div>
     </main>
 
-    <footer>
-        <p>© 2026 PokeTrade · <a href="aviso-legal.html">Aviso legal</a> · <a href="privacidad.html">Privacidad</a> · <a href="contacto.html">Soporte</a></p>
-    </footer>
+    <div id="app-footer"></div>
 
-    <script src="../js/auth.js"></script>
-    <script src="../js/header.js"></script>
-    <script src="../js/utils.js"></script>
-    <script src="../js/publicar-tradeo.js"></script>
+    <script type="module" src="../js/header.js"></script>
+    <script type="module" src="../js/publicar-tradeo.js"></script>
 </body>
 </html>

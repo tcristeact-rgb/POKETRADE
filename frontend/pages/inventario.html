@@ -5,215 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mi Inventario - PokeTrade</title>
     <meta name="description" content="Gestiona tu colección de cartas Pokémon en PokeTrade.">
+    <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
-    <style>
-        .inventario-contenedor {
-            max-width: 1200px;
-            margin: 2.5rem auto;
-            padding: 0 2rem;
-        }
-        .inventario-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-        .inventario-header h1 {
-            font-family: var(--font-display);
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: var(--texto);
-        }
-        .grid-inventario {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
-            gap: 1.25rem;
-        }
-        .carta-inventario {
-            background: var(--fondo-card);
-            border: 1px solid var(--borde);
-            border-radius: var(--radius-lg);
-            overflow: hidden;
-            text-align: center;
-            position: relative;
-            transition: transform var(--trans), box-shadow var(--trans), border-color var(--trans);
-            box-shadow: var(--sombra-card);
-        }
-        .carta-inventario:hover {
-            transform: translateY(-4px);
-            box-shadow: var(--sombra-hover);
-            border-color: var(--borde-hover);
-        }
-        .carta-inventario img {
-            width: 100%;
-            height: 140px;
-            object-fit: contain;
-            background: linear-gradient(160deg, #f5f7fa 0%, #e8ecf0 100%);
-            padding: 0.75rem;
-        }
-        .carta-inventario h3 {
-            font-family: var(--font-display);
-            font-size: 0.875rem;
-            font-weight: 700;
-            padding: 0 0.75rem;
-            margin: 0.5rem 0 0.2rem;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            color: var(--texto);
-        }
-        .carta-inventario small {
-            font-size: 0.74rem;
-            color: var(--muted);
-            padding: 0 0.75rem;
-            display: block;
-            margin-bottom: 0.65rem;
-        }
-        .badge-cantidad {
-            position: absolute;
-            top: 0.6rem;
-            right: 0.6rem;
-            background: var(--primario);
-            color: white;
-            border-radius: 50%;
-            width: 26px;
-            height: 26px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 700;
-            box-shadow: 0 2px 8px rgba(231,76,60,0.4);
-        }
-        .btn-eliminar {
-            background: var(--primario);
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-            cursor: pointer;
-            font-family: var(--font-body);
-            font-size: 0.82rem;
-            font-weight: 600;
-            width: 100%;
-            transition: background var(--trans);
-            letter-spacing: 0.01em;
-        }
-        .btn-eliminar:hover { background: var(--primario-hover); }
-
-        /* Modal */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(15,23,42,0.6);
-            z-index: 100;
-            align-items: center;
-            justify-content: center;
-            padding: 1rem;
-            backdrop-filter: blur(2px);
-        }
-        .modal-overlay.activo { display: flex; }
-        .modal {
-            background: var(--fondo-card);
-            border-radius: var(--radius-lg);
-            padding: 2rem;
-            width: 90%;
-            max-width: 700px;
-            max-height: 85vh;
-            overflow-y: auto;
-            box-shadow: 0 24px 60px rgba(0,0,0,0.2);
-        }
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--borde);
-        }
-        .modal-header h2 {
-            font-family: var(--font-display);
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: var(--texto);
-        }
-        .modal-filtros {
-            display: flex;
-            gap: 0.75rem;
-            margin-bottom: 1.25rem;
-            flex-wrap: wrap;
-        }
-        .modal-filtros input {
-            flex: 1;
-            min-width: 150px;
-            padding: 0.6rem 0.95rem;
-            border: 1.5px solid var(--borde);
-            border-radius: var(--radius);
-            font-family: var(--font-body);
-            font-size: 0.9rem;
-            background: var(--fondo);
-            transition: border-color var(--trans), box-shadow var(--trans);
-        }
-        .modal-filtros input:focus {
-            outline: none;
-            border-color: var(--primario);
-            box-shadow: 0 0 0 3px var(--primario-soft);
-            background: white;
-        }
-        .lista-cartas-modal {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 0.85rem;
-        }
-        .cantidad-control {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.85rem;
-            margin: 0.85rem 0;
-        }
-        .cantidad-control button {
-            background: var(--primario);
-            color: white;
-            border: none;
-            width: 34px;
-            height: 34px;
-            border-radius: var(--radius-sm);
-            font-size: 1.1rem;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background var(--trans), transform var(--trans);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .cantidad-control button:hover { background: var(--primario-hover); transform: scale(1.05); }
-        .cantidad-control span {
-            font-family: var(--font-display);
-            font-weight: 700;
-            font-size: 1.15rem;
-            min-width: 2ch;
-            text-align: center;
-            color: var(--texto);
-        }
-
-        /* ── Responsive ── */
-        @media (max-width: 768px) {
-            .inventario-contenedor { padding: 0 1rem; margin: 1.5rem auto; }
-            .grid-inventario { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 0.85rem; }
-            .modal { padding: 1.5rem; }
-        }
-        @media (max-width: 480px) {
-            .inventario-header { flex-direction: column; align-items: stretch; }
-            .inventario-header .btn-primario { width: 100%; }
-            .modal { padding: 1.25rem; }
-            .modal-header h2 { font-size: 1.05rem; }
-            .lista-cartas-modal { grid-template-columns: repeat(auto-fill, minmax(102px, 1fr)); }
-        }
-    </style>
 </head>
 <body>
     <div id="app-header"></div>
@@ -221,8 +14,8 @@
     <main>
         <div class="inventario-contenedor">
             <div class="inventario-header">
-                <h1>📦 Mi Inventario</h1>
-                <button class="btn-primario" onclick="abrirModal()">+ Añadir carta</button>
+                <h1><img class="icono" src="../img/icons/inventario.svg" alt="" /> Mi Inventario</h1>
+                <button class="btn-primario" id="btn-abrir-modal" type="button">+ Añadir carta</button>
             </div>
 
             <div id="alerta" class="alerta"></div>
@@ -234,41 +27,37 @@
     </main>
 
     <!-- Modal: seleccionar carta para añadir -->
-    <div class="modal-overlay" id="modal-overlay">
+    <div class="modal-overlay" id="modal-overlay" hidden>
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-inv-titulo">
-            <div class="modal-header">
+            <div class="inv-modal-header">
                 <h2 id="modal-inv-titulo">Añadir carta al inventario</h2>
-                <button class="btn-cerrar-modal" onclick="cerrarModal()" aria-label="Cerrar ventana">✕</button>
+                <button class="btn-cerrar-modal" id="btn-cerrar-modal-inv" type="button" aria-label="Cerrar ventana">✕</button>
             </div>
 
             <div class="modal-filtros">
                 <input type="text" id="modal-buscar" placeholder="Buscar carta..."
-                       oninput="filtrarModal()" aria-label="Buscar carta en el catálogo" />
+                       aria-label="Buscar carta en el catálogo" />
             </div>
 
             <div id="lista-cartas-modal" class="lista-cartas-modal">
                 <p>Cargando cartas...</p>
             </div>
 
-            <div id="seleccion-panel" style="display:none; margin-top:1.5rem; border-top:1px solid #eee; padding-top:1rem;">
+            <div id="seleccion-panel" class="seleccion-panel" hidden>
                 <p><strong id="nombre-seleccionada"></strong></p>
                 <div class="cantidad-control">
-                    <button onclick="cambiarCantidad(-1)" aria-label="Disminuir cantidad">−</button>
+                    <button id="btn-cantidad-menos" type="button" aria-label="Disminuir cantidad">−</button>
                     <span id="cantidad-valor" aria-live="polite">1</span>
-                    <button onclick="cambiarCantidad(1)" aria-label="Aumentar cantidad">+</button>
+                    <button id="btn-cantidad-mas" type="button" aria-label="Aumentar cantidad">+</button>
                 </div>
-                <button class="btn-formulario" onclick="confirmarAnadir()">Añadir al inventario</button>
+                <button class="btn-formulario" id="btn-confirmar-anadir" type="button">Añadir al inventario</button>
             </div>
         </div>
     </div>
 
-    <footer>
-        <p>© 2026 PokeTrade · <a href="aviso-legal.html">Aviso legal</a> · <a href="privacidad.html">Privacidad</a> · <a href="contacto.html">Soporte</a></p>
-    </footer>
+    <div id="app-footer"></div>
 
-    <script src="../js/auth.js"></script>
-    <script src="../js/header.js"></script>
-    <script src="../js/utils.js"></script>
-    <script src="../js/inventario.js"></script>
+    <script type="module" src="../js/header.js"></script>
+    <script type="module" src="../js/inventario.js"></script>
 </body>
 </html>

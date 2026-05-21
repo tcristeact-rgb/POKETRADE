@@ -1,4 +1,7 @@
-// inicio.js — Lógica de la página principal
+// inicio.js — Lógica de la página principal (módulo ES6)
+
+import { API_URL, estaLogueado } from './auth.js';
+import { tarjetaCarta, pokemonACarta } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const btnTradeo = document.querySelector('#btn-hero-tradeo');
