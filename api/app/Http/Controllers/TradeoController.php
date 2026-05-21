@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Tradeo;
 use App\Models\Inventario;
+use App\Models\Carta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;        // Para usar transacciones SQL
 use Illuminate\Support\Facades\Validator; // Para validar los datos recibidos
@@ -75,8 +76,10 @@ class TradeoController extends Controller
             // attach() recibe un array de IDs y crea las filas en la tabla pivote
             $tradeo->cartasOfrece()->attach($request->cartas_ofrece);
 
-            // Asociamos las cartas que busca en la tabla pivote tradeo_cartas_busca
-            $tradeo->cartasBusca()->attach($request->cartas_busca);
+            // Las cartas buscadas pueden llegar como datos completos de Pokémon
+            // de la PokeAPI (el catálogo del backend solo tiene unas pocas).
+            // Las resolvemos a IDs de la tabla cartas, creando las que falten.
+            $tradeo->cartasBusca()->attach($this->resolverCartasBuscadas($request->cartas_busca));
 
             // Si todo fue bien confirmamos la transacción
             DB::commit();
@@ -96,6 +99,32 @@ class TradeoController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
+    }
+
+    // Convierte la lista de cartas buscadas en IDs de la tabla cartas.
+    // Cada elemento puede ser un ID (carta ya existente) o un objeto con los
+    // datos de un Pokémon de la PokeAPI, que se crea si no existe (por numero).
+    private function resolverCartasBuscadas(array $cartas): array
+    {
+        $ids = [];
+        foreach ($cartas as $c) {
+            if (is_array($c)) {
+                $carta = Carta::firstOrCreate(
+                    ['numero' => $c['numero'] ?? null],
+                    [
+                        'nombre'        => $c['nombre']        ?? 'Carta',
+                        'tipo'          => $c['tipo']          ?? null,
+                        'rareza'        => $c['rareza']        ?? null,
+                        'set_expansion' => $c['set_expansion'] ?? null,
+                        'imagen_url'    => $c['imagen_url']    ?? null,
+                    ]
+                );
+                $ids[] = $carta->id;
+            } else {
+                $ids[] = $c;
+            }
+        }
+        return $ids;
     }
 
     // --- Actualizar estado de un tradeo ---
