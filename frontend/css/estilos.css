@@ -91,6 +91,41 @@ img  { max-width: 100%; height: auto; display: block; }
   border-radius: 4px;
 }
 
+/* ── Accesibilidad: contenido solo para lectores de pantalla ── */
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Accesibilidad: enlace para saltar al contenido (WCAG 2.4.1) ── */
+.skip-link {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 2000;
+  background: var(--primario);
+  color: #ffffff;
+  padding: 0.7rem 1.2rem;
+  font-family: var(--font-body);
+  font-weight: 600;
+  text-decoration: none;
+  border-radius: 0 0 var(--radius) 0;
+  transform: translateY(-150%);
+  transition: transform 0.18s ease;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+/* main recibe foco al usar el enlace de salto, sin contorno permanente */
+main:focus { outline: none; }
+
 /* ══════════════════════════════════════════════════
    HEADER / NAV
 ══════════════════════════════════════════════════ */
@@ -366,7 +401,7 @@ nav {
 ══════════════════════════════════════════════════ */
 footer {
   background: var(--header-bg);
-  color: #64748b;
+  color: #94a3b8; /* contraste 6.1:1 sobre fondo oscuro (WCAG 1.4.3 AA) */
   padding: 1.5rem 2rem;
   font-size: 0.85rem;
   margin-top: auto;
@@ -487,6 +522,41 @@ footer a:hover { color: white; }
 }
 .formulario-pie a:hover { text-decoration: underline; }
 
+/* ── Ayudas contextuales, errores por campo y validación ── */
+.formulario-intro {
+  font-size: 0.875rem;
+  color: var(--muted);
+  text-align: center;
+  margin: -1rem 0 1.5rem;
+  line-height: 1.5;
+}
+.campo-ayuda {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--muted);
+  margin-top: 0.25rem;
+}
+.campo-error {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--error);
+  font-weight: 500;
+  margin-top: 0.25rem;
+  min-height: 1rem;
+}
+.formulario-grupo input.invalido {
+  border-color: var(--error);
+  background: #fff7f7;
+}
+.formulario-grupo input.invalido:focus {
+  box-shadow: 0 0 0 3px rgba(220,38,38,0.12);
+}
+.formulario-grupo input.valido { border-color: var(--exito); }
+.formulario-grupo input.valido:focus {
+  box-shadow: 0 0 0 3px rgba(22,163,74,0.12);
+}
+.obligatorio { color: var(--primario); font-weight: 700; }
+
 /* ══════════════════════════════════════════════════
    CATÁLOGO / CONTENEDOR GENERAL
 ══════════════════════════════════════════════════ */
@@ -594,6 +664,8 @@ footer a:hover { color: white; }
   text-overflow: ellipsis;
   margin: 0;
 }
+.carta-info h3 a { color: inherit; text-decoration: none; }
+.carta-info h3 a:hover { text-decoration: underline; }
 .carta-tipo {
   display: inline-block;
   padding: 0.15rem 0.55rem;
@@ -601,7 +673,7 @@ footer a:hover { color: white; }
   font-size: 0.72rem;
   font-weight: 600;
   background: var(--fondo);
-  color: var(--muted);
+  color: var(--texto-sec); /* contraste suficiente sobre fondo gris (WCAG 1.4.3) */
   width: fit-content;
 }
 .carta-rareza {
@@ -1013,7 +1085,15 @@ footer a:hover { color: white; }
 }
 .drawer-buscador input { flex: 1; min-width: 0; width: 100%; }
 
-.drawer-nav { flex-shrink: 0; }
+/* Reset de las reglas globales de `nav` (display:flex, max-width, padding) */
+.drawer-nav {
+  flex-shrink: 0;
+  display: block;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+}
 .drawer-nav ul { list-style: none; padding: 0; margin: 0; }
 .drawer-nav ul li a {
   display: flex;
@@ -1137,4 +1217,29 @@ body.nav-drawer-abierto { overflow: hidden; }
   .hero h1 { font-size: 1.8rem; }
   .alerta-error { flex-direction: column; align-items: flex-start; }
   .grid-cartas { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+}
+
+/* ── Fix dropdown menú usuario ── */
+.dropdown-menu li a,
+.dropdown-menu li button {
+  color: var(--texto) !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.55rem !important;
+  width: 100% !important;
+  padding: 0.6rem 0.85rem !important;
+  text-decoration: none !important;
+  background: none !important;
+  border: none !important;
+  text-align: left !important;
+  cursor: pointer !important;
+  border-radius: var(--radius-sm) !important;
+  transition: background var(--trans), color var(--trans) !important;
+}
+.dropdown-menu li a:hover,
+.dropdown-menu li button:hover {
+  background: var(--fondo) !important;
+  color: var(--primario) !important;
 }

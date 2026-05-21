@@ -87,11 +87,14 @@ function renderizarModal(cartas) {
     }
 
     lista.innerHTML = cartas.map(carta => `
-        <div class="carta-seleccionable" style="padding:0.75rem;" onclick="seleccionarCarta(${carta.id}, '${carta.nombre.replace(/'/g, "\\'")}')">
+        <div class="carta-seleccionable" style="padding:0.75rem;" role="button" tabindex="0"
+             aria-label="Seleccionar ${escapeHtml(carta.nombre)}"
+             onclick="seleccionarCarta(${carta.id}, '${carta.nombre.replace(/'/g, "\\'")}')"
+             onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">
             ${carta.imagen_url
-                ? `<img src="${carta.imagen_url}" alt="${carta.nombre}" style="width:80px;height:80px;object-fit:contain;" />`
-                : `<div style="width:80px;height:80px;background:#f0f0f0;border-radius:6px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:#ccc;">?</div>`}
-            <p>${carta.nombre}</p>
+                ? `<img src="${carta.imagen_url}" alt="${escapeHtml(carta.nombre)}" style="width:80px;height:80px;object-fit:contain;" />`
+                : `<div aria-hidden="true" style="width:80px;height:80px;background:#f0f0f0;border-radius:6px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:1.5rem;color:#ccc;">?</div>`}
+            <p>${escapeHtml(carta.nombre)}</p>
         </div>
     `).join('');
 }
@@ -140,12 +143,16 @@ function abrirModal() {
     document.getElementById('modal-overlay').classList.add('activo');
     document.getElementById('seleccion-panel').style.display = 'none';
     cartaSeleccionadaId = null;
+    // Accesibilidad: foco al modal, retención de Tab y cierre con Escape
+    abrirModalAccesible(document.getElementById('modal-overlay'), cerrarModal);
 }
 
 function cerrarModal() {
     document.getElementById('modal-overlay').classList.remove('activo');
     document.getElementById('modal-buscar').value = '';
     renderizarModal(todasLasCartasCatalogo);
+    // Accesibilidad: devuelve el foco al botón que abrió el modal
+    cerrarModalAccesible();
 }
 
 document.getElementById('modal-overlay').addEventListener('click', e => {

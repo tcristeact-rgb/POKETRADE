@@ -1,3 +1,5 @@
+// novedades.js — Pokémon más recientes de la PokeAPI con imagen oficial
+
 document.addEventListener('DOMContentLoaded', cargarNovedades);
 
 async function cargarNovedades() {
@@ -9,29 +11,40 @@ async function cargarNovedades() {
     errorBox.hidden = true;
 
     try {
-        const res = await fetch(`${API_URL}/cartas`);
-        if (!res.ok) throw new Error(`HTTP_${res.status}`);
+        // Pedimos el total para saber el ID más alto
+        const resTotal = await fetch('https://pokeapi.co/api/v2/pokemon?limit=1');
+        if (!resTotal.ok) throw new Error('Error al conectar con la PokeAPI');
+        const datosTotales = await resTotal.json();
+        const total = datosTotales.count;
 
-        const datos  = await res.json();
-        const cartas = Array.isArray(datos) ? datos : (datos.data ?? []);
+        // Cogemos los últimos 60 para tener margen de filtrar los sin imagen
+        const offset = Math.max(0, total - 60);
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=60&offset=${offset}`);
+        if (!res.ok) throw new Error('Error al conectar con la PokeAPI');
+        const datos = await res.json();
 
-        if (!cartas.length) {
-            grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#888;">No hay cartas disponibles.</p>';
+        // Invertimos para mostrar del más nuevo al más antiguo
+        const listaInvertida = [...datos.results].reverse();
+
+        // Cargamos datos completos en paralelo
+        const promesas = listaInvertida.map(p => fetch(p.url).then(r => r.json()));
+        const pokemons = await Promise.all(promesas);
+
+        // Filtramos solo los que tienen artwork oficial
+        const conImagen = pokemons
+            .filter(p => p.sprites?.other?.['official-artwork']?.front_default)
+            .slice(0, 20);
+
+        if (!conImagen.length) {
+            grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#888;">No hay novedades disponibles.</p>';
             return;
         }
 
-        grid.innerHTML = cartas.map(c => tarjetaCarta(c)).join('');
+        grid.innerHTML = conImagen.map(p => tarjetaCarta(pokemonACarta(p))).join('');
 
     } catch (error) {
         grid.innerHTML = '';
         errorBox.hidden = false;
-
-        if (error.message.includes('HTTP_5')) {
-            errorMsg.textContent = 'Error en el servidor. Inténtalo más tarde.';
-        } else if (error.message.includes('HTTP_')) {
-            errorMsg.textContent = 'No se pudo cargar el catálogo.';
-        } else {
-            errorMsg.textContent = 'Sin conexión con el servidor. ¿Está activo el backend?';
-        }
+        errorMsg.textContent = 'No se pudieron cargar las novedades. Inténtalo más tarde.';
     }
 }

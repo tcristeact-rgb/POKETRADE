@@ -199,6 +199,20 @@
             text-align: center;
             color: var(--texto);
         }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .inventario-contenedor { padding: 0 1rem; margin: 1.5rem auto; }
+            .grid-inventario { grid-template-columns: repeat(auto-fill, minmax(145px, 1fr)); gap: 0.85rem; }
+            .modal { padding: 1.5rem; }
+        }
+        @media (max-width: 480px) {
+            .inventario-header { flex-direction: column; align-items: stretch; }
+            .inventario-header .btn-primario { width: 100%; }
+            .modal { padding: 1.25rem; }
+            .modal-header h2 { font-size: 1.05rem; }
+            .lista-cartas-modal { grid-template-columns: repeat(auto-fill, minmax(102px, 1fr)); }
+        }
     </style>
 </head>
 <body>
@@ -221,14 +235,15 @@
 
     <!-- Modal: seleccionar carta para añadir -->
     <div class="modal-overlay" id="modal-overlay">
-        <div class="modal">
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-inv-titulo">
             <div class="modal-header">
-                <h2>Añadir carta al inventario</h2>
-                <button class="btn-cerrar-modal" onclick="cerrarModal()">✕</button>
+                <h2 id="modal-inv-titulo">Añadir carta al inventario</h2>
+                <button class="btn-cerrar-modal" onclick="cerrarModal()" aria-label="Cerrar ventana">✕</button>
             </div>
 
             <div class="modal-filtros">
-                <input type="text" id="modal-buscar" placeholder="Buscar carta..." oninput="filtrarModal()" />
+                <input type="text" id="modal-buscar" placeholder="Buscar carta..."
+                       oninput="filtrarModal()" aria-label="Buscar carta en el catálogo" />
             </div>
 
             <div id="lista-cartas-modal" class="lista-cartas-modal">
@@ -238,9 +253,9 @@
             <div id="seleccion-panel" style="display:none; margin-top:1.5rem; border-top:1px solid #eee; padding-top:1rem;">
                 <p><strong id="nombre-seleccionada"></strong></p>
                 <div class="cantidad-control">
-                    <button onclick="cambiarCantidad(-1)">−</button>
-                    <span id="cantidad-valor">1</span>
-                    <button onclick="cambiarCantidad(1)">+</button>
+                    <button onclick="cambiarCantidad(-1)" aria-label="Disminuir cantidad">−</button>
+                    <span id="cantidad-valor" aria-live="polite">1</span>
+                    <button onclick="cambiarCantidad(1)" aria-label="Aumentar cantidad">+</button>
                 </div>
                 <button class="btn-formulario" onclick="confirmarAnadir()">Añadir al inventario</button>
             </div>
@@ -248,7 +263,7 @@
     </div>
 
     <footer>
-        <p>© 2026 PokeTrade · <a href="aviso-legal.html">Aviso legal</a> · <a href="privacidad.html">Privacidad</a> · <a href="contacto.html">Contacto</a></p>
+        <p>© 2026 PokeTrade · <a href="aviso-legal.html">Aviso legal</a> · <a href="privacidad.html">Privacidad</a> · <a href="contacto.html">Soporte</a></p>
     </footer>
 
     <script src="../js/auth.js"></script>

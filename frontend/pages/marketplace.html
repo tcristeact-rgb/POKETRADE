@@ -392,6 +392,24 @@
         }
         .btn-confirmar-modal:hover:not(:disabled) { background: #15803d; transform: translateY(-1px); }
         .btn-confirmar-modal:disabled { background: #b0bec5; cursor: not-allowed; }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .marketplace-hero { padding: 2.5rem 1rem; }
+            .marketplace-hero h1 { font-size: 1.6rem; }
+            .marketplace-contenedor { padding: 0 1rem; margin: 1.5rem auto; }
+            .grid-tradeos { grid-template-columns: 1fr; gap: 1rem; }
+            .modal-footer { flex-direction: column-reverse; }
+            .btn-cancelar-modal, .btn-confirmar-modal { width: 100%; }
+        }
+        @media (max-width: 480px) {
+            .barra-busqueda { flex-direction: column; }
+            .barra-busqueda input { min-width: 0; width: 100%; }
+            .barra-busqueda select { width: 100%; }
+            .marketplace-toolbar { flex-direction: column; align-items: stretch; }
+            .cta-publicar { padding: 1.5rem 1.25rem; }
+            .modal-header, .modal-contenido, .modal-footer { padding-left: 1rem; padding-right: 1rem; }
+        }
     </style>
 </head>
 <body>
@@ -402,14 +420,15 @@
     <section class="marketplace-hero">
         <h1>🔄 Marketplace de Tradeos</h1>
         <p>Encuentra el intercambio perfecto entre coleccionistas de toda la comunidad</p>
-        <div class="barra-busqueda">
+        <div class="barra-busqueda" role="search" aria-label="Búsqueda de tradeos">
             <input
                 type="text"
                 id="buscar-carta"
                 placeholder="Buscar por carta (ofrece o busca)..."
                 oninput="filtrar()"
+                aria-label="Buscar tradeo por carta"
             />
-            <select id="filtro-tipo" onchange="filtrar()">
+            <select id="filtro-tipo" onchange="filtrar()" aria-label="Filtrar por tipo de carta">
                 <option value="">Todos los tipos</option>
                 <option value="Fuego">Fuego</option>
                 <option value="Agua">Agua</option>
@@ -473,7 +492,7 @@
     </main>
 
     <footer>
-        <p>© 2026 PokeTrade · <a href="aviso-legal.html">Aviso legal</a> · <a href="contacto.html">Contacto</a></p>
+        <p>© 2026 PokeTrade · <a href="aviso-legal.html">Aviso legal</a> · <a href="contacto.html">Soporte</a></p>
     </footer>
 
     <!-- Modal: aceptar tradeo -->
