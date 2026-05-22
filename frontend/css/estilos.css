@@ -513,7 +513,7 @@ footer a:hover { color: white; }
   font-family: var(--font-body);
   font-size: 0.95rem;
   color: var(--texto);
-  background: white;
+  background: var(--fondo-card);
   transition: border-color var(--trans), box-shadow var(--trans);
 }
 .formulario-grupo input:focus,
@@ -851,7 +851,7 @@ footer a:hover { color: white; }
 .como-funciona {
   padding: 4rem 2rem;
   text-align: center;
-  background: white;
+  background: var(--fondo-card);
   border-top: 1px solid var(--borde);
   border-bottom: 1px solid var(--borde);
 }
@@ -877,7 +877,7 @@ footer a:hover { color: white; }
   transition: transform var(--trans), box-shadow var(--trans);
 }
 .paso:hover { transform: translateY(-3px); box-shadow: var(--sombra); }
-.paso-icono { font-size: 2.5rem; line-height: 1; margin-bottom: 0.75rem; }
+.paso-icono { display: flex; justify-content: center; font-size: 2.5rem; line-height: 1; margin-bottom: 0.75rem; }
 .paso h3 {
   font-family: var(--font-display);
   font-weight: 700;
@@ -1196,6 +1196,9 @@ footer a:hover { color: white; }
   border-left-color: var(--primario);
 }
 .drawer-btn-logout {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
   margin: 0.6rem 1.25rem 0;
   padding: 0.65rem 1rem;
   background: none;
@@ -1407,6 +1410,9 @@ body.nav-drawer-abierto { overflow: hidden; }
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   transition: transform var(--trans), background var(--trans);
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
 }
 .stat-item:hover { transform: translateY(-3px); background: rgba(255,255,255,0.1); }
 .stat-numero {
@@ -1560,6 +1566,13 @@ body.nav-drawer-abierto { overflow: hidden; }
   transition: color var(--trans);
 }
 .footer-col ul a:hover { color: white; }
+/* Columnas con texto (PokeTrade y Soporte): el encabezado se centra
+   sobre el texto de debajo. Las columnas de enlaces (Navegación y
+   Legal) se mantienen alineadas a la izquierda. */
+.footer-col:first-child,
+.footer-col:last-child {
+  text-align: center;
+}
 .footer-bottom {
   border-top: 1px solid rgba(255,255,255,0.06);
   padding: 1.25rem 2rem;
