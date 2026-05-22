@@ -51,7 +51,6 @@ POKETRADE/
 │   │   ├── utils.js      Utilidades compartidas
 │   │   └── *.js          Un módulo por página
 │   ├── pages/            Resto de páginas HTML
-│   ├── tests/            Pruebas unitarias (Jest)
 │   └── package.json
 └── README.md
 ```
