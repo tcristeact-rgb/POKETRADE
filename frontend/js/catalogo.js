@@ -1,16 +1,14 @@
-// catalogo.js — Catálogo completo con paginación, filtros y buscador
-// Módulo ES6. Carga los Pokémon de la PokeAPI de 20 en 20.
 
 import { tarjetaCarta, pokemonACarta } from './utils.js';
 
-const CARTAS_POR_PAGINA = 20;       // Pokémon por página
-let paginaActual        = 1;        // Página actual
-let totalPokemon        = 0;        // Total de Pokémon en la PokeAPI
-let cartasFiltradas     = [];       // Resultado de los filtros activos
-let todasLasCartas      = [];       // Cache de todas las cartas ya cargadas
-let cargandoTodo        = false;    // Carga de fondo en curso
-let cargaCompletada     = false;    // Toda la PokeAPI ya está en cache
-let conteoFiltradoPrevio = -1;      // Nº de resultados del último refresco
+const CARTAS_POR_PAGINA = 20;       
+let paginaActual        = 1;        
+let totalPokemon        = 0;        
+let cartasFiltradas     = [];       
+let todasLasCartas      = [];       
+let cargandoTodo        = false;    
+let cargaCompletada     = false;    
+let conteoFiltradoPrevio = -1;      
 
 // Retrasa la ejecución de fn hasta que pasen ms sin nuevas llamadas.
 function debounce(fn, ms) {
@@ -22,7 +20,6 @@ function debounce(fn, ms) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Filtros: se enlazan con addEventListener (sin onclick en línea)
     document.getElementById('filtro-nombre')?.addEventListener('input', debounce(filtrar, 300));
     document.getElementById('filtro-tipo')?.addEventListener('change', filtrar);
     document.getElementById('filtro-rareza')?.addEventListener('change', filtrar);
@@ -32,10 +29,9 @@ document.addEventListener('DOMContentLoaded', () => {
     paginacionEl?.addEventListener('click', (e) => {
         const btn = e.target.closest('button[data-pagina]');
         if (btn && !btn.disabled) { irAPagina(Number(btn.dataset.pagina)); return; }
-        // Botón "Ir" del salto directo de página
         if (e.target.closest('[data-accion="ir"]')) saltarAPaginaEscrita();
     });
-    // Permite saltar de página pulsando Enter en el campo numérico
+
     paginacionEl?.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && e.target.id === 'input-ir-pagina') {
             e.preventDefault();
@@ -56,11 +52,10 @@ async function iniciarCatalogo() {
         if (!resTotal.ok) throw new Error('Error al conectar con la PokeAPI');
         const datosTotales = await resTotal.json();
 
-        // Solo usamos los Pokémon con ID hasta 1010 (excluye formas especiales)
+        // Solo usamos los Pokémon con ID hasta 1010 (excluye formas especiales por errores en la PokeAPI)
         totalPokemon = Math.min(datosTotales.count, 1010);
 
         // Página inicial: si la URL trae ?page=N volvemos a esa página
-        // (p. ej. al pulsar "atrás" del navegador desde el detalle de una carta).
         const params       = new URLSearchParams(window.location.search);
         const totalPaginas = Math.ceil(totalPokemon / CARTAS_POR_PAGINA);
         let paginaInicial  = parseInt(params.get('page'), 10) || 1;
@@ -74,8 +69,8 @@ async function iniciarCatalogo() {
             const inputNombre = document.getElementById('filtro-nombre');
             if (inputNombre) {
                 inputNombre.value = q;
-                cargarTodoEnSegundoPlano();   // arranca la carga (no bloquea)
-                filtrar();                    // filtra ya, sin esperar
+                cargarTodoEnSegundoPlano();   
+                filtrar();                    
             }
         } else {
             // Sin búsqueda cargamos el resto en segundo plano
@@ -87,7 +82,6 @@ async function iniciarCatalogo() {
     }
 }
 
-// Carga una página específica de Pokémon
 async function cargarPagina(pagina) {
     const grid = document.getElementById('grid-cartas');
     grid.innerHTML = Array(8).fill('<div class="carta-card skeleton" aria-hidden="true"></div>').join('');
@@ -317,7 +311,7 @@ function filtrar() {
 function refrescarBusquedaSiActiva() {
     if (!hayFiltrosActivos()) return;
     calcularFiltradas();
-    if (cartasFiltradas.length === conteoFiltradoPrevio) return;  // sin cambios
+    if (cartasFiltradas.length === conteoFiltradoPrevio) return;  
     conteoFiltradoPrevio = cartasFiltradas.length;
     const totPags = Math.max(1, Math.ceil(cartasFiltradas.length / CARTAS_POR_PAGINA));
     paginaActual  = Math.min(paginaActual, totPags);

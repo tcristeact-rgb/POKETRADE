@@ -5,10 +5,10 @@ import { escapeHtml, mostrarAlerta, capitalizarNombre, pokemonACarta } from './u
 
 protegerRuta();
 
-const MAX_BUSCA_VISIBLE = 60;   // Pokémon mostrados a la vez en "¿qué buscas?"
+const MAX_BUSCA_VISIBLE = 60;   
 
 let inventario     = [];
-let catalogoCartas = [];        // catálogo completo de la PokeAPI (datos ligeros)
+let catalogoCartas = [];        
 let idsOfrece = new Set();
 let idsBusca  = new Set();
 
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarInventarioOfrece();
     cargarCatalogoBusca();
 
-    // Controles estáticos (sin manejadores en línea)
+    // Controles estáticos
     document.getElementById('buscar-busca')?.addEventListener('input', filtrarBusca);
     document.getElementById('descripcion')?.addEventListener('input', actualizarContador);
     document.getElementById('btn-publicar')?.addEventListener('click', publicarTradeo);
@@ -68,8 +68,6 @@ async function cargarInventarioOfrece() {
 async function cargarCatalogoBusca() {
     const grid = document.getElementById('grid-busca');
     try {
-        // El catálogo son los Pokémon de la PokeAPI: una única petición ligera
-        // (solo nombre y URL). La imagen se deriva del ID, sin pedir el detalle.
         const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=10000');
         if (!res.ok) throw new Error('Error al conectar con la PokeAPI');
         const datos = await res.json();
@@ -83,7 +81,7 @@ async function cargarCatalogoBusca() {
                     imagen_url: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
                 };
             })
-            .filter(c => c.id <= 1010);   // excluye formas especiales
+            .filter(c => c.id <= 1010);   
 
         renderizarBusca(catalogoCartas.slice(0, MAX_BUSCA_VISIBLE));
     } catch (e) {
@@ -193,8 +191,6 @@ function filtrarBuscaActual() {
     const fuente = texto
         ? catalogoCartas.filter(c => c.nombre.toLowerCase().includes(texto))
         : catalogoCartas;
-    // Limitamos los resultados visibles: con >1000 Pokémon, mostrarlos todos
-    // sobrecarga el DOM. El buscador acota; el resto se refina escribiendo.
     return fuente.slice(0, MAX_BUSCA_VISIBLE);
 }
 
@@ -219,9 +215,6 @@ async function publicarTradeo() {
         return;
     }
 
-    // Las cartas buscadas son Pokémon de la PokeAPI. Pedimos sus datos
-    // completos para enviarlos al backend, que creará las que no existan
-    // todavía en el catálogo (firstOrCreate por numero).
     let cartasBusca;
     try {
         cartasBusca = await Promise.all([...idsBusca].map(async (id) => {
@@ -256,9 +249,6 @@ async function publicarTradeo() {
         });
         const datos = await parsearRespuesta(res);
         if (!res.ok) throw new Error(datos.error || manejarErrorHTTP(res.status));
-
-        // El backend retira del inventario las cartas ofrecidas dentro de la
-        // misma transacción que la creación del tradeo (operación atómica).
         mostrarAlerta('¡Tradeo publicado correctamente!', 'exito');
         setTimeout(() => { window.location.href = 'tradeos.html'; }, 1600);
     } catch (e) {

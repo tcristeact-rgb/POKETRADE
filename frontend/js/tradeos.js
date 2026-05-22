@@ -1,4 +1,4 @@
-// tradeos.js — Gestión de los tradeos del usuario (módulo ES6)
+// tradeos.js — Gestión de los tradeos del usuario
 
 import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
 import { formatearFecha, miniaturas, mostrarAlerta, escapeHtml } from './utils.js';
@@ -10,13 +10,13 @@ let todosMisTradeos = [];
 document.addEventListener('DOMContentLoaded', () => {
     cargarMisTradeos();
 
-    // Filtros de estado (delegación sobre el contenedor)
+    // Filtros de estado
     document.querySelector('.filtro-estado')?.addEventListener('click', (e) => {
         const btn = e.target.closest('button[data-estado]');
         if (btn) filtrarPorEstado(btn.dataset.estado, btn);
     });
 
-    // Acciones sobre cada tradeo (delegación sobre la lista)
+    // Acciones sobre cada tradeo
     document.getElementById('lista-tradeos')?.addEventListener('click', (e) => {
         const el = e.target.closest('[data-accion]');
         if (!el) return;

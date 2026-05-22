@@ -1,4 +1,4 @@
-// marketplace.js — Listado público de tradeos activos (módulo ES6)
+// marketplace.js — Listado público de tradeos activos
 
 import { API_URL, estaLogueado, obtenerUsuario, headersAuth, parsearRespuesta } from './auth.js';
 import { formatearFecha, escapeHtml, miniaturas, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
@@ -10,7 +10,7 @@ let tradeoEnCurso     = null;
 document.addEventListener('DOMContentLoaded', () => {
     mostrarCtaPublicar();
 
-    // Filtros y reintento (sin manejadores en línea)
+    // Filtros y reintento
     document.getElementById('buscar-carta')?.addEventListener('input', filtrar);
     document.getElementById('filtro-tipo')?.addEventListener('change', filtrar);
     document.getElementById('btn-reintentar-mkt')?.addEventListener('click', cargarTradeos);

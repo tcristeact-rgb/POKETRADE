@@ -1,4 +1,4 @@
-// inventario.js — Gestión del inventario del usuario (módulo ES6)
+// inventario.js — Gestión del inventario del usuario
 
 import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
 import { escapeHtml, mostrarAlerta, abrirModalAccesible, cerrarModalAccesible,
@@ -6,9 +6,9 @@ import { escapeHtml, mostrarAlerta, abrirModalAccesible, cerrarModalAccesible,
 
 protegerRuta();
 
-const MAX_MODAL_VISIBLE = 60;   // Pokémon mostrados a la vez en el modal
+const MAX_MODAL_VISIBLE = 60;   
 
-let todasLasCartasCatalogo = [];   // catálogo completo de la PokeAPI (datos ligeros)
+let todasLasCartasCatalogo = [];   
 let cartaSeleccionadaId    = null;
 let cantidadSeleccionada   = 1;
 
@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarInventario();
     cargarCatalogoPModal();
 
-    // Botones estáticos (sin manejadores en línea)
+    // Botones estáticos
     document.getElementById('btn-abrir-modal')?.addEventListener('click', abrirModal);
     document.getElementById('btn-cerrar-modal-inv')?.addEventListener('click', cerrarModal);
     document.getElementById('modal-buscar')?.addEventListener('input', filtrarModal);
@@ -112,8 +112,6 @@ async function eliminarItem(id) {
 
 async function cargarCatalogoPModal() {
     try {
-        // El catálogo son los Pokémon de la PokeAPI: una sola petición ligera
-        // (nombre y URL). La imagen se deriva del ID, sin pedir cada detalle.
         const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=10000');
         if (!res.ok) throw new Error('Error al conectar con la PokeAPI');
         const datos = await res.json();
@@ -161,7 +159,6 @@ function filtrarModal() {
     const fuente = texto
         ? todasLasCartasCatalogo.filter(c => c.nombre.toLowerCase().includes(texto))
         : todasLasCartasCatalogo;
-    // Con >1000 Pokémon limitamos los visibles; el buscador acota el resto.
     renderizarModal(fuente.slice(0, MAX_MODAL_VISIBLE));
 }
 
@@ -186,7 +183,7 @@ async function confirmarAnadir() {
     if (!cartaSeleccionadaId) return;
     try {
         // Pedimos los datos completos del Pokémon a la PokeAPI. El backend
-        // crea la carta si aún no existe en el catálogo (firstOrCreate por numero).
+        // crea la carta si aún no existe en el catálogo
         const resPoke = await fetch(`https://pokeapi.co/api/v2/pokemon/${cartaSeleccionadaId}`);
         if (!resPoke.ok) throw new Error('No se pudieron cargar los datos de la carta.');
         const carta = pokemonACarta(await resPoke.json());

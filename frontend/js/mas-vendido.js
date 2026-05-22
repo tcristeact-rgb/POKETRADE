@@ -1,5 +1,4 @@
-// mas-vendido.js — Ranking de cartas más demandadas en tradeos (módulo ES6)
-// Combina datos de nuestra API (tradeos) con imágenes de la PokeAPI.
+// mas-vendido.js — Ranking de cartas más demandadas en tradeos
 
 import { API_URL, paginaUrl } from './auth.js';
 import { pokemonACarta, escapeHtml } from './utils.js';
@@ -95,8 +94,6 @@ function tarjetaRanking({ carta, veces }, posicion) {
     const medalla = medallas[posicion]
         ? `<img class="icono" src="${paginaUrl('img/icons/medalla-' + medallas[posicion] + '.svg')}" alt="" />`
         : `#${posicion}`;
-    // Las cartas del backend llevan numero (nº de Pokédex); su id es el de la
-    // BD y no coincide con el de la PokeAPI, que es lo que espera el detalle.
     const idDetalle = carta.numero ? Number(carta.numero) : carta.id;
     const url       = paginaUrl(`pages/detalle-carta.html?id=${idDetalle}`);
     const nombre    = escapeHtml(carta.nombre);

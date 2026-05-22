@@ -1,8 +1,5 @@
 // ===================================================
-// registro.js — Alta de usuario (módulo ES6)
-// Validación preventiva por campo y reutilización de
-// la función registro() de auth.js (sin duplicar la
-// petición de red).
+// registro.js — Alta de usuario
 // ===================================================
 
 import { registro } from './auth.js';

@@ -11,7 +11,7 @@
 </head>
 <body>
 
-  <!-- Header unificado (inyectado por js/header.js) -->
+  <!-- Header-->
   <div id="app-header"></div>
 
   <main>
@@ -43,7 +43,7 @@
 
     <!--
       Stats cargadas asíncronamente: fetch → JSON → DOM
-      Mientras carga se muestran con clase .skeleton (animación shimmer)
+      Mientras carga se muestran con clase .skeleton
     -->
     <div class="hero-stats" id="hero-stats" aria-live="polite" role="status">
       <div class="stat-item skeleton" id="stat-cartas">
@@ -118,7 +118,6 @@
 
   <!-- ═══════════════════════════════════════════════
        CTA – REGISTRO / LOGIN
-       Se oculta dinámicamente si el usuario ya está autenticado.
   ════════════════════════════════════════════════ -->
   <section class="cta-seccion" id="cta-seccion" aria-labelledby="titulo-cta">
     <div class="cta-contenido">
@@ -133,13 +132,13 @@
 
   </main>
 
-  <!-- Footer unificado (inyectado por js/header.js) -->
+  <!-- Footer -->
   <div id="app-footer"></div>
 
-  <!-- Toast de notificaciones (éxito / error / info) -->
+  <!-- Toast de notificaciones -->
   <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
 
-  <!-- Scripts ES6: header.js (inyecta header/footer) → lógica de la página -->
+  <!-- Scripts -->
   <script type="module" src="js/header.js"></script>
   <script type="module" src="js/inicio.js"></script>
 </body>

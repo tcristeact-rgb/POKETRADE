@@ -1,20 +1,14 @@
 // ===================================================
 // auth.js – Gestión de sesión y autenticación JWT
-// Módulo ES6: expone sus funciones mediante `export`.
 // La URL de la API se importa desde config.js.
 // ===================================================
 
 import { API_URL } from './config.js';
 
-// Se reexporta para que las páginas puedan importarla
-// directamente desde este módulo junto al resto de utilidades.
 export { API_URL };
 
 // Calcula la ruta relativa correcta según si estamos en pages/ o en la raíz.
-// Así las rutas funcionan tanto desde la raíz del proyecto
-// como desde la carpeta pages/.
 export function paginaUrl(ruta) {
-  // ruta es relativa a la raíz de frontend/, ej: 'pages/login.html' o 'index.html'
   const enPagesDir = window.location.pathname.includes('/pages/');
   if (enPagesDir) {
     return ruta.startsWith('pages/') ? ruta.replace('pages/', '') : '../' + ruta;
@@ -61,9 +55,6 @@ export function headersAuth() {
 
 // ─────────────────────────────────────────────────
 // PROTECCIÓN DE RUTAS
-// Llamar al inicio de cada página que requiera
-// sesión activa (inventario, tradeos, perfil…)
-// Si no hay token redirige al login inmediatamente
 // ─────────────────────────────────────────────────
 
 export function protegerRuta() {
@@ -77,12 +68,9 @@ export function protegerRuta() {
 
 // ─────────────────────────────────────────────────
 // GESTIÓN DE ERRORES HTTP CENTRALIZADA
-// Recibe el status HTTP y un elementoId opcional
-// para mostrar el mensaje directamente en el DOM
 // ─────────────────────────────────────────────────
 
-// Evita que varias respuestas 401 simultáneas (por ejemplo de un
-// Promise.all) programen varias redirecciones al login a la vez.
+// Evita que varias respuestas 401 simultáneas
 let _redireccion401EnCurso = false;
 
 export function manejarErrorHTTP(status, elementoId = null) {
@@ -130,7 +118,7 @@ export function manejarErrorHTTP(status, elementoId = null) {
 // ─────────────────────────────────────────────────
 // HELPER: parsear respuesta de forma segura
 // Evita que respuesta.json() falle si el servidor
-// devuelve HTML en lugar de JSON (ej: error 500)
+// devuelve HTML en lugar de JSON
 // ─────────────────────────────────────────────────
 
 export async function parsearRespuesta(respuesta) {
@@ -138,7 +126,6 @@ export async function parsearRespuesta(respuesta) {
   if (contentType.includes('application/json')) {
     return await respuesta.json();
   }
-  // El servidor devuelve HTML u otro formato — devolvemos objeto vacío
   return {};
 }
 
@@ -150,7 +137,6 @@ export async function parsearRespuesta(respuesta) {
 export async function login(email, password) {
   let respuesta;
 
-  // Capturar error de red por separado (servidor caído, sin conexión)
   try {
     respuesta = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
@@ -171,8 +157,6 @@ export async function login(email, password) {
   // Guardar token y datos del usuario en localStorage
   guardarSesion(datos.token, datos.usuario);
 
-  // Redirigir a la página que intentaba visitar antes del login;
-  // si no hay ninguna guardada, volvemos al inicio.
   const redirigir = sessionStorage.getItem('redirigir_tras_login');
   if (redirigir) {
     sessionStorage.removeItem('redirigir_tras_login');
@@ -192,7 +176,6 @@ export async function registro(campos) {
   // campos: { nombre, apellido, email, password, fecha_nacimiento, nacionalidad }
   let respuesta;
 
-  // Capturar error de red por separado
   try {
     respuesta = await fetch(`${API_URL}/auth/registro`, {
       method: 'POST',
@@ -214,7 +197,6 @@ export async function registro(campos) {
 
 // ─────────────────────────────────────────────────
 // LOGOUT
-// Notifica al backend e invalida el token local
 // ─────────────────────────────────────────────────
 
 export async function cerrarSesion() {
@@ -227,7 +209,6 @@ export async function cerrarSesion() {
         headers: headersAuth()
       });
     } catch (_) {
-      // Si falla el servidor igualmente limpiamos local
     }
   }
 

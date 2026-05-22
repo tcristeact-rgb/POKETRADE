@@ -1,10 +1,7 @@
 // ===================================================
 // header.js — Inyecta el header y el footer unificados
-// de PokeTrade. Módulo ES6.
-// La página debe incluir:
-//   <div id="app-header"></div>  → donde va el header
-//   <div id="app-footer"></div>  → donde va el footer
-// ===================================================
+// de PokeTrade.
+// =================================================== 
 
 import { paginaUrl, estaLogueado, obtenerUsuario, cerrarSesion, renderizarMenu } from './auth.js';
 
@@ -108,7 +105,7 @@ function inyectarHeader() {
         '<a href="' + rTradeos + '" class="drawer-enlace"><img class="icono" src="' + paginaUrl('img/icons/tradeos.svg') + '" alt="" /> Mis Tradeos</a>' +
         '<a href="' + rPerfil + '" class="drawer-enlace"><img class="icono" src="' + paginaUrl('img/icons/perfil.svg') + '" alt="" /> Perfil</a>' +
         '<button type="button" class="drawer-btn-logout"><img class="icono" src="' + paginaUrl('img/icons/logout.svg') + '" alt="" /> Cerrar sesión</button>';
-      // textContent evita inyección de HTML con el nombre del usuario
+      
       drawerAuth.querySelector('.drawer-usuario-nombre').textContent =
         (u && u.nombre) ? u.nombre : 'Usuario';
       drawerAuth.querySelector('.drawer-btn-logout').addEventListener('click', cerrarSesion);
@@ -124,7 +121,7 @@ function inyectarHeader() {
   configurarTema();
 }
 
-// ── Lógica del drawer (apertura / cierre) ──────────
+// ── Lógica del drawer ──────────
 function configurarDrawer() {
   const hamburguesa = document.getElementById('btn-hamburguesa');
   const backdrop    = document.getElementById('drawer-backdrop');
@@ -152,7 +149,7 @@ function configurarDrawer() {
   btnCerrar.addEventListener('click', cerrarDrawer);
   backdrop.addEventListener('click', cerrarDrawer);
 
-  // Cierre con Escape y retención del foco dentro del drawer (WCAG 2.1.2 / 2.4.3)
+  // Cierre con Escape y retención del foco dentro del drawer
   document.addEventListener('keydown', (e) => {
     if (!drawer.classList.contains('abierto')) return;
     if (e.key === 'Escape') { cerrarDrawer(); return; }
@@ -174,7 +171,7 @@ function configurarDrawer() {
   });
 }
 
-// ── Buscadores (header + drawer) ───────────────────
+// ── Buscadores ───────────────────
 function configurarBuscadores() {
   function lanzarBusqueda(termino) {
     const q = encodeURIComponent((termino || '').trim());
@@ -196,9 +193,6 @@ function configurarBuscadores() {
 }
 
 // ── Conmutador de modo claro / oscuro ──────────────
-// El tema se guarda en localStorage. Un script inline en el <head>
-// de cada página lo aplica antes del primer pintado (sin parpadeo);
-// aquí solo sincronizamos el botón y gestionamos el clic.
 function configurarTema() {
   const btn = document.getElementById('btn-tema');
   if (!btn) return;
@@ -227,7 +221,7 @@ function configurarTema() {
 }
 
 // ───────────────────────────────────────────────────
-// FOOTER (mismo footer completo en todas las páginas)
+// FOOTER
 // ───────────────────────────────────────────────────
 function inyectarFooter() {
   const mount = document.getElementById('app-footer');
