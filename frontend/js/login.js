@@ -22,7 +22,7 @@ async function iniciarSesion(e) {
   if (e) e.preventDefault();
 
   const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value.trim();
+  const password = document.getElementById('password').value;
   const errorMensaje = document.getElementById('error-mensaje');
   errorMensaje.textContent = '';
 

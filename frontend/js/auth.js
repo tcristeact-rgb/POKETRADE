@@ -81,16 +81,24 @@ export function protegerRuta() {
 // para mostrar el mensaje directamente en el DOM
 // ─────────────────────────────────────────────────
 
+// Evita que varias respuestas 401 simultáneas (por ejemplo de un
+// Promise.all) programen varias redirecciones al login a la vez.
+let _redireccion401EnCurso = false;
+
 export function manejarErrorHTTP(status, elementoId = null) {
   let mensaje;
 
   switch (status) {
     case 401:
       mensaje = 'Sesión expirada. Por favor, inicia sesión de nuevo.';
-      eliminarSesion();
-      // Redirigir al login si estamos en una página protegida
-      if (!window.location.pathname.includes('login')) {
-        setTimeout(() => { window.location.href = paginaUrl('pages/login.html'); }, 1500);
+      // Solo la primera respuesta 401 cierra sesión y redirige
+      if (!_redireccion401EnCurso) {
+        _redireccion401EnCurso = true;
+        eliminarSesion();
+        // Redirigir al login si estamos en una página protegida
+        if (!window.location.pathname.includes('login')) {
+          setTimeout(() => { window.location.href = paginaUrl('pages/login.html'); }, 1500);
+        }
       }
       break;
     case 403:

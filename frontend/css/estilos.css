@@ -4,7 +4,7 @@
    index.html carga además index.css para el home.
    =================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300..800;1,9..40,400&display=swap');
 
 /* ── Variables ─────────────────────────────────── */
 :root {
@@ -51,13 +51,47 @@
   --trans:           0.2s ease;
   --trans-fast:      0.12s ease;
 
-  /* Tipografía */
-  --font-display:    'Syne', sans-serif;
+  /* Tipografía — una sola familia en todo el sitio: DM Sans.
+     Sustituye a Syne (display), cuyas proporciones achatadas restaban
+     legibilidad. DM Sans tiene buena altura de x y letras bien
+     diferenciadas, más adecuada según los principios de accesibilidad. */
+  --font-display:    'DM Sans', sans-serif;
   --font-body:       'DM Sans', sans-serif;
 
   /* Layout */
   --max-w:           1200px;
   --nav-h:           64px;
+}
+
+/* ── Modo oscuro ─────────────────────────────────────
+   Solo redefine las variables de color. Como toda la UI
+   usa var(--…), el tema se aplica en cascada a todo el
+   sitio. El estado claro (:root) queda intacto. */
+[data-tema="oscuro"] {
+  color-scheme: dark;
+  --primario-soft:   rgba(231, 76, 60, 0.22);
+  --primario-light:  rgba(231, 76, 60, 0.14);
+  --fondo:           #10171f;
+  --fondo-card:      #1b2632;
+  --texto:           #e8edf2;
+  --texto-sec:       #b2bdc9;
+  --muted:           #8492a0;
+  --borde:           #2c3a48;
+  --borde-hover:     #41525f;
+  --exito-soft:      rgba(22, 163, 74, 0.16);
+  --exito-borde:     rgba(22, 163, 74, 0.40);
+  --dorado-soft:     rgba(245, 158, 11, 0.14);
+  --sombra-sm:       0 1px 3px rgba(0,0,0,0.40);
+  --sombra:          0 4px 16px rgba(0,0,0,0.45);
+  --sombra-hover:    0 8px 28px rgba(0,0,0,0.55);
+  --sombra-card:     0 2px 8px rgba(0,0,0,0.40);
+}
+/* Las opciones nativas del <select> no heredan las variables del
+   tema; en modo oscuro las forzamos a fondo oscuro y texto claro
+   para que el desplegable sea legible. */
+[data-tema="oscuro"] select option {
+  background-color: #1b2632;
+  color: #e8edf2;
 }
 
 /* ── Reset ──────────────────────────────────────── */
@@ -176,7 +210,7 @@ nav {
   flex-shrink: 0;
 }
 
-/* ── Iconos SVG (sustituyen a los emojis) ── */
+/* ── Iconos SVG ── */
 .icono {
   height: 1.1em;
   width: auto;
@@ -285,6 +319,24 @@ nav {
 }
 .buscador-contenedor button:hover { color: white; }
 
+/* Botón de modo claro / oscuro en el header */
+.btn-tema {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  padding: 0;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 50%;
+  color: rgba(255,255,255,0.85);
+  cursor: pointer;
+  transition: background var(--trans), color var(--trans);
+}
+.btn-tema:hover { background: rgba(255,255,255,0.2); color: #ffffff; }
+
 /* ── Dropdown autenticado ── */
 #menu-no-auth {
   display: flex;
@@ -336,30 +388,6 @@ nav {
   z-index: 1000;
 }
 .dropdown.abierto .dropdown-menu { display: block; }
-.dropdown-menu li a,
-.dropdown-menu li button {
-  display: flex;
-  align-items: center;
-  gap: 0.55rem;
-  width: 100%;
-  padding: 0.55rem 0.85rem;
-  color: var(--texto);
-  text-decoration: none;
-  font-family: var(--font-body);
-  font-size: 0.875rem;
-  font-weight: 400;
-  background: none;
-  border: none;
-  text-align: left;
-  cursor: pointer;
-  border-radius: var(--radius-sm);
-  transition: background var(--trans), color var(--trans);
-}
-.dropdown-menu li a:hover,
-.dropdown-menu li button:hover {
-  background: var(--fondo);
-  color: var(--primario);
-}
 .dropdown-menu hr {
   border: none;
   border-top: 1px solid var(--borde);
@@ -588,7 +616,7 @@ footer a:hover { color: white; }
 .obligatorio { color: var(--primario); font-weight: 700; }
 
 /* ══════════════════════════════════════════════════
-   CATÁLOGO / CONTENEDOR GENERAL
+   CATÁLOGO
 ══════════════════════════════════════════════════ */
 .catalogo-contenedor {
   max-width: var(--max-w);
@@ -632,7 +660,7 @@ footer a:hover { color: white; }
   outline: none;
   border-color: var(--primario);
   box-shadow: 0 0 0 3px var(--primario-soft);
-  background: white;
+  background: var(--fondo-card);
 }
 .filtros input { flex: 1; min-width: 200px; }
 
@@ -1235,10 +1263,12 @@ body.nav-drawer-abierto { overflow: hidden; }
   .grid-cartas { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 }
 
-/* ── Fix dropdown menú usuario ── */
+/* Enlaces del menú desplegable de usuario (estilos unificados).
+   Usan !important para imponerse sobre los estilos generales del header. */
 .dropdown-menu li a,
 .dropdown-menu li button {
   color: var(--texto) !important;
+  font-family: var(--font-body) !important;
   font-size: 0.875rem !important;
   font-weight: 500 !important;
   display: flex !important;
@@ -1338,10 +1368,10 @@ body.nav-drawer-abierto { overflow: hidden; }
   font-family: var(--font-display);
   font-size: 3rem;
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.15;
   margin: 0 0 1.1rem;
   color: white;
-  letter-spacing: -0.03em;
+  letter-spacing: -0.01em;
 }
 .hero p {
   font-size: 1.1rem;
@@ -1578,6 +1608,31 @@ body.nav-drawer-abierto { overflow: hidden; }
 .btn-pagina.activa { background: var(--primario); border-color: var(--primario); color: white; font-weight: 700; }
 .btn-pagina:disabled { opacity: 0.4; cursor: default; }
 .paginacion-puntos { color: var(--muted); padding: 0 0.25rem; }
+.paginacion-ir {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-left: 0.5rem;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+.paginacion-ir label { white-space: nowrap; }
+.input-ir-pagina {
+  width: 3.6rem;
+  padding: 0.4rem 0.45rem;
+  border: 1.5px solid var(--borde);
+  border-radius: var(--radius-sm);
+  background: var(--fondo-card);
+  color: var(--texto);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  text-align: center;
+}
+.input-ir-pagina:focus {
+  outline: none;
+  border-color: var(--primario);
+  box-shadow: 0 0 0 3px var(--primario-soft);
+}
 .paginacion-info {
   text-align: center;
   color: var(--muted);
@@ -1926,6 +1981,44 @@ body.nav-drawer-abierto { overflow: hidden; }
   flex-wrap: wrap;
   box-shadow: var(--sombra);
 }
+/* Flechas de navegación entre cartas (a los lados del detalle) */
+.detalle-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+.detalle-nav .detalle-card {
+  flex: 1;
+  min-width: 0;
+}
+.detalle-flecha {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  border: 1.5px solid var(--borde);
+  background: var(--fondo-card);
+  color: var(--texto-sec);
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--sombra-sm);
+  transition: background var(--trans), color var(--trans),
+              border-color var(--trans), transform var(--trans);
+}
+.detalle-flecha:hover:not(:disabled) {
+  background: var(--primario);
+  border-color: var(--primario);
+  color: white;
+  transform: scale(1.08);
+}
+.detalle-flecha:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
 .detalle-imagen {
   flex-shrink: 0;
   display: flex;
@@ -2040,7 +2133,18 @@ body.nav-drawer-abierto { overflow: hidden; }
   box-shadow: none;
 }
 .breadcrumb {
-  margin-bottom: 1.25rem;
+  /* Es un <nav>, así que reseteamos la regla global de nav
+     (flex con space-between, max-width y padding) para que las
+     migas queden juntas y pegadas a la izquierda. */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 0.4rem;
+  width: auto;
+  max-width: none;
+  margin: 0 0 1.25rem;
+  padding: 0;
   font-size: 0.875rem;
   color: var(--muted);
 }
@@ -2299,6 +2403,8 @@ body.nav-drawer-abierto { overflow: hidden; }
   border-radius: var(--radius);
   font-family: var(--font-body);
   font-size: 0.925rem;
+  background: var(--fondo-card);
+  color: var(--texto);
   outline: none;
 }
 .barra-busqueda input:focus { box-shadow: 0 0 0 3px rgba(231,76,60,0.4); }
@@ -2308,8 +2414,15 @@ body.nav-drawer-abierto { overflow: hidden; }
   border-radius: var(--radius);
   font-family: var(--font-body);
   font-size: 0.9rem;
-  background: white;
+  background: var(--fondo-card);
+  color: var(--texto);
   cursor: pointer;
+}
+/* En modo oscuro los campos del buscador del marketplace necesitan
+   un borde para distinguirse del hero oscuro. */
+[data-tema="oscuro"] .barra-busqueda input,
+[data-tema="oscuro"] .barra-busqueda select {
+  border: 1px solid var(--borde);
 }
 .marketplace-contenedor {
   max-width: 1100px;
@@ -2725,39 +2838,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   padding: 2rem 2.25rem;
   box-shadow: var(--sombra);
 }
-.form-grupo {
-  margin-bottom: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-.form-grupo label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--texto);
-}
-.form-grupo input,
-.form-grupo textarea,
-.form-grupo select {
-  padding: 0.65rem 0.95rem;
-  border: 1.5px solid var(--borde);
-  border-radius: var(--radius-sm);
-  font-family: var(--font-body);
-  font-size: 0.925rem;
-  color: var(--texto);
-  background: var(--fondo);
-  transition: border-color var(--trans), box-shadow var(--trans), background var(--trans);
-  resize: vertical;
-}
-.form-grupo input:focus,
-.form-grupo textarea:focus,
-.form-grupo select:focus {
-  outline: none;
-  border-color: var(--primario);
-  box-shadow: 0 0 0 3px var(--primario-soft);
-  background: white;
-}
-.form-grupo textarea { min-height: 130px; }
+/* El formulario de soporte usa la clase compartida .formulario-grupo */
 .btn-enviar {
   width: 100%;
   padding: 0.75rem;
@@ -2859,6 +2940,8 @@ body.nav-drawer-abierto { overflow: hidden; }
 @media (max-width: 600px) {
   .detalle-contenedor { padding: 0 1rem; margin: 1.5rem auto; }
   .detalle-card { padding: 1.5rem; gap: 1.5rem; }
+  .detalle-nav { gap: 0.4rem; }
+  .detalle-flecha { width: 36px; height: 36px; font-size: 0.95rem; }
   .detalle-imagen { width: 100%; }
   .detalle-imagen img,
   .sin-imagen-grande { width: 160px; height: 160px; }

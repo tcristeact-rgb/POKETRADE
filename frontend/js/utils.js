@@ -24,7 +24,9 @@ export function mostrarAlerta(msg, tipo, elementoId = 'alerta') {
     if (!el) return;
     el.className = `alerta ${tipo}`;
     el.textContent = msg;
-    setTimeout(() => { el.className = 'alerta'; el.textContent = ''; }, 4000);
+    // Cancelamos el temporizador anterior para que no borre este mensaje
+    clearTimeout(el._alertaTimeout);
+    el._alertaTimeout = setTimeout(() => { el.className = 'alerta'; el.textContent = ''; }, 4000);
 }
 
 // Tarjeta de carta compartida por catálogo, novedades, inicio y más vendidas.

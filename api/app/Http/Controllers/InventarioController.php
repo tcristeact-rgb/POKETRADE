@@ -54,7 +54,7 @@ class InventarioController extends Controller
                 'numero' => 'required|string',
             ]);
             if ($validacionCarta->fails()) {
-                return response()->json(['error' => $validacionCarta->errors()->first()], 400);
+                return response()->json(['error' => $validacionCarta->errors()->first()], 422);
             }
 
             $carta = Carta::firstOrCreate(
@@ -82,9 +82,9 @@ class InventarioController extends Controller
             ]
         );
 
-        // Si la validación falla devolvemos el primer error con código 400
+        // Si la validación falla devolvemos el primer error con código 422
         if ($validacion->fails()) {
-            return response()->json(['error' => $validacion->errors()->first()], 400);
+            return response()->json(['error' => $validacion->errors()->first()], 422);
         }
 
         // Comprobamos si el usuario ya tiene esa carta en su inventario

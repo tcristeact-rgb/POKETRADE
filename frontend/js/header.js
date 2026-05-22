@@ -57,6 +57,7 @@ function inyectarHeader() {
     '<button id="btn-buscar" aria-label="Buscar"><img class="icono" src="' + paginaUrl('img/icons/buscar.svg') + '" alt="" /></button>' +
     '</div>' +
     '<div id="menu-usuario"></div>' +
+    '<button id="btn-tema" class="btn-tema" type="button" aria-label="Activar modo oscuro"></button>' +
     '<button id="btn-hamburguesa" class="btn-hamburguesa"' +
     ' aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="nav-drawer">' +
     '<span></span><span></span><span></span>' +
@@ -120,6 +121,7 @@ function inyectarHeader() {
 
   configurarDrawer();
   configurarBuscadores();
+  configurarTema();
 }
 
 // ── Lógica del drawer (apertura / cierre) ──────────
@@ -191,6 +193,37 @@ function configurarBuscadores() {
     bDrw.addEventListener('keydown', (e) => { if (e.key === 'Enter') lanzarBusqueda(bDrw.value); });
     btnD.addEventListener('click', () => lanzarBusqueda(bDrw.value));
   }
+}
+
+// ── Conmutador de modo claro / oscuro ──────────────
+// El tema se guarda en localStorage. Un script inline en el <head>
+// de cada página lo aplica antes del primer pintado (sin parpadeo);
+// aquí solo sincronizamos el botón y gestionamos el clic.
+function configurarTema() {
+  const btn = document.getElementById('btn-tema');
+  if (!btn) return;
+
+  const ICONO_LUNA = '<svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>';
+  const ICONO_SOL  = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg>';
+
+  function aplicar(tema) {
+    const oscuro = tema === 'oscuro';
+    document.documentElement.setAttribute('data-tema', oscuro ? 'oscuro' : 'claro');
+    btn.innerHTML = oscuro ? ICONO_SOL : ICONO_LUNA;
+    btn.setAttribute('aria-label', oscuro ? 'Activar modo claro' : 'Activar modo oscuro');
+    btn.setAttribute('aria-pressed', oscuro ? 'true' : 'false');
+  }
+
+  let guardado = null;
+  try { guardado = localStorage.getItem('tema'); } catch (_) {}
+  aplicar(guardado === 'oscuro' ? 'oscuro' : 'claro');
+
+  btn.addEventListener('click', () => {
+    const oscuro = document.documentElement.getAttribute('data-tema') === 'oscuro';
+    const nuevo  = oscuro ? 'claro' : 'oscuro';
+    try { localStorage.setItem('tema', nuevo); } catch (_) {}
+    aplicar(nuevo);
+  });
 }
 
 // ───────────────────────────────────────────────────

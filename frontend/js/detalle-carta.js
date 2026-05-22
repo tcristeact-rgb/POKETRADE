@@ -6,6 +6,10 @@ import { pokemonACarta, traducirTipo, escapeHtml, mostrarAlerta } from './utils.
 
 let cartaActual = null;
 
+// El catálogo se limita a los 1010 primeros Pokémon (igual que catalogo.js),
+// así que la navegación entre cartas se mueve dentro de ese rango.
+const MAX_POKEMON = 1010;
+
 document.addEventListener('DOMContentLoaded', () => {
     const id = new URLSearchParams(window.location.search).get('id');
 
@@ -17,7 +21,19 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarDetalle(id);
 });
 
+// Si el usuario usa atrás/adelante del navegador entre cartas, recargamos
+// el detalle correspondiente al ?id= de la URL restaurada.
+window.addEventListener('popstate', () => {
+    const id = new URLSearchParams(window.location.search).get('id');
+    if (id) cargarDetalle(id);
+});
+
 async function cargarDetalle(id) {
+    // Skeleton mientras carga (también da feedback al cambiar de carta
+    // con las flechas y evita dobles clics durante la petición).
+    document.getElementById('contenido-detalle').innerHTML =
+        '<div class="skeleton-detalle"></div>';
+
     try {
         const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
 
@@ -80,7 +96,13 @@ function renderizarDetalle(carta) {
         ? carta.tipos.map(t => `<span class="badge-tipo">${escapeHtml(traducirTipo(t.type.name))}</span>`).join(' ')
         : carta.tipo ? `<span class="badge-tipo">${escapeHtml(carta.tipo)}</span>` : '';
 
+    // IDs de la carta anterior y siguiente para las flechas laterales
+    const idAnterior  = carta.id - 1;
+    const idSiguiente = carta.id + 1;
+
     document.getElementById('contenido-detalle').innerHTML = `
+        <div class="detalle-nav">
+        <button class="detalle-flecha" id="detalle-flecha-prev" type="button" aria-label="Ver carta anterior" ${idAnterior < 1 ? 'disabled' : ''}>❮</button>
         <div class="detalle-card">
             <div class="detalle-imagen">
                 ${carta.imagen_url
@@ -119,9 +141,10 @@ function renderizarDetalle(carta) {
                 ${carta.descripcion ? `<p class="descripcion-carta">${escapeHtml(carta.descripcion)}</p>` : ''}
                 <div class="acciones-carta">
                     ${botonInventario}
-                    <a href="catalogo.html" class="btn-secundario">← Catálogo</a>
                 </div>
             </div>
+        </div>
+        <button class="detalle-flecha" id="detalle-flecha-next" type="button" aria-label="Ver carta siguiente" ${idSiguiente > MAX_POKEMON ? 'disabled' : ''}>❯</button>
         </div>
         ${statsHTML}
     `;
@@ -129,6 +152,21 @@ function renderizarDetalle(carta) {
     // Enlazar el botón de inventario (sin onclick en línea)
     document.getElementById('btn-add-inventario')
         ?.addEventListener('click', () => anadirAInventario(carta));
+
+    // Flechas laterales: navegan a la carta anterior / siguiente
+    document.getElementById('detalle-flecha-prev')
+        ?.addEventListener('click', () => irACarta(idAnterior));
+    document.getElementById('detalle-flecha-next')
+        ?.addEventListener('click', () => irACarta(idSiguiente));
+}
+
+// Navega a otra carta sin recargar toda la página: actualiza la URL
+// (para que atrás/adelante del navegador funcionen) y repinta el detalle.
+function irACarta(id) {
+    if (id < 1 || id > MAX_POKEMON) return;
+    history.pushState(null, '', `?id=${id}`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    cargarDetalle(id);
 }
 
 // Traduce los nombres de las stats de inglés a español

@@ -40,9 +40,9 @@ class UsuarioController extends Controller
             'avatar_url'       => 'nullable|string',
         ]);
 
-        // Si la validación falla devolvemos el primer error con código 400
+        // Si la validación falla devolvemos el primer error con código 422
         if ($validacion->fails()) {
-            return response()->json(['error' => $validacion->errors()->first()], 400);
+            return response()->json(['error' => $validacion->errors()->first()], 422);
         }
 
         // Actualizamos solo los campos permitidos usando only()
@@ -75,18 +75,18 @@ class UsuarioController extends Controller
             'password_nuevo'  => 'required|string|min:6', // Nueva contraseña, mínimo 6 caracteres
         ]);
 
-        // Si la validación falla devolvemos el primer error con código 400
+        // Si la validación falla devolvemos el primer error con código 422
         if ($validacion->fails()) {
-            return response()->json(['error' => $validacion->errors()->first()], 400);
+            return response()->json(['error' => $validacion->errors()->first()], 422);
         }
 
         $usuario = auth()->user();
 
         // Verificamos que la contraseña actual introducida coincide con la almacenada
         // Hash::check() compara el texto plano con el hash bcrypt de la BD
-        // Si no coincide devolvemos error 400
+        // Si no coincide devolvemos error 422
         if (!Hash::check($request->password_actual, $usuario->password)) {
-            return response()->json(['error' => 'La contraseña actual no es correcta'], 400);
+            return response()->json(['error' => 'La contraseña actual no es correcta'], 422);
         }
 
         // Actualizamos la contraseña encriptándola con bcrypt

@@ -94,7 +94,7 @@ function renderizarInventario(items) {
 }
 
 async function eliminarItem(id) {
-    if (!confirm('¿Eliminar esta carta del inventario?')) return;
+    if (!confirm('¿Eliminar esta carta del inventario? Se quitarán todas las copias que tengas de ella.')) return;
     try {
         const res = await fetch(`${API_URL}/inventario/${id}`, {
             method: 'DELETE',

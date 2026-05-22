@@ -27,10 +27,20 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filtro-tipo')?.addEventListener('change', filtrar);
     document.getElementById('filtro-rareza')?.addEventListener('change', filtrar);
 
-    // Paginación: un único listener delegado sobre el contenedor
-    document.getElementById('paginacion')?.addEventListener('click', (e) => {
+    // Paginación: listeners delegados sobre el contenedor
+    const paginacionEl = document.getElementById('paginacion');
+    paginacionEl?.addEventListener('click', (e) => {
         const btn = e.target.closest('button[data-pagina]');
-        if (btn && !btn.disabled) irAPagina(Number(btn.dataset.pagina));
+        if (btn && !btn.disabled) { irAPagina(Number(btn.dataset.pagina)); return; }
+        // Botón "Ir" del salto directo de página
+        if (e.target.closest('[data-accion="ir"]')) saltarAPaginaEscrita();
+    });
+    // Permite saltar de página pulsando Enter en el campo numérico
+    paginacionEl?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.target.id === 'input-ir-pagina') {
+            e.preventDefault();
+            saltarAPaginaEscrita();
+        }
     });
 
     iniciarCatalogo();
@@ -49,12 +59,17 @@ async function iniciarCatalogo() {
         // Solo usamos los Pokémon con ID hasta 1010 (excluye formas especiales)
         totalPokemon = Math.min(datosTotales.count, 1010);
 
-        // Cargamos la primera página
-        await cargarPagina(1);
+        // Página inicial: si la URL trae ?page=N volvemos a esa página
+        // (p. ej. al pulsar "atrás" del navegador desde el detalle de una carta).
+        const params       = new URLSearchParams(window.location.search);
+        const totalPaginas = Math.ceil(totalPokemon / CARTAS_POR_PAGINA);
+        let paginaInicial  = parseInt(params.get('page'), 10) || 1;
+        paginaInicial      = Math.min(Math.max(1, paginaInicial), totalPaginas);
+        await cargarPagina(paginaInicial);
 
         // Búsqueda desde el header (?q=): filtramos de inmediato con lo que
         // ya hay en cache y dejamos que la carga de fondo complete resultados.
-        const q = new URLSearchParams(window.location.search).get('q');
+        const q = params.get('q');
         if (q) {
             const inputNombre = document.getElementById('filtro-nombre');
             if (inputNombre) {
@@ -95,6 +110,7 @@ async function cargarPagina(pagina) {
     });
 
     paginaActual = pagina;
+    actualizarUrlPagina(pagina);
     mostrarCartas(cartas);
     actualizarPaginacion();
     actualizarInfo(offset + 1, Math.min(offset + CARTAS_POR_PAGINA, totalPokemon), totalPokemon);
@@ -195,6 +211,15 @@ function actualizarPaginacion(ocultar = false) {
 
     html += `<button class="btn-pagina" type="button" data-pagina="${paginaActual + 1}" aria-label="Página siguiente" ${paginaActual === totalPaginas ? 'disabled' : ''}>Sig →</button>`;
 
+    // Salto directo: campo para escribir el número de página al que ir
+    html += `<span class="paginacion-ir">` +
+            `<label for="input-ir-pagina">Ir a página</label>` +
+            `<input type="number" id="input-ir-pagina" class="input-ir-pagina"` +
+            ` min="1" max="${totalPaginas}" inputmode="numeric" placeholder="${paginaActual}" />` +
+            `<button class="btn-pagina" type="button" data-accion="ir"` +
+            ` aria-label="Ir a la página escrita">Ir</button>` +
+            `</span>`;
+
     contenedor.innerHTML = html;
 }
 
@@ -219,7 +244,36 @@ async function irAPagina(pagina) {
         return;
     }
 
-    await cargarPagina(pagina);
+    try {
+        await cargarPagina(pagina);
+    } catch (e) {
+        document.getElementById('grid-cartas').innerHTML =
+            `<p class="grid-mensaje error-texto">Error al cargar las cartas: ${e.message}</p>`;
+    }
+}
+
+// Refleja la página actual en la URL (?page=N) sin añadir entradas al
+// historial, para que el botón "atrás" del navegador devuelva el catálogo
+// a la misma página en la que estaba el usuario antes de abrir una carta.
+function actualizarUrlPagina(pagina) {
+    const url = new URL(window.location.href);
+    if (pagina > 1) {
+        url.searchParams.set('page', pagina);
+    } else {
+        url.searchParams.delete('page');
+    }
+    history.replaceState(null, '', url);
+}
+
+// Salta a la página escrita en el campo numérico, acotándola al rango válido.
+function saltarAPaginaEscrita() {
+    const input = document.getElementById('input-ir-pagina');
+    if (!input) return;
+    const totalPaginas = Math.ceil(totalPokemon / CARTAS_POR_PAGINA);
+    let pagina = parseInt(input.value, 10);
+    if (!pagina) return;
+    pagina = Math.min(Math.max(1, pagina), totalPaginas);
+    irAPagina(pagina);
 }
 
 // ¿Hay algún filtro activo ahora mismo?

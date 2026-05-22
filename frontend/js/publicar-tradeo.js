@@ -257,29 +257,9 @@ async function publicarTradeo() {
         const datos = await parsearRespuesta(res);
         if (!res.ok) throw new Error(datos.error || manejarErrorHTTP(res.status));
 
-        // Quitar del inventario las cartas que el creador ofrece.
-        // Contamos los fallos para avisar si la limpieza fue parcial.
-        const itemsAEliminar = inventario.filter(item =>
-            idsOfrece.has(item.carta?.id ?? item.carta_id)
-        );
-        let fallos = 0;
-        for (const item of itemsAEliminar) {
-            try {
-                const r = await fetch(`${API_URL}/inventario/${item.id}`, {
-                    method: 'DELETE',
-                    headers: headersAuth()
-                });
-                if (!r.ok) fallos++;
-            } catch (_) {
-                fallos++;
-            }
-        }
-
-        if (fallos > 0) {
-            mostrarAlerta('Tradeo publicado, pero algunas cartas no se pudieron retirar del inventario. Revísalo.', 'error');
-        } else {
-            mostrarAlerta('¡Tradeo publicado correctamente!', 'exito');
-        }
+        // El backend retira del inventario las cartas ofrecidas dentro de la
+        // misma transacción que la creación del tradeo (operación atómica).
+        mostrarAlerta('¡Tradeo publicado correctamente!', 'exito');
         setTimeout(() => { window.location.href = 'tradeos.html'; }, 1600);
     } catch (e) {
         mostrarAlerta(`Error al publicar: ${e.message}`, 'error');

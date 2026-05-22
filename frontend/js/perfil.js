@@ -84,7 +84,7 @@ async function guardarPerfil() {
 
         const usuario = obtenerUsuario();
         if (usuario) {
-            usuario.nombre = datos.nombre || campos.nombre;
+            usuario.nombre = datos.usuario?.nombre || campos.nombre;
             localStorage.setItem('usuario', JSON.stringify(usuario));
             renderizarMenu();
         }
@@ -117,7 +117,7 @@ async function cambiarPassword() {
         const res = await fetch(`${API_URL}/usuario/password`, {
             method: 'PUT',
             headers: headersAuth(),
-            body: JSON.stringify({ password_actual: actual, password_nueva: nueva, password_confirmacion: confirmar })
+            body: JSON.stringify({ password_actual: actual, password_nuevo: nueva })
         });
         const datos = await parsearRespuesta(res);
         if (!res.ok) throw new Error(datos.error || manejarErrorHTTP(res.status));

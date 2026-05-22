@@ -4,7 +4,10 @@
 import { API_URL, paginaUrl } from './auth.js';
 import { pokemonACarta, escapeHtml } from './utils.js';
 
-document.addEventListener('DOMContentLoaded', cargarMasVendido);
+document.addEventListener('DOMContentLoaded', () => {
+    cargarMasVendido();
+    document.getElementById('btn-reintentar-mv')?.addEventListener('click', cargarMasVendido);
+});
 
 async function cargarMasVendido() {
     const grid     = document.getElementById('grid-mas-vendido');

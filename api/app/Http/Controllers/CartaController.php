@@ -76,9 +76,9 @@ class CartaController extends Controller
             'imagen_url' => 'nullable|string',  // Opcional
         ]);
 
-        // Si la validación falla devolvemos el primer error con código 400
+        // Si la validación falla devolvemos el primer error con código 422
         if ($validacion->fails()) {
-            return response()->json(['error' => $validacion->errors()->first()], 400);
+            return response()->json(['error' => $validacion->errors()->first()], 422);
         }
 
         // Creamos la carta con todos los datos recibidos

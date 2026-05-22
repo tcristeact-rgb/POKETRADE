@@ -26,11 +26,11 @@ class AuthController extends Controller
             'nacionalidad'     => 'nullable|string|max:100',  // Opcional, máx 100 caracteres
         ]);
 
-        // Si la validación falla devolvemos el primer error con código 400
+        // Si la validación falla devolvemos el primer error con código 422
         if ($validacion->fails()) {
             return response()->json([
                 'error' => $validacion->errors()->first()
-            ], 400);
+            ], 422);
         }
 
         // Creamos el usuario en la base de datos
@@ -68,7 +68,7 @@ class AuthController extends Controller
         if (!$token = Auth::attempt($credenciales)) {
             return response()->json([
                 'error' => 'Email o contraseña incorrectos'
-            ], 400);
+            ], 401);
         }
 
         // Obtenemos los datos del usuario autenticado

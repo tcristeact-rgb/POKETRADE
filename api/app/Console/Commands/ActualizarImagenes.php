@@ -28,15 +28,18 @@ class ActualizarImagenes extends Command
             $res = Http::withoutVerifying()->get("https://pokeapi.co/api/v2/pokemon/{$carta->numero}");
 
             if ($res->successful()) {
-                // Extraemos la URL del artwork oficial del JSON de respuesta
-                // La PokeAPI devuelve varios tipos de imágenes, usamos el artwork oficial
-                $url = $res->json()['sprites']['other']['official-artwork']['front_default'];
+                // Extraemos la URL del artwork oficial con acceso por notación
+                // de punto: si alguna clave no existe devuelve null en lugar
+                // de lanzar un error de "undefined array key".
+                $url = $res->json('sprites.other.official-artwork.front_default');
 
-                // Actualizamos la carta en la BD con la URL obtenida
-                $carta->update(['imagen_url' => $url]);
-
-                // Mensaje de éxito en la consola (en verde)
-                $this->info("Actualizada: {$carta->nombre}");
+                if ($url) {
+                    // Actualizamos la carta en la BD con la URL obtenida
+                    $carta->update(['imagen_url' => $url]);
+                    $this->info("Actualizada: {$carta->nombre}");
+                } else {
+                    $this->warn("Sin imagen disponible: {$carta->nombre}");
+                }
             } else {
                 // Si la petición falla, mostramos el error en consola (en rojo)
                 // y continuamos con la siguiente carta
