@@ -1,14 +1,48 @@
 // catalogo.js — Catálogo completo con paginación, filtros y buscador
-// Carga todos los Pokémon de la PokeAPI con paginación de 20 en 20
+// Módulo ES6. Carga los Pokémon de la PokeAPI de 20 en 20.
+
+import { tarjetaCarta, pokemonACarta } from './utils.js';
 
 const CARTAS_POR_PAGINA = 20;       // Pokémon por página
 let paginaActual        = 1;        // Página actual
 let totalPokemon        = 0;        // Total de Pokémon en la PokeAPI
 let cartasFiltradas     = [];       // Resultado de los filtros activos
 let todasLasCartas      = [];       // Cache de todas las cartas ya cargadas
-let cargandoTodo        = false;    // Indica si está cargando en segundo plano
+let cargandoTodo        = false;    // Carga de fondo en curso
+let cargaCompletada     = false;    // Toda la PokeAPI ya está en cache
+let conteoFiltradoPrevio = -1;      // Nº de resultados del último refresco
+
+// Retrasa la ejecución de fn hasta que pasen ms sin nuevas llamadas.
+function debounce(fn, ms) {
+    let temporizador;
+    return (...args) => {
+        clearTimeout(temporizador);
+        temporizador = setTimeout(() => fn(...args), ms);
+    };
+}
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Filtros: se enlazan con addEventListener (sin onclick en línea)
+    document.getElementById('filtro-nombre')?.addEventListener('input', debounce(filtrar, 300));
+    document.getElementById('filtro-tipo')?.addEventListener('change', filtrar);
+    document.getElementById('filtro-rareza')?.addEventListener('change', filtrar);
+
+    // Paginación: listeners delegados sobre el contenedor
+    const paginacionEl = document.getElementById('paginacion');
+    paginacionEl?.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-pagina]');
+        if (btn && !btn.disabled) { irAPagina(Number(btn.dataset.pagina)); return; }
+        // Botón "Ir" del salto directo de página
+        if (e.target.closest('[data-accion="ir"]')) saltarAPaginaEscrita();
+    });
+    // Permite saltar de página pulsando Enter en el campo numérico
+    paginacionEl?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && e.target.id === 'input-ir-pagina') {
+            e.preventDefault();
+            saltarAPaginaEscrita();
+        }
+    });
+
     iniciarCatalogo();
 });
 
@@ -25,18 +59,23 @@ async function iniciarCatalogo() {
         // Solo usamos los Pokémon con ID hasta 1010 (excluye formas especiales)
         totalPokemon = Math.min(datosTotales.count, 1010);
 
-        // Cargamos la primera página
-        await cargarPagina(1);
+        // Página inicial: si la URL trae ?page=N volvemos a esa página
+        // (p. ej. al pulsar "atrás" del navegador desde el detalle de una carta).
+        const params       = new URLSearchParams(window.location.search);
+        const totalPaginas = Math.ceil(totalPokemon / CARTAS_POR_PAGINA);
+        let paginaInicial  = parseInt(params.get('page'), 10) || 1;
+        paginaInicial      = Math.min(Math.max(1, paginaInicial), totalPaginas);
+        await cargarPagina(paginaInicial);
 
-        // Si hay búsqueda desde el header (?q=) la aplicamos DESPUÉS de cargar
-        const q = new URLSearchParams(window.location.search).get('q');
+        // Búsqueda desde el header (?q=): filtramos de inmediato con lo que
+        // ya hay en cache y dejamos que la carga de fondo complete resultados.
+        const q = params.get('q');
         if (q) {
             const inputNombre = document.getElementById('filtro-nombre');
             if (inputNombre) {
                 inputNombre.value = q;
-                // Cargamos todo en segundo plano antes de filtrar
-                await cargarTodoEnSegundoPlano();
-                filtrar();
+                cargarTodoEnSegundoPlano();   // arranca la carga (no bloquea)
+                filtrar();                    // filtra ya, sin esperar
             }
         } else {
             // Sin búsqueda cargamos el resto en segundo plano
@@ -44,7 +83,7 @@ async function iniciarCatalogo() {
         }
 
     } catch (e) {
-        grid.innerHTML = `<p class="error-texto" style="grid-column:1/-1;padding:2rem;text-align:center;">Error al cargar las cartas: ${e.message}</p>`;
+        grid.innerHTML = `<p class="grid-mensaje error-texto">Error al cargar las cartas: ${e.message}</p>`;
     }
 }
 
@@ -71,6 +110,7 @@ async function cargarPagina(pagina) {
     });
 
     paginaActual = pagina;
+    actualizarUrlPagina(pagina);
     mostrarCartas(cartas);
     actualizarPaginacion();
     actualizarInfo(offset + 1, Math.min(offset + CARTAS_POR_PAGINA, totalPokemon), totalPokemon);
@@ -81,7 +121,7 @@ async function cargarPagina(pagina) {
 
 // Carga todos los Pokémon en segundo plano sin bloquear la UI
 async function cargarTodoEnSegundoPlano() {
-    if (cargandoTodo) return;
+    if (cargandoTodo || cargaCompletada) return;
     cargandoTodo = true;
 
     const totalPaginas = Math.ceil(totalPokemon / CARTAS_POR_PAGINA);
@@ -102,23 +142,40 @@ async function cargarTodoEnSegundoPlano() {
                     todasLasCartas.push(pokemonACarta(poke));
                 }
             });
+            // Si hay una búsqueda activa, refrescamos los resultados
+            // conforme van llegando más cartas (sin esperar a terminar).
+            refrescarBusquedaSiActiva();
         } catch (_) {}
 
         // Pequeña pausa para no saturar la API
         await new Promise(r => setTimeout(r, 100));
     }
+
+    cargandoTodo         = false;
+    cargaCompletada      = true;
+    conteoFiltradoPrevio = -1;        // fuerza el render del estado final
+    refrescarBusquedaSiActiva();
 }
 
 function mostrarCartas(cartas) {
     const grid = document.getElementById('grid-cartas');
 
     if (!cartas.length) {
-        grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;color:#888;padding:2rem;">No se encontraron cartas.</p>';
+        grid.innerHTML = '<p class="grid-mensaje">No se encontraron cartas.</p>';
         actualizarPaginacion(true);
         return;
     }
 
     grid.innerHTML = cartas.map(c => tarjetaCarta(c)).join('');
+}
+
+// Devuelve el HTML de un botón de paginación accesible
+function botonPagina(pagina, etiqueta, { activa = false, deshabilitado = false } = {}) {
+    const aria = activa
+        ? ` aria-label="Página ${pagina}, página actual" aria-current="page"`
+        : ` aria-label="Ir a página ${pagina}"`;
+    return `<button class="btn-pagina${activa ? ' activa' : ''}" type="button"` +
+           ` data-pagina="${pagina}"${aria}${deshabilitado ? ' disabled' : ''}>${etiqueta}</button>`;
 }
 
 // Actualiza la barra de paginación
@@ -136,23 +193,32 @@ function actualizarPaginacion(ocultar = false) {
 
     let html = '';
 
-    html += `<button class="btn-pagina" onclick="irAPagina(${paginaActual - 1})" ${paginaActual === 1 ? 'disabled' : ''}>← Ant</button>`;
+    html += `<button class="btn-pagina" type="button" data-pagina="${paginaActual - 1}" aria-label="Página anterior" ${paginaActual === 1 ? 'disabled' : ''}>← Ant</button>`;
 
     if (inicio > 1) {
-        html += `<button class="btn-pagina" onclick="irAPagina(1)">1</button>`;
-        if (inicio > 2) html += `<span style="color:var(--muted);padding:0 0.25rem;">…</span>`;
+        html += botonPagina(1, '1');
+        if (inicio > 2) html += `<span class="paginacion-puntos" aria-hidden="true">…</span>`;
     }
 
     for (let i = inicio; i <= fin; i++) {
-        html += `<button class="btn-pagina ${i === paginaActual ? 'activa' : ''}" onclick="irAPagina(${i})">${i}</button>`;
+        html += botonPagina(i, String(i), { activa: i === paginaActual });
     }
 
     if (fin < totalPaginas) {
-        if (fin < totalPaginas - 1) html += `<span style="color:var(--muted);padding:0 0.25rem;">…</span>`;
-        html += `<button class="btn-pagina" onclick="irAPagina(${totalPaginas})">${totalPaginas}</button>`;
+        if (fin < totalPaginas - 1) html += `<span class="paginacion-puntos" aria-hidden="true">…</span>`;
+        html += botonPagina(totalPaginas, String(totalPaginas));
     }
 
-    html += `<button class="btn-pagina" onclick="irAPagina(${paginaActual + 1})" ${paginaActual === totalPaginas ? 'disabled' : ''}>Sig →</button>`;
+    html += `<button class="btn-pagina" type="button" data-pagina="${paginaActual + 1}" aria-label="Página siguiente" ${paginaActual === totalPaginas ? 'disabled' : ''}>Sig →</button>`;
+
+    // Salto directo: campo para escribir el número de página al que ir
+    html += `<span class="paginacion-ir">` +
+            `<label for="input-ir-pagina">Ir a página</label>` +
+            `<input type="number" id="input-ir-pagina" class="input-ir-pagina"` +
+            ` min="1" max="${totalPaginas}" inputmode="numeric" placeholder="${paginaActual}" />` +
+            `<button class="btn-pagina" type="button" data-accion="ir"` +
+            ` aria-label="Ir a la página escrita">Ir</button>` +
+            `</span>`;
 
     contenedor.innerHTML = html;
 }
@@ -178,31 +244,83 @@ async function irAPagina(pagina) {
         return;
     }
 
-    await cargarPagina(pagina);
+    try {
+        await cargarPagina(pagina);
+    } catch (e) {
+        document.getElementById('grid-cartas').innerHTML =
+            `<p class="grid-mensaje error-texto">Error al cargar las cartas: ${e.message}</p>`;
+    }
 }
 
-// Filtra las cartas del cache
-function filtrar() {
-    const nombre = document.getElementById('filtro-nombre')?.value.toLowerCase() || '';
+// Refleja la página actual en la URL (?page=N) sin añadir entradas al
+// historial, para que el botón "atrás" del navegador devuelva el catálogo
+// a la misma página en la que estaba el usuario antes de abrir una carta.
+function actualizarUrlPagina(pagina) {
+    const url = new URL(window.location.href);
+    if (pagina > 1) {
+        url.searchParams.set('page', pagina);
+    } else {
+        url.searchParams.delete('page');
+    }
+    history.replaceState(null, '', url);
+}
+
+// Salta a la página escrita en el campo numérico, acotándola al rango válido.
+function saltarAPaginaEscrita() {
+    const input = document.getElementById('input-ir-pagina');
+    if (!input) return;
+    const totalPaginas = Math.ceil(totalPokemon / CARTAS_POR_PAGINA);
+    let pagina = parseInt(input.value, 10);
+    if (!pagina) return;
+    pagina = Math.min(Math.max(1, pagina), totalPaginas);
+    irAPagina(pagina);
+}
+
+// ¿Hay algún filtro activo ahora mismo?
+function hayFiltrosActivos() {
+    const nombre = document.getElementById('filtro-nombre')?.value.trim() || '';
+    const tipo   = document.getElementById('filtro-tipo')?.value || '';
+    const rareza = document.getElementById('filtro-rareza')?.value || '';
+    return Boolean(nombre || tipo || rareza);
+}
+
+// Recalcula cartasFiltradas a partir del cache disponible ahora mismo
+function calcularFiltradas() {
+    const nombre = document.getElementById('filtro-nombre')?.value.toLowerCase().trim() || '';
     const tipo   = document.getElementById('filtro-tipo')?.value || '';
     const rareza = document.getElementById('filtro-rareza')?.value || '';
 
-    if (!nombre && !tipo && !rareza) {
-        // Sin filtros volvemos a la paginación normal
-        paginaActual = 1;
-        cargarPagina(1);
-        return;
-    }
-
-    // Filtramos sobre el cache
     cartasFiltradas = todasLasCartas.filter(c => {
         const coincideNombre = c.nombre.toLowerCase().includes(nombre);
         const coincideTipo   = !tipo   || c.tipo   === tipo;
         const coincideRareza = !rareza || c.rareza === rareza;
         return coincideNombre && coincideTipo && coincideRareza;
     });
+}
 
+// Aplica los filtros desde cero (vuelve a la página 1 de resultados)
+function filtrar() {
+    if (!hayFiltrosActivos()) {
+        // Sin filtros volvemos a la paginación normal
+        paginaActual = 1;
+        cargarPagina(1);
+        return;
+    }
+    calcularFiltradas();
+    conteoFiltradoPrevio = cartasFiltradas.length;
     paginaActual = 1;
+    mostrarPaginaFiltrada();
+}
+
+// Refresca una búsqueda activa sin perder la página del usuario.
+// Lo invoca la carga de fondo conforme entran más cartas al cache.
+function refrescarBusquedaSiActiva() {
+    if (!hayFiltrosActivos()) return;
+    calcularFiltradas();
+    if (cartasFiltradas.length === conteoFiltradoPrevio) return;  // sin cambios
+    conteoFiltradoPrevio = cartasFiltradas.length;
+    const totPags = Math.max(1, Math.ceil(cartasFiltradas.length / CARTAS_POR_PAGINA));
+    paginaActual  = Math.min(paginaActual, totPags);
     mostrarPaginaFiltrada();
 }
 
@@ -214,6 +332,17 @@ function mostrarPaginaFiltrada() {
     const total   = cartasFiltradas.length;
     const totPags = Math.ceil(total / CARTAS_POR_PAGINA);
 
+    // Sin resultados todavía pero la carga de fondo sigue: estado "buscando"
+    if (!total && cargandoTodo) {
+        document.getElementById('grid-cartas').innerHTML =
+            '<p class="grid-mensaje">Buscando en el catálogo completo…</p>';
+        const cont = document.getElementById('paginacion');
+        if (cont) cont.innerHTML = '';
+        const info = document.getElementById('paginacion-info');
+        if (info) info.textContent = '';
+        return;
+    }
+
     mostrarCartas(pagina);
 
     const contenedor = document.getElementById('paginacion');
@@ -222,14 +351,20 @@ function mostrarPaginaFiltrada() {
             contenedor.innerHTML = '';
         } else {
             let html = '';
-            html += `<button class="btn-pagina" onclick="irAPagina(${paginaActual - 1})" ${paginaActual === 1 ? 'disabled' : ''}>← Ant</button>`;
+            html += `<button class="btn-pagina" type="button" data-pagina="${paginaActual - 1}" aria-label="Página anterior" ${paginaActual === 1 ? 'disabled' : ''}>← Ant</button>`;
             for (let i = 1; i <= Math.min(totPags, 10); i++) {
-                html += `<button class="btn-pagina ${i === paginaActual ? 'activa' : ''}" onclick="irAPagina(${i})">${i}</button>`;
+                html += botonPagina(i, String(i), { activa: i === paginaActual });
             }
-            html += `<button class="btn-pagina" onclick="irAPagina(${paginaActual + 1})" ${paginaActual === totPags ? 'disabled' : ''}>Sig →</button>`;
+            html += `<button class="btn-pagina" type="button" data-pagina="${paginaActual + 1}" aria-label="Página siguiente" ${paginaActual === totPags ? 'disabled' : ''}>Sig →</button>`;
             contenedor.innerHTML = html;
         }
     }
 
     actualizarInfo(inicio + 1, Math.min(fin, total), total);
+
+    // Aviso de que la búsqueda todavía sigue completándose en segundo plano
+    if (cargandoTodo) {
+        const info = document.getElementById('paginacion-info');
+        if (info) info.textContent += ' · buscando más…';
+    }
 }

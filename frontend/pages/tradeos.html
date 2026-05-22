@@ -3,129 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
     <title>Mis Tradeos - PokeTrade</title>
     <meta name="description" content="Gestiona tus tradeos de cartas Pokémon en PokeTrade.">
+    <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
-    <style>
-        .tradeos-contenedor {
-            max-width: 900px;
-            margin: 2.5rem auto;
-            padding: 0 2rem;
-        }
-        .tradeos-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-        .tradeos-header h1 {
-            font-family: var(--font-display);
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: var(--texto);
-        }
-        .filtro-estado {
-            display: flex;
-            gap: 0.5rem;
-            margin-bottom: 1.75rem;
-            flex-wrap: wrap;
-        }
-        .btn-filtro {
-            padding: 0.4rem 1.1rem;
-            border-radius: 20px;
-            border: 1.5px solid var(--borde);
-            background: var(--fondo-card);
-            color: var(--muted);
-            cursor: pointer;
-            font-family: var(--font-body);
-            font-size: 0.875rem;
-            font-weight: 500;
-            transition: border-color var(--trans), color var(--trans), background var(--trans);
-        }
-        .btn-filtro:hover { border-color: var(--primario); color: var(--primario); }
-        .btn-filtro.activo { background: var(--primario); border-color: var(--primario); color: white; }
-        .tradeo-card {
-            background: var(--fondo-card);
-            border: 1px solid var(--borde);
-            border-radius: var(--radius-lg);
-            padding: 1.5rem;
-            margin-bottom: 1rem;
-            box-shadow: var(--sombra-sm);
-            transition: box-shadow var(--trans), border-color var(--trans);
-        }
-        .tradeo-card:hover { box-shadow: var(--sombra); border-color: var(--borde-hover); }
-        .tradeo-card-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 1rem;
-            gap: 1rem;
-        }
-        .tradeo-fecha { font-size: 0.8rem; color: var(--muted); }
-        .badge-estado {
-            padding: 0.2rem 0.75rem;
-            border-radius: 20px;
-            font-size: 0.775rem;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-        .badge-activo    { background: var(--exito-soft);  color: var(--exito);   border: 1px solid var(--exito-borde); }
-        .badge-cerrado   { background: #eff6ff; color: var(--info);   border: 1px solid #bfdbfe; }
-        .badge-cancelado { background: #fff1f0; color: var(--error);  border: 1px solid #fecaca; }
-        .tradeo-cartas { display: flex; gap: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
-        .tradeo-grupo { flex: 1; min-width: 200px; }
-        .tradeo-grupo h4 {
-            font-size: 0.72rem;
-            color: var(--muted);
-            margin-bottom: 0.5rem;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            font-weight: 700;
-        }
-        .tradeo-descripcion {
-            font-size: 0.875rem;
-            color: var(--muted);
-            margin-bottom: 1rem;
-            font-style: italic;
-            background: var(--fondo);
-            padding: 0.65rem 0.9rem;
-            border-radius: var(--radius-sm);
-            border-left: 3px solid var(--borde-hover);
-            line-height: 1.55;
-        }
-        .tradeo-acciones { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .btn-accion {
-            padding: 0.42rem 1rem;
-            border-radius: var(--radius-sm);
-            border: none;
-            cursor: pointer;
-            font-family: var(--font-body);
-            font-size: 0.82rem;
-            font-weight: 600;
-            transition: opacity var(--trans), transform var(--trans), box-shadow var(--trans);
-            letter-spacing: 0.01em;
-        }
-        .btn-accion:hover { opacity: 0.9; transform: translateY(-1px); }
-        .btn-cerrar          { background: var(--info);        color: white; }
-        .btn-cancelar        { background: var(--advertencia); color: white; }
-        .btn-eliminar-tradeo { background: var(--primario);    color: white; }
-
-        /* ── Responsive ── */
-        @media (max-width: 768px) {
-            .tradeos-contenedor { padding: 0 1rem; margin: 1.5rem auto; }
-        }
-        @media (max-width: 480px) {
-            .tradeos-header { flex-direction: column; align-items: stretch; }
-            .tradeos-header .btn-primario { width: 100%; text-align: center; }
-            .tradeo-cartas { flex-direction: column; gap: 1rem; }
-            .tradeo-grupo { min-width: 0; }
-            .tradeo-card-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
-            .tradeo-acciones { width: 100%; }
-            .tradeo-acciones .btn-accion { flex: 1; }
-        }
-    </style>
 </head>
 <body>
     <div id="app-header"></div>
@@ -133,17 +15,17 @@
     <main>
         <div class="tradeos-contenedor">
             <div class="tradeos-header">
-                <h1>🔄 Mis Tradeos</h1>
+                <h1><img class="icono" src="../img/icons/tradeos.svg" alt="" /> Mis Tradeos</h1>
                 <a href="publicar-tradeo.html" class="btn-primario">+ Nuevo tradeo</a>
             </div>
 
             <div id="alerta" class="alerta"></div>
 
-            <div class="filtro-estado">
-                <button class="btn-filtro activo" onclick="filtrarPorEstado('todos', this)">Todos</button>
-                <button class="btn-filtro" onclick="filtrarPorEstado('activo', this)">Activos</button>
-                <button class="btn-filtro" onclick="filtrarPorEstado('cerrado', this)">Cerrados</button>
-                <button class="btn-filtro" onclick="filtrarPorEstado('cancelado', this)">Cancelados</button>
+            <div class="filtro-estado" role="group" aria-label="Filtrar tradeos por estado">
+                <button class="btn-filtro activo" type="button" data-estado="todos">Todos</button>
+                <button class="btn-filtro" type="button" data-estado="activo">Activos</button>
+                <button class="btn-filtro" type="button" data-estado="cerrado">Cerrados</button>
+                <button class="btn-filtro" type="button" data-estado="cancelado">Cancelados</button>
             </div>
 
             <div id="lista-tradeos">
@@ -152,13 +34,9 @@
         </div>
     </main>
 
-    <footer>
-        <p>© 2026 PokeTrade · <a href="aviso-legal.html">Aviso legal</a> · <a href="privacidad.html">Privacidad</a> · <a href="contacto.html">Soporte</a></p>
-    </footer>
+    <div id="app-footer"></div>
 
-    <script src="../js/auth.js"></script>
-    <script src="../js/header.js"></script>
-    <script src="../js/utils.js"></script>
-    <script src="../js/tradeos.js"></script>
+    <script type="module" src="../js/header.js"></script>
+    <script type="module" src="../js/tradeos.js"></script>
 </body>
 </html>

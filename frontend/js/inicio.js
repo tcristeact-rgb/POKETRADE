@@ -1,4 +1,7 @@
-// inicio.js — Lógica de la página principal
+// inicio.js — Lógica de la página principal (módulo ES6)
+
+import { API_URL, estaLogueado } from './auth.js';
+import { tarjetaCarta, pokemonACarta } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const btnTradeo = document.querySelector('#btn-hero-tradeo');
@@ -35,7 +38,10 @@ async function cargarNovedades() {
         const resTotal = await fetch('https://pokeapi.co/api/v2/pokemon?limit=1');
         if (!resTotal.ok) throw new Error('Error al conectar con la PokeAPI');
         const datosTotales = await resTotal.json();
-        const total = datosTotales.count;
+        // Limitamos al mismo tope que el catálogo (1010): así las cartas
+        // de novedades siempre existen también en el catálogo y se excluyen
+        // las formas especiales con IDs > 1010 de la PokeAPI.
+        const total = Math.min(datosTotales.count, 1010);
 
         // Cogemos los últimos 40 para tener margen de filtrar los sin imagen
         const offset = Math.max(0, total - 40);

@@ -3,10 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
   <title>PokeTrade – Intercambia tus cartas Pokémon</title>
   <meta name="description" content="Plataforma de intercambio de cartas Pokémon. Conecta con coleccionistas, publica tus tradeos y encuentra las cartas que buscas.">
+  <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
   <link rel="stylesheet" href="css/estilos.css">
-  <link rel="stylesheet" href="css/index.css">
 </head>
 <body>
 
@@ -17,7 +18,7 @@
 
   <!-- ═══════════════════════════════════════════════
        HERO / BANNER PRINCIPAL
-       Prototipo p.2: Banner con 2 botones (Ver catálogo / Publicar tradeo)
+       Banner con 2 botones (Ver catálogo / Publicar tradeo)
        + Stats cargadas vía AJAX (petición fetch → JSON → DOM)
   ════════════════════════════════════════════════ -->
   <section class="hero" aria-labelledby="hero-titulo">
@@ -41,9 +42,8 @@
     </div>
 
     <!--
-      Stats cargadas asíncronamente: fetch('/api/stats') → JSON → DOM
+      Stats cargadas asíncronamente: fetch → JSON → DOM
       Mientras carga se muestran con clase .skeleton (animación shimmer)
-      Flujo AJAX: Petición → JSON → actualizarDOM (cargarEstadisticas en index.js)
     -->
     <div class="hero-stats" id="hero-stats" aria-live="polite" role="status">
       <div class="stat-item skeleton" id="stat-cartas">
@@ -59,8 +59,7 @@
 
   <!-- ═══════════════════════════════════════════════
        ÚLTIMAS NOVEDADES
-       Prototipo p.3/p.4: Grid de cartas con botón +Info por carta
-       Flujo AJAX: fetch('/api/cartas?limit=8&orden=recientes') → JSON → DOM
+       Grid de cartas. Flujo AJAX: fetch → JSON → DOM
        Gestión de errores: red (sin conexión), HTTP 404, HTTP 500
   ════════════════════════════════════════════════ -->
   <section class="novedades-seccion" aria-labelledby="titulo-novedades">
@@ -73,18 +72,15 @@
 
     <!--
       Alerta de error de red / HTTP – oculta por defecto.
-      Se muestra en cargarNovedades() si fetch() lanza excepción
-      o si la respuesta HTTP no es 2xx.
-      Botón "Reintentar" vuelve a llamar a cargarNovedades().
+      El botón "Reintentar" vuelve a llamar a cargarNovedades().
     -->
     <div id="error-novedades" class="alerta-error" hidden role="alert">
-      <p>⚠️ <span id="error-novedades-msg">No se pudieron cargar las novedades.</span></p>
+      <p><img class="icono" src="img/icons/aviso.svg" alt="" /> <span id="error-novedades-msg">No se pudieron cargar las novedades.</span></p>
       <button id="btn-reintentar-novedades" type="button">Reintentar</button>
     </div>
 
     <!--
-      Grid de cartas – se rellena dinámicamente con crearTarjetaCarta()
-      tras recibir y procesar el JSON de la API.
+      Grid de cartas – se rellena dinámicamente tras recibir el JSON.
       Skeletons iniciales dan feedback visual durante la carga.
     -->
     <div class="grid-cartas" id="grid-novedades" aria-live="polite" aria-busy="true">
@@ -97,23 +93,23 @@
 
   <!-- ═══════════════════════════════════════════════
        CÓMO FUNCIONA POKETRADE
-       Prototipo p.2: 3 pasos explicativos (Registro → Publicar → Intercambiar)
+       3 pasos explicativos (Registro → Publicar → Intercambiar)
   ════════════════════════════════════════════════ -->
   <section class="como-funciona" aria-labelledby="titulo-como-funciona">
     <h2 id="titulo-como-funciona">¿Cómo funciona PokeTrade?</h2>
     <div class="pasos">
       <div class="paso">
-        <div class="paso-icono" aria-hidden="true">1️⃣</div>
+        <div class="paso-icono" aria-hidden="true"><img class="icono" src="img/icons/paso-1.svg" alt="" /></div>
         <h3>Regístrate</h3>
         <p>Crea tu cuenta gratis y añade las cartas de tu colección al inventario.</p>
       </div>
       <div class="paso">
-        <div class="paso-icono" aria-hidden="true">2️⃣</div>
+        <div class="paso-icono" aria-hidden="true"><img class="icono" src="img/icons/paso-2.svg" alt="" /></div>
         <h3>Publica un tradeo</h3>
         <p>Selecciona las cartas que ofreces y las que buscas a cambio.</p>
       </div>
       <div class="paso">
-        <div class="paso-icono" aria-hidden="true">3️⃣</div>
+        <div class="paso-icono" aria-hidden="true"><img class="icono" src="img/icons/paso-3.svg" alt="" /></div>
         <h3>¡Intercambia!</h3>
         <p>Conecta con otros coleccionistas y completa el intercambio.</p>
       </div>
@@ -122,12 +118,11 @@
 
   <!-- ═══════════════════════════════════════════════
        CTA – REGISTRO / LOGIN
-       Prototipo p.2: Apartado de incitación con 2 botones.
        Se oculta dinámicamente si el usuario ya está autenticado.
   ════════════════════════════════════════════════ -->
   <section class="cta-seccion" id="cta-seccion" aria-labelledby="titulo-cta">
     <div class="cta-contenido">
-      <h2 id="titulo-cta">Únete a PokeTRade</h2>
+      <h2 id="titulo-cta">Únete a PokeTrade</h2>
       <p>Más de 1000 Pokémon disponibles. Crea tu cuenta gratis y empieza a intercambiar.</p>
       <div class="hero-botones">
         <a href="pages/registro.html" class="btn-primario">Crear cuenta gratis</a>
@@ -138,52 +133,14 @@
 
   </main>
 
-  <!-- ═══════════════════════════════════════════════
-       FOOTER
-       Prototipo p.2: columnas de info, navegación, legal y Soporte
-  ════════════════════════════════════════════════ -->
-  <footer>
-    <div class="footer-grid">
-      <div class="footer-col">
-        <h3>🃏 PokeTrade</h3>
-        <p>Plataforma de intercambio de cartas Pokémon para coleccionistas de toda España.</p>
-        <p style="margin-top:0.75rem;">IES El Lago · Madrid</p>
-      </div>
-      <div class="footer-col">
-        <h3>Navegación</h3>
-        <ul>
-          <li><a href="pages/novedades.html">Novedades</a></li>
-          <li><a href="pages/catalogo.html">Catálogo</a></li>
-          <li><a href="pages/mas-vendido.html">Más Vendido</a></li>
-          <li><a href="pages/publicar-tradeo.html">Publicar Tradeo</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h3>Legal</h3>
-        <ul>
-          <li><a href="pages/aviso-legal.html">Aviso Legal</a></li>
-          <li><a href="pages/privacidad.html">Privacidad</a></li>
-          <li><a href="pages/contacto.html">Soporte</a></li>
-        </ul>
-      </div>
-      <div class="footer-col">
-        <h3>Soporte</h3>
-        <p>poketrade@iesellago.es</p>
-        <p style="margin-top:0.5rem;">Daniel Leal &amp; Teo Cristea</p>
-      </div>
-    </div>
-    <div class="footer-bottom">
-      <p>&copy; 2025 PokeTrade – Daniel Leal &amp; Teo Cristea. Todos los derechos reservados.</p>
-    </div>
-  </footer>
+  <!-- Footer unificado (inyectado por js/header.js) -->
+  <div id="app-footer"></div>
 
   <!-- Toast de notificaciones (éxito / error / info) -->
   <div id="toast" class="toast" hidden role="status" aria-live="polite"></div>
 
-  <!-- Scripts: auth.js → header.js (inyecta el header) → lógica de la página -->
-  <script src="js/auth.js"></script>
-  <script src="js/header.js"></script>
-  <script src="js/utils.js"></script>
-  <script src="js/inicio.js"></script>
+  <!-- Scripts ES6: header.js (inyecta header/footer) → lógica de la página -->
+  <script type="module" src="js/header.js"></script>
+  <script type="module" src="js/inicio.js"></script>
 </body>
 </html>

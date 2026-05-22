@@ -1,7 +1,13 @@
-// mas-vendido.js — Ranking de cartas más demandadas en tradeos
-// Combina datos de nuestra API (tradeos) con imágenes de la PokeAPI
+// mas-vendido.js — Ranking de cartas más demandadas en tradeos (módulo ES6)
+// Combina datos de nuestra API (tradeos) con imágenes de la PokeAPI.
 
-document.addEventListener('DOMContentLoaded', cargarMasVendido);
+import { API_URL, paginaUrl } from './auth.js';
+import { pokemonACarta, escapeHtml } from './utils.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+    cargarMasVendido();
+    document.getElementById('btn-reintentar-mv')?.addEventListener('click', cargarMasVendido);
+});
 
 async function cargarMasVendido() {
     const grid     = document.getElementById('grid-mas-vendido');
@@ -41,12 +47,9 @@ async function cargarMasVendido() {
         // Para las cartas del ranking intentamos mejorar la imagen con la PokeAPI
         const cartasConImagen = await Promise.all(
             ranking.map(async (entry) => {
-                // Si la carta ya tiene imagen la usamos directamente
                 if (entry.carta.imagen_url) return entry;
-
-                // Si no tiene imagen la buscamos en la PokeAPI por número
                 try {
-                    const numero = entry.carta.numero || entry.carta.id;
+                    const numero = Number(entry.carta.numero) || entry.carta.id;
                     const res2 = await fetch(`https://pokeapi.co/api/v2/pokemon/${numero}`);
                     if (res2.ok) {
                         const poke = await res2.json();
@@ -73,40 +76,46 @@ async function cargarMasVendido() {
 
 // Fallback: muestra los Pokémon más icónicos cuando no hay tradeos
 async function cargarPopularesPokeAPI(grid) {
-    // IDs de los Pokémon más populares/icónicos
     const populares = [6, 25, 150, 9, 3, 94, 149, 131];
     const promesas  = populares.map(id =>
         fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then(r => r.json())
     );
     const pokemons = await Promise.all(promesas);
 
-    // Los mostramos como ranking con contador "Popular"
     grid.innerHTML = pokemons.map((p, i) => {
         const carta = pokemonACarta(p);
         return tarjetaRanking({ carta, veces: null }, i + 1);
     }).join('');
 }
 
-// Tarjeta de carta con posición en el ranking
+// Tarjeta de carta con posición en el ranking. Toda la tarjeta es un
+// enlace <a>: accesible con teclado de forma nativa.
 function tarjetaRanking({ carta, veces }, posicion) {
-    const medalla = posicion === 1 ? '🥇' : posicion === 2 ? '🥈' : posicion === 3 ? '🥉' : `#${posicion}`;
-    const url     = paginaUrl(`pages/detalle-carta.html?id=${carta.id}`);
+    const medallas = { 1: 'oro', 2: 'plata', 3: 'bronce' };
+    const medalla = medallas[posicion]
+        ? `<img class="icono" src="${paginaUrl('img/icons/medalla-' + medallas[posicion] + '.svg')}" alt="" />`
+        : `#${posicion}`;
+    // Las cartas del backend llevan numero (nº de Pokédex); su id es el de la
+    // BD y no coincide con el de la PokeAPI, que es lo que espera el detalle.
+    const idDetalle = carta.numero ? Number(carta.numero) : carta.id;
+    const url       = paginaUrl(`pages/detalle-carta.html?id=${idDetalle}`);
+    const nombre    = escapeHtml(carta.nombre);
     const imgHTML = carta.imagen_url
-        ? `<img src="${carta.imagen_url}" alt="${escapeHtml(carta.nombre)}" loading="lazy" />`
-        : `<div class="carta-sin-imagen">🃏</div>`;
+        ? `<img src="${escapeHtml(carta.imagen_url)}" alt="${nombre}" loading="lazy" />`
+        : `<div class="carta-sin-imagen" aria-hidden="true"><img class="icono" src="${paginaUrl('img/icons/carta.svg')}" alt="" /></div>`;
     const contadorHTML = veces !== null
         ? `<span class="mv-contador">${veces} ${veces === 1 ? 'tradeo' : 'tradeos'}</span>`
-        : `<span class="mv-contador">⭐ Popular</span>`;
+        : `<span class="mv-contador"><img class="icono" src="${paginaUrl('img/icons/estrella.svg')}" alt="" /> Popular</span>`;
 
     return `
-    <article class="carta-card mv-card" onclick="window.location.href='${url}'" style="cursor:pointer;" tabindex="0" role="button" aria-label="${escapeHtml(carta.nombre)}">
-        <div class="mv-posicion">${medalla}</div>
+    <a class="carta-card mv-card" href="${url}" aria-label="Ver detalle de ${nombre}">
+        <div class="mv-posicion" aria-hidden="true">${medalla}</div>
         ${imgHTML}
         <div class="carta-info">
-            <h3>${escapeHtml(carta.nombre)}</h3>
+            <h3>${nombre}</h3>
             ${carta.tipo   ? `<span class="carta-tipo">${escapeHtml(carta.tipo)}</span>`   : ''}
             ${carta.rareza ? `<span class="carta-rareza">${escapeHtml(carta.rareza)}</span>` : ''}
             ${contadorHTML}
         </div>
-    </article>`;
+    </a>`;
 }

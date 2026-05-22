@@ -1,161 +1,37 @@
 <!DOCTYPE html>
 <html lang="es">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
     <title>Soporte - PokeTrade</title>
+    <meta name="description" content="Contacta con el equipo de PokeTrade para resolver dudas, reportar errores o enviar sugerencias.">
+    <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
-    <style>
-        .Soporte-contenedor {
-            max-width: 620px;
-            margin: 2.5rem auto;
-            padding: 0 2rem 4rem;
-        }
-
-        .Soporte-contenedor h1 {
-            font-family: var(--font-display);
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin-bottom: 0.35rem;
-            color: var(--texto);
-        }
-
-        .Soporte-contenedor .subtitulo {
-            color: var(--muted);
-            font-size: 0.925rem;
-            margin-bottom: 2rem;
-        }
-
-        .Soporte-card {
-            background: var(--fondo-card);
-            border: 1px solid var(--borde);
-            border-radius: var(--radius-lg);
-            padding: 2rem 2.25rem;
-            box-shadow: var(--sombra);
-        }
-
-        .form-grupo {
-            margin-bottom: 1.25rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-        }
-
-        .form-grupo label {
-            font-size: 0.875rem;
-            font-weight: 500;
-            color: var(--texto);
-        }
-
-        .form-grupo input,
-        .form-grupo textarea,
-        .form-grupo select {
-            padding: 0.65rem 0.95rem;
-            border: 1.5px solid var(--borde);
-            border-radius: var(--radius-sm);
-            font-family: var(--font-body);
-            font-size: 0.925rem;
-            color: var(--texto);
-            background: var(--fondo);
-            transition: border-color var(--trans), box-shadow var(--trans), background var(--trans);
-            resize: vertical;
-        }
-
-        .form-grupo input:focus,
-        .form-grupo textarea:focus,
-        .form-grupo select:focus {
-            outline: none;
-            border-color: var(--primario);
-            box-shadow: 0 0 0 3px var(--primario-soft);
-            background: white;
-        }
-
-        .form-grupo textarea {
-            min-height: 130px;
-        }
-
-        .btn-enviar {
-            width: 100%;
-            padding: 0.75rem;
-            background: var(--primario);
-            color: white;
-            border: none;
-            border-radius: var(--radius);
-            font-family: var(--font-body);
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            letter-spacing: 0.01em;
-            transition: background var(--trans), transform var(--trans), box-shadow var(--trans);
-            margin-top: 0.5rem;
-        }
-
-        .btn-enviar:hover {
-            background: var(--primario-hover);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 14px rgba(231, 76, 60, 0.3);
-        }
-
-        .Soporte-info {
-            margin-top: 2rem;
-            padding-top: 1.5rem;
-            border-top: 1px solid var(--borde);
-        }
-
-        .Soporte-info p {
-            color: var(--muted);
-            font-size: 0.9rem;
-            line-height: 1.65;
-        }
-
-        .Soporte-info a {
-            color: var(--primario);
-            text-decoration: underline;
-        }
-
-        .Soporte-info a:hover {
-            color: var(--primario-hover);
-        }
-
-        /* ── Responsive ── */
-        @media (max-width: 600px) {
-            .Soporte-contenedor {
-                padding: 0 1rem 3rem;
-                margin: 1.5rem auto;
-            }
-
-            .Soporte-card {
-                padding: 1.5rem 1.25rem;
-            }
-        }
-    </style>
 </head>
-
 <body>
     <div id="app-header"></div>
 
     <main>
-        <div class="Soporte-contenedor">
+        <div class="soporte-contenedor">
             <h1>Soporte</h1>
-            <p class="subtitulo">¿Tienes algun problema o sugerencia? Escríbenos y te responderemos lo antes posible.
-            </p>
+            <p class="subtitulo">¿Tienes algún problema o sugerencia? Escríbenos y te responderemos lo antes posible.</p>
 
-            <div class="Soporte-card">
+            <div class="soporte-card">
                 <div id="alerta" class="alerta" role="alert"></div>
 
-                <form id="form-Soporte" onsubmit="enviarFormulario(event)" novalidate>
-                    <div class="form-grupo">
+                <form id="form-soporte" novalidate>
+                    <div class="formulario-grupo">
                         <label for="nombre">Nombre</label>
                         <input type="text" id="nombre" name="nombre" placeholder="Tu nombre" required
                             autocomplete="name" />
                     </div>
-                    <div class="form-grupo">
+                    <div class="formulario-grupo">
                         <label for="email">Correo electrónico</label>
                         <input type="email" id="email" name="email" placeholder="tu@correo.com" required
                             autocomplete="email" />
                     </div>
-                    <div class="form-grupo">
+                    <div class="formulario-grupo">
                         <label for="asunto">Asunto</label>
                         <select id="asunto" name="asunto" required>
                             <option value="">Selecciona un asunto...</option>
@@ -165,82 +41,25 @@
                             <option value="otro">Otro</option>
                         </select>
                     </div>
-                    <div class="form-grupo">
+                    <div class="formulario-grupo">
                         <label for="mensaje">Mensaje</label>
-                        <textarea id="mensaje" name="mensaje" placeholder="Describe tu consulta..." required></textarea>
+                        <textarea id="mensaje" name="mensaje" rows="5" placeholder="Describe tu consulta..." required></textarea>
                     </div>
                     <button type="submit" class="btn-enviar">Enviar mensaje</button>
                 </form>
 
-                <div class="Soporte-info">
-                    <p>También puedes escribirnos directamente a <a
-                            href="mailto:poketrade@iesellago.es">poketrade@iesellago.es</a>.</p>
-                    <p style="margin-top:0.5rem;">IES El Lago · Madrid · Daniel Leal &amp; Teo Cristea</p>
+                <div class="soporte-info">
+                    <p>También puedes escribirnos directamente a
+                        <a href="mailto:poketrade@iesellago.es">poketrade@iesellago.es</a>.</p>
+                    <p class="soporte-sede">IES El Lago · Madrid · Daniel Leal &amp; Teo Cristea</p>
                 </div>
             </div>
         </div>
     </main>
 
-    <footer>
-        <p>© 2026 PokeTrade · <a href="aviso-legal.html">Aviso legal</a> · <a href="privacidad.html">Privacidad</a> · <a
-                href="contacto.html">Soporte</a></p>
-    </footer>
+    <div id="app-footer"></div>
 
-    <script src="../js/auth.js"></script>
-    <script src="../js/header.js"></script>
-    <script>
-        // Soporte.js — Envío real del formulario de Soporte mediante mailto
-        // Al enviar abre el cliente de correo del usuario con los datos rellenos
-        // Como alternativa muestra el email directo para copiar
-
-        function enviarFormulario(e) {
-            e.preventDefault();
-
-            const nombre = document.getElementById('nombre').value.trim();
-            const email = document.getElementById('email').value.trim();
-            const asunto = document.getElementById('asunto').value;
-            const mensaje = document.getElementById('mensaje').value.trim();
-            const alerta = document.getElementById('alerta');
-
-            // Validación básica de campos obligatorios
-            if (!nombre || !email || !asunto || !mensaje) {
-                alerta.className = 'alerta error';
-                alerta.textContent = 'Por favor, rellena todos los campos.';
-                return;
-            }
-
-            // Validación básica de formato de email
-            if (!email.includes('@') || !email.includes('.')) {
-                alerta.className = 'alerta error';
-                alerta.textContent = 'Por favor, introduce un correo electrónico válido.';
-                return;
-            }
-
-            // Construimos el asunto y cuerpo del correo
-            const asuntoTexto = {
-                error: 'Reporte de error',
-                sugerencia: 'Sugerencia de mejora',
-                cuenta: 'Problema con mi cuenta',
-                otro: 'Consulta general',
-            }[asunto] || asunto;
-
-            const cuerpo = `Nombre: ${nombre}\nEmail: ${email}\n\n${mensaje}`;
-
-            // Abrimos el cliente de correo con los datos rellenos
-            const mailtoUrl = `mailto:poketrade@iesellago.es`
-                + `?subject=${encodeURIComponent(`[PokeTrade] ${asuntoTexto}`)}`
-                + `&body=${encodeURIComponent(cuerpo)}`;
-
-            window.location.href = mailtoUrl;
-
-            // Mostramos mensaje de éxito y reseteamos el formulario
-            alerta.className = 'alerta exito';
-            alerta.textContent = '¡Abriendo tu cliente de correo! Si no se abre automáticamente, escríbenos a poketrade@iesellago.es';
-            document.getElementById('form-Soporte').reset();
-
-            setTimeout(() => { alerta.className = 'alerta'; alerta.textContent = ''; }, 6000);
-        }
-    </script>
+    <script type="module" src="../js/header.js"></script>
+    <script type="module" src="../js/contacto.js"></script>
 </body>
-
 </html>

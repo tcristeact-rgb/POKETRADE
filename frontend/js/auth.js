@@ -1,15 +1,19 @@
 // ===================================================
 // auth.js – Gestión de sesión y autenticación JWT
-// Se carga en TODAS las páginas antes que cualquier
-// otro script. Expone API_URL como variable global.
+// Módulo ES6: expone sus funciones mediante `export`.
+// La URL de la API se importa desde config.js.
 // ===================================================
 
-const API_URL = 'http://localhost:8000/api';
+import { API_URL } from './config.js';
+
+// Se reexporta para que las páginas puedan importarla
+// directamente desde este módulo junto al resto de utilidades.
+export { API_URL };
 
 // Calcula la ruta relativa correcta según si estamos en pages/ o en la raíz.
-// Así las rutas funcionan tanto con Live Server desde la raíz del proyecto
-// como desde la carpeta frontend/.
-function paginaUrl(ruta) {
+// Así las rutas funcionan tanto desde la raíz del proyecto
+// como desde la carpeta pages/.
+export function paginaUrl(ruta) {
   // ruta es relativa a la raíz de frontend/, ej: 'pages/login.html' o 'index.html'
   const enPagesDir = window.location.pathname.includes('/pages/');
   if (enPagesDir) {
@@ -22,32 +26,32 @@ function paginaUrl(ruta) {
 // GESTIÓN DEL TOKEN JWT
 // ─────────────────────────────────────────────────
 
-function obtenerToken() {
+export function obtenerToken() {
   return localStorage.getItem('token');
 }
 
-function obtenerUsuario() {
+export function obtenerUsuario() {
   const datos = localStorage.getItem('usuario');
   return datos ? JSON.parse(datos) : null;
 }
 
-function estaLogueado() {
+export function estaLogueado() {
   return !!obtenerToken();
 }
 
-function guardarSesion(token, usuario) {
+export function guardarSesion(token, usuario) {
   localStorage.setItem('token', token);
   localStorage.setItem('usuario', JSON.stringify(usuario));
 }
 
-function eliminarSesion() {
+export function eliminarSesion() {
   localStorage.removeItem('token');
   localStorage.removeItem('usuario');
 }
 
 // Devuelve los headers con JWT para rutas protegidas
 // Uso: fetch(url, { headers: headersAuth() })
-function headersAuth() {
+export function headersAuth() {
   return {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
@@ -62,9 +66,9 @@ function headersAuth() {
 // Si no hay token redirige al login inmediatamente
 // ─────────────────────────────────────────────────
 
-function protegerRuta() {
+export function protegerRuta() {
   if (!estaLogueado()) {
-    // Guardar la pagina actual para redirigir despues del login
+    // Guardar la página actual para redirigir después del login
     const paginaActual = window.location.pathname;
     sessionStorage.setItem('redirigir_tras_login', paginaActual);
     window.location.href = paginaUrl('pages/login.html');
@@ -77,33 +81,41 @@ function protegerRuta() {
 // para mostrar el mensaje directamente en el DOM
 // ─────────────────────────────────────────────────
 
-function manejarErrorHTTP(status, elementoId = null) {
+// Evita que varias respuestas 401 simultáneas (por ejemplo de un
+// Promise.all) programen varias redirecciones al login a la vez.
+let _redireccion401EnCurso = false;
+
+export function manejarErrorHTTP(status, elementoId = null) {
   let mensaje;
 
   switch (status) {
     case 401:
-      mensaje = 'Sesion expirada. Por favor, inicia sesion de nuevo.';
-      eliminarSesion();
-      // Redirigir al login si estamos en una pagina protegida
-      if (!window.location.pathname.includes('login')) {
-        setTimeout(() => { window.location.href = paginaUrl('pages/login.html'); }, 1500);
+      mensaje = 'Sesión expirada. Por favor, inicia sesión de nuevo.';
+      // Solo la primera respuesta 401 cierra sesión y redirige
+      if (!_redireccion401EnCurso) {
+        _redireccion401EnCurso = true;
+        eliminarSesion();
+        // Redirigir al login si estamos en una página protegida
+        if (!window.location.pathname.includes('login')) {
+          setTimeout(() => { window.location.href = paginaUrl('pages/login.html'); }, 1500);
+        }
       }
       break;
     case 403:
-      mensaje = 'No tienes permisos para realizar esta accion.';
+      mensaje = 'No tienes permisos para realizar esta acción.';
       break;
     case 404:
       mensaje = 'El recurso solicitado no existe.';
       break;
     case 422:
-      mensaje = 'Datos no validos. Revisa el formulario.';
+      mensaje = 'Datos no válidos. Revisa el formulario.';
       break;
     case 500:
     case 503:
-      mensaje = 'Error interno del servidor. Inténtalo mas tarde.';
+      mensaje = 'Error interno del servidor. Inténtalo más tarde.';
       break;
     default:
-      mensaje = `Error inesperado (codigo ${status}).`;
+      mensaje = `Error inesperado (código ${status}).`;
   }
 
   // Actualizar el DOM si se proporciona un elemento destino
@@ -121,12 +133,12 @@ function manejarErrorHTTP(status, elementoId = null) {
 // devuelve HTML en lugar de JSON (ej: error 500)
 // ─────────────────────────────────────────────────
 
-async function parsearRespuesta(respuesta) {
+export async function parsearRespuesta(respuesta) {
   const contentType = respuesta.headers.get('Content-Type') || '';
   if (contentType.includes('application/json')) {
     return await respuesta.json();
   }
-  // El servidor devuelve HTML u otro formato — devolvemos objeto vacio
+  // El servidor devuelve HTML u otro formato — devolvemos objeto vacío
   return {};
 }
 
@@ -135,7 +147,7 @@ async function parsearRespuesta(respuesta) {
 // Petición AJAX → recibe token JWT → guarda sesión
 // ─────────────────────────────────────────────────
 
-async function login(email, password) {
+export async function login(email, password) {
   let respuesta;
 
   // Capturar error de red por separado (servidor caído, sin conexión)
@@ -159,11 +171,14 @@ async function login(email, password) {
   // Guardar token y datos del usuario en localStorage
   guardarSesion(datos.token, datos.usuario);
 
-  // Redirigir a la página que intentaba visitar antes del login (si existe)
+  // Redirigir a la página que intentaba visitar antes del login;
+  // si no hay ninguna guardada, volvemos al inicio.
   const redirigir = sessionStorage.getItem('redirigir_tras_login');
   if (redirigir) {
     sessionStorage.removeItem('redirigir_tras_login');
     window.location.href = redirigir;
+  } else {
+    window.location.href = paginaUrl('index.html');
   }
 
   return datos;
@@ -173,7 +188,7 @@ async function login(email, password) {
 // REGISTRO
 // ─────────────────────────────────────────────────
 
-async function registro(campos) {
+export async function registro(campos) {
   // campos: { nombre, apellido, email, password, fecha_nacimiento, nacionalidad }
   let respuesta;
 
@@ -202,7 +217,7 @@ async function registro(campos) {
 // Notifica al backend e invalida el token local
 // ─────────────────────────────────────────────────
 
-async function cerrarSesion() {
+export async function cerrarSesion() {
   const token = obtenerToken();
 
   if (token) {
@@ -222,10 +237,22 @@ async function cerrarSesion() {
 
 // ─────────────────────────────────────────────────
 // RENDERIZAR MENÚ DE USUARIO EN EL HEADER
-// Se ejecuta automáticamente al cargar cada página
+// La llama header.js tras inyectar el header.
 // ─────────────────────────────────────────────────
 
-function renderizarMenu() {
+// El listener para cerrar el dropdown al hacer clic fuera se
+// registra una sola vez aunque renderizarMenu() se ejecute
+// varias veces (evita acumular listeners en `document`).
+let _listenerDropdownRegistrado = false;
+
+function cerrarDropdownFuera(e) {
+  const dropdown = document.querySelector('#menu-usuario .dropdown');
+  if (dropdown && !dropdown.contains(e.target)) {
+    dropdown.classList.remove('abierto');
+  }
+}
+
+export function renderizarMenu() {
   const menu = document.getElementById('menu-usuario');
   if (!menu) return;
 
@@ -233,26 +260,36 @@ function renderizarMenu() {
     const usuario = obtenerUsuario();
     menu.innerHTML = `
       <div class="dropdown">
-        <button class="btn-dropdown" onclick="this.parentElement.classList.toggle('abierto')">
-          👤 ${usuario?.nombre || 'Usuario'} ▾
+        <button class="btn-dropdown" type="button" aria-haspopup="true" aria-expanded="false">
+          <img class="icono" src="${paginaUrl('img/icons/usuario.svg')}" alt="" /> <span class="btn-dropdown-nombre"></span> ▾
         </button>
         <ul class="dropdown-menu">
-          <li><a href="${paginaUrl('pages/inventario.html')}">📦 Inventario</a></li>
-          <li><a href="${paginaUrl('pages/tradeos.html')}">🔄 Mis Tradeos</a></li>
-          <li><a href="${paginaUrl('pages/perfil.html')}">⚙️ Perfil</a></li>
+          <li><a href="${paginaUrl('pages/inventario.html')}"><img class="icono" src="${paginaUrl('img/icons/inventario.svg')}" alt="" /> Inventario</a></li>
+          <li><a href="${paginaUrl('pages/tradeos.html')}"><img class="icono" src="${paginaUrl('img/icons/tradeos.svg')}" alt="" /> Mis Tradeos</a></li>
+          <li><a href="${paginaUrl('pages/perfil.html')}"><img class="icono" src="${paginaUrl('img/icons/perfil.svg')}" alt="" /> Perfil</a></li>
           <li><hr/></li>
-          <li><button onclick="cerrarSesion()">🚪 Cerrar sesión</button></li>
+          <li><button type="button" class="btn-logout"><img class="icono" src="${paginaUrl('img/icons/logout.svg')}" alt="" /> Cerrar sesión</button></li>
         </ul>
       </div>
     `;
 
-    // Cierra el dropdown al hacer clic fuera
-    document.addEventListener('click', function cerrarFuera(e) {
-      const dropdown = menu.querySelector('.dropdown');
-      if (dropdown && !dropdown.contains(e.target)) {
-        dropdown.classList.remove('abierto');
-      }
+    // El nombre se asigna con textContent para evitar inyección de HTML (XSS)
+    menu.querySelector('.btn-dropdown-nombre').textContent = usuario?.nombre || 'Usuario';
+
+    const dropdown = menu.querySelector('.dropdown');
+    const btnDropdown = menu.querySelector('.btn-dropdown');
+    btnDropdown.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const abierto = dropdown.classList.toggle('abierto');
+      btnDropdown.setAttribute('aria-expanded', abierto ? 'true' : 'false');
     });
+
+    menu.querySelector('.btn-logout').addEventListener('click', cerrarSesion);
+
+    if (!_listenerDropdownRegistrado) {
+      document.addEventListener('click', cerrarDropdownFuera);
+      _listenerDropdownRegistrado = true;
+    }
 
   } else {
     menu.innerHTML = `
@@ -261,6 +298,3 @@ function renderizarMenu() {
     `;
   }
 }
-
-// Ejecutar al cargar cualquier página
-renderizarMenu();

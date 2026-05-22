@@ -1,8 +1,11 @@
 // ===================================================
-// login.js — Inicio de sesión con envío por formulario
-// (Enter nativo), bloqueo del botón para evitar envíos
-// duplicados y aviso de registro correcto.
+// login.js — Inicio de sesión (módulo ES6)
+// Reutiliza la función login() de auth.js (sin duplicar
+// la petición). Bloquea el botón para evitar envíos
+// duplicados y avisa si el registro fue correcto.
 // ===================================================
+
+import { login } from './auth.js';
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('form-login');
@@ -19,7 +22,7 @@ async function iniciarSesion(e) {
   if (e) e.preventDefault();
 
   const email = document.getElementById('email').value.trim();
-  const password = document.getElementById('password').value.trim();
+  const password = document.getElementById('password').value;
   const errorMensaje = document.getElementById('error-mensaje');
   errorMensaje.textContent = '';
 
@@ -37,25 +40,11 @@ async function iniciarSesion(e) {
   boton.textContent = 'Entrando…';
 
   try {
-    const respuesta = await fetch(`${API_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email, password })
-    });
-
-    const datos = await respuesta.json().catch(() => ({}));
-
-    if (!respuesta.ok) {
-      errorMensaje.textContent = datos.error || 'Correo o contraseña incorrectos.';
-      boton.disabled = false;
-      boton.textContent = textoOriginal;
-      return;
-    }
-
-    guardarSesion(datos.token, datos.usuario);
-    window.location.href = '../index.html';
+    // login() guarda la sesión y redirige automáticamente
+    // (al destino previo guardado o al inicio).
+    await login(email, password);
   } catch (error) {
-    errorMensaje.textContent = 'Error de conexión con el servidor. Inténtalo de nuevo en unos instantes.';
+    errorMensaje.textContent = error.message || 'Correo o contraseña incorrectos.';
     boton.disabled = false;
     boton.textContent = textoOriginal;
   }

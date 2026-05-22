@@ -1,9 +1,30 @@
+// tradeos.js — Gestión de los tradeos del usuario (módulo ES6)
+
+import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
+import { formatearFecha, miniaturas, mostrarAlerta, escapeHtml } from './utils.js';
+
 protegerRuta();
 
 let todosMisTradeos = [];
-let filtroActual = 'todos';
 
-document.addEventListener('DOMContentLoaded', cargarMisTradeos);
+document.addEventListener('DOMContentLoaded', () => {
+    cargarMisTradeos();
+
+    // Filtros de estado (delegación sobre el contenedor)
+    document.querySelector('.filtro-estado')?.addEventListener('click', (e) => {
+        const btn = e.target.closest('button[data-estado]');
+        if (btn) filtrarPorEstado(btn.dataset.estado, btn);
+    });
+
+    // Acciones sobre cada tradeo (delegación sobre la lista)
+    document.getElementById('lista-tradeos')?.addEventListener('click', (e) => {
+        const el = e.target.closest('[data-accion]');
+        if (!el) return;
+        const id = Number(el.dataset.tradeoId);
+        if (el.dataset.accion === 'estado') cambiarEstado(id, el.dataset.estado);
+        else if (el.dataset.accion === 'eliminar') eliminarTradeo(id);
+    });
+});
 
 async function cargarMisTradeos() {
     const lista = document.getElementById('lista-tradeos');
@@ -11,9 +32,14 @@ async function cargarMisTradeos() {
     try {
         const res = await fetch(`${API_URL}/mis-tradeos`, { headers: headersAuth() });
         if (!res.ok) throw new Error(manejarErrorHTTP(res.status));
-        const datos = await res.json();
-        todosMisTradeos = datos;
-        renderizarTradeos(datos);
+        todosMisTradeos = await res.json();
+
+        // Mantener el filtro activo tras recargar
+        const activo = document.querySelector('.btn-filtro.activo')?.dataset.estado || 'todos';
+        const filtrados = activo === 'todos'
+            ? todosMisTradeos
+            : todosMisTradeos.filter(t => t.estado === activo);
+        renderizarTradeos(filtrados);
     } catch (e) {
         lista.innerHTML = `<p class="error-texto">Error al cargar tus tradeos: ${e.message}</p>`;
     }
@@ -39,17 +65,17 @@ function renderizarTradeos(tradeos) {
         const buscaMinis  = miniaturas(t.cartas_busca);
 
         const botonesAccion = t.estado === 'activo' ? `
-            <button class="btn-accion btn-cerrar"   onclick="cambiarEstado(${t.id}, 'cerrado')">Marcar cerrado</button>
-            <button class="btn-accion btn-cancelar" onclick="cambiarEstado(${t.id}, 'cancelado')">Cancelar</button>
-            <button class="btn-accion btn-eliminar-tradeo" onclick="eliminarTradeo(${t.id})">Eliminar</button>
+            <button class="btn-accion btn-cerrar" type="button" data-accion="estado" data-tradeo-id="${t.id}" data-estado="cerrado">Marcar cerrado</button>
+            <button class="btn-accion btn-cancelar" type="button" data-accion="estado" data-tradeo-id="${t.id}" data-estado="cancelado">Cancelar</button>
+            <button class="btn-accion btn-eliminar-tradeo" type="button" data-accion="eliminar" data-tradeo-id="${t.id}">Eliminar</button>
         ` : `
-            <button class="btn-accion btn-eliminar-tradeo" onclick="eliminarTradeo(${t.id})">Eliminar</button>
+            <button class="btn-accion btn-eliminar-tradeo" type="button" data-accion="eliminar" data-tradeo-id="${t.id}">Eliminar</button>
         `;
 
         return `
-        <div class="tradeo-card" id="tradeo-${t.id}">
-            <div class="tradeo-card-header">
-                <span class="tradeo-fecha">${fecha}</span>
+        <div class="mistradeo-card" id="tradeo-${t.id}">
+            <div class="mistradeo-card-header">
+                <span class="mistradeo-fecha">${fecha}</span>
                 ${badge}
             </div>
             <div class="tradeo-cartas">
@@ -62,20 +88,19 @@ function renderizarTradeos(tradeos) {
                     <div class="cartas-miniaturas">${buscaMinis}</div>
                 </div>
             </div>
-            ${t.descripcion ? `<p class="tradeo-descripcion">"${t.descripcion}"</p>` : ''}
+            ${t.descripcion ? `<p class="mistradeo-descripcion">"${escapeHtml(t.descripcion)}"</p>` : ''}
             <div class="tradeo-acciones">${botonesAccion}</div>
         </div>`;
     }).join('');
 }
 
 function badgeEstado(estado) {
-    const clases   = { activo: 'badge-activo', cerrado: 'badge-cerrado', cancelado: 'badge-cancelado' };
+    const clases    = { activo: 'badge-activo', cerrado: 'badge-cerrado', cancelado: 'badge-cancelado' };
     const etiquetas = { activo: 'Activo', cerrado: 'Cerrado', cancelado: 'Cancelado' };
     return `<span class="badge-estado ${clases[estado] || ''}">${etiquetas[estado] || estado}</span>`;
 }
 
 function filtrarPorEstado(estado, boton) {
-    filtroActual = estado;
     document.querySelectorAll('.btn-filtro').forEach(b => b.classList.remove('activo'));
     boton.classList.add('activo');
 

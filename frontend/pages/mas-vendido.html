@@ -3,60 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
     <title>Más demandadas - PokeTrade</title>
     <meta name="description" content="Las cartas Pokémon más buscadas y ofrecidas en tradeos activos de PokeTrade.">
+    <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
-    <style>
-        .mv-contenedor {
-            max-width: 1200px;
-            margin: 2.5rem auto;
-            padding: 0 2rem;
-        }
-        .mv-contenedor h1 {
-            font-family: var(--font-display);
-            font-size: 1.75rem;
-            font-weight: 700;
-            margin-bottom: 0.35rem;
-            color: var(--texto);
-        }
-        .mv-contenedor .subtitulo {
-            color: var(--muted);
-            font-size: 0.925rem;
-            margin-bottom: 2rem;
-        }
-        /* Carta de ranking */
-        .mv-card { position: relative; }
-        .mv-posicion {
-            position: absolute;
-            top: 0.55rem;
-            left: 0.55rem;
-            font-size: 1.15rem;
-            line-height: 1;
-            z-index: 1;
-            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
-        }
-        /* Top 3: borde dorado */
-        .mv-card:nth-child(1) { border-color: #f59e0b !important; box-shadow: 0 4px 16px rgba(245,158,11,0.2) !important; }
-        .mv-card:nth-child(2) { border-color: #94a3b8 !important; box-shadow: 0 4px 12px rgba(148,163,184,0.2) !important; }
-        .mv-card:nth-child(3) { border-color: #cd7c3b !important; box-shadow: 0 4px 12px rgba(205,124,59,0.15) !important; }
-        .mv-contador {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.2rem;
-            margin-top: 0.4rem;
-            background: var(--primario-soft);
-            color: var(--primario);
-            font-size: 0.75rem;
-            font-weight: 700;
-            padding: 0.2rem 0.55rem;
-            border-radius: 20px;
-        }
-
-        /* ── Responsive ── */
-        @media (max-width: 768px) {
-            .mv-contenedor { padding: 0 1rem; margin: 1.5rem auto; }
-        }
-    </style>
 </head>
 <body>
     <div id="app-header"></div>
@@ -68,9 +19,10 @@
 
             <div id="error-box" class="alerta-error" hidden role="alert">
                 <span id="error-msg">No se pudieron cargar los datos.</span>
+                <button id="btn-reintentar-mv" type="button">Reintentar</button>
             </div>
 
-            <div id="grid-mas-vendido" class="grid-cartas" aria-live="polite" aria-busy="true">
+            <div id="grid-mas-vendido" class="grid-cartas" aria-live="polite">
                 <div class="carta-card skeleton" aria-hidden="true"></div>
                 <div class="carta-card skeleton" aria-hidden="true"></div>
                 <div class="carta-card skeleton" aria-hidden="true"></div>
@@ -83,13 +35,9 @@
         </div>
     </main>
 
-    <footer>
-        <p>© 2026 PokeTrade · <a href="aviso-legal.html">Aviso legal</a> · <a href="privacidad.html">Privacidad</a> · <a href="contacto.html">Soporte</a></p>
-    </footer>
+    <div id="app-footer"></div>
 
-    <script src="../js/auth.js"></script>
-    <script src="../js/header.js"></script>
-    <script src="../js/utils.js"></script>
-    <script src="../js/mas-vendido.js"></script>
+    <script type="module" src="../js/header.js"></script>
+    <script type="module" src="../js/mas-vendido.js"></script>
 </body>
 </html>
