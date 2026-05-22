@@ -6,8 +6,6 @@ import { pokemonACarta, traducirTipo, escapeHtml, mostrarAlerta } from './utils.
 
 let cartaActual = null;
 
-// El catálogo se limita a los 1010 primeros Pokémon (igual que catalogo.js),
-// así que la navegación entre cartas se mueve dentro de ese rango.
 const MAX_POKEMON = 1010;
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -29,8 +27,7 @@ window.addEventListener('popstate', () => {
 });
 
 async function cargarDetalle(id) {
-    // Skeleton mientras carga (también da feedback al cambiar de carta
-    // con las flechas y evita dobles clics durante la petición).
+    // Skeleton mientras carga
     document.getElementById('contenido-detalle').innerHTML =
         '<div class="skeleton-detalle"></div>';
 
@@ -91,7 +88,7 @@ function renderizarDetalle(carta) {
             </div>
         </div>` : '';
 
-    // Todos los tipos del Pokémon (algunos tienen 2)
+    // Todos los tipos del Pokémon
     const tiposHTML = carta.tipos
         ? carta.tipos.map(t => `<span class="badge-tipo">${escapeHtml(traducirTipo(t.type.name))}</span>`).join(' ')
         : carta.tipo ? `<span class="badge-tipo">${escapeHtml(carta.tipo)}</span>` : '';
@@ -149,7 +146,7 @@ function renderizarDetalle(carta) {
         ${statsHTML}
     `;
 
-    // Enlazar el botón de inventario (sin onclick en línea)
+    // Enlazar el botón de inventario
     document.getElementById('btn-add-inventario')
         ?.addEventListener('click', () => anadirAInventario(carta));
 
@@ -160,8 +157,7 @@ function renderizarDetalle(carta) {
         ?.addEventListener('click', () => irACarta(idSiguiente));
 }
 
-// Navega a otra carta sin recargar toda la página: actualiza la URL
-// (para que atrás/adelante del navegador funcionen) y repinta el detalle.
+// Navega a otra carta sin recargar toda la página
 function irACarta(id) {
     if (id < 1 || id > MAX_POKEMON) return;
     history.pushState(null, '', `?id=${id}`);
@@ -191,8 +187,7 @@ function claseStat(valor) {
     return 'muy-baja';
 }
 
-// El detalle se nutre de la PokeAPI, cuyos IDs NO coinciden con los de la
-// tabla cartas del backend. Por eso enviamos los datos completos del Pokémon:
+// El detalle se nutre de la PokeAPI. Por eso enviamos los datos completos del Pokémon:
 // el backend lo busca por numero (nº de Pokédex) y, si no está en el
 // catálogo, lo crea en el momento. Así funciona para cualquier Pokémon.
 async function anadirAInventario(carta) {

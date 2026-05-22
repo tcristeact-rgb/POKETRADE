@@ -17,8 +17,6 @@ export function formatearFecha(iso) {
     return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
-// Uso: mostrarAlerta(msg, tipo)              → muestra en #alerta
-//      mostrarAlerta(msg, tipo, elementoId)  → muestra en #elementoId
 export function mostrarAlerta(msg, tipo, elementoId = 'alerta') {
     const el = document.getElementById(elementoId);
     if (!el) return;
@@ -29,9 +27,6 @@ export function mostrarAlerta(msg, tipo, elementoId = 'alerta') {
     el._alertaTimeout = setTimeout(() => { el.className = 'alerta'; el.textContent = ''; }, 4000);
 }
 
-// Tarjeta de carta compartida por catálogo, novedades, inicio y más vendidas.
-// Toda la tarjeta es un enlace <a>: accesible con teclado de forma nativa
-// (sin manejadores onclick en línea ni botones redundantes).
 export function tarjetaCarta(carta) {
     const nombre = carta.nombre || 'Sin nombre';
     const id     = carta.id || 0;
@@ -95,7 +90,7 @@ export function cerrarModalAccesible() {
     _focoPrevioModal = null;
 }
 
-// Miniaturas de cartas para tarjetas de tradeo (marketplace y mis tradeos)
+// Miniaturas de cartas para tarjetas de trade
 export function miniaturas(cartas) {
     if (!cartas?.length) return '<span class="miniaturas-vacio">—</span>';
     return cartas.map(c => `
@@ -126,12 +121,12 @@ export function pokemonACarta(p) {
         stats:         p.stats,
         altura:        p.height,
         peso:          p.weight,
-        tipos:         p.types,         // Todos los tipos (algunos tienen 2)
+        tipos:         p.types,         
         habilidades:   p.abilities,
     };
 }
 
-// Capitaliza el nombre del Pokémon (ej: "charizard" → "Charizard")
+// Capitaliza el nombre del Pokémon 
 export function capitalizarNombre(nombre) {
     return nombre.charAt(0).toUpperCase() + nombre.slice(1);
 }

@@ -1,8 +1,5 @@
 // ===================================================
-// login.js — Inicio de sesión (módulo ES6)
-// Reutiliza la función login() de auth.js (sin duplicar
-// la petición). Bloquea el botón para evitar envíos
-// duplicados y avisa si el registro fue correcto.
+// login.js — Inicio de sesión 
 // ===================================================
 
 import { login } from './auth.js';
@@ -41,7 +38,6 @@ async function iniciarSesion(e) {
 
   try {
     // login() guarda la sesión y redirige automáticamente
-    // (al destino previo guardado o al inicio).
     await login(email, password);
   } catch (error) {
     errorMensaje.textContent = error.message || 'Correo o contraseña incorrectos.';

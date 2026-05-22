@@ -1,4 +1,4 @@
-// perfil.js — Edición de perfil y cambio de contraseña (módulo ES6)
+// perfil.js — Edición de perfil y cambio de contraseña
 
 import { API_URL, headersAuth, protegerRuta, obtenerUsuario, manejarErrorHTTP, parsearRespuesta, renderizarMenu, paginaUrl } from './auth.js';
 import { mostrarAlerta } from './utils.js';
@@ -38,9 +38,6 @@ function previsualizarAvatar() {
     actualizarAvatar(document.getElementById('avatar_url').value.trim());
 }
 
-// Construye la vista previa del avatar. Si la imagen falla al cargar
-// se sustituye por un marcador (el manejo de error se enlaza con JS,
-// sin atributos onerror en línea).
 function actualizarAvatar(url) {
     const contenedor = document.getElementById('avatar-container');
     contenedor.innerHTML = '';
