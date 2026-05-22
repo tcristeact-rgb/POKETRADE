@@ -10,7 +10,8 @@ class UsuariosSeeder extends Seeder
 {
     public function run(): void
     {
-        // --- Usuario administrador ---
+        //NO IMPLEMENTADO EN LA VERSION FINAL
+        // --- Usuario administrador --- 
         // Tiene rol 'admin' para poder acceder a las rutas protegidas por EsAdmin
         User::create([
             'nombre'       => 'Admin',

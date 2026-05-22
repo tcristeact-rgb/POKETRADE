@@ -13,6 +13,7 @@ class AuthController extends Controller
     // --- Registro de nuevo usuario ---
     // Endpoint: POST /api/auth/registro
     // Acceso: público (sin token)
+    
     public function registro(Request $request)
     {
         // Validamos los datos recibidos en el body de la petición

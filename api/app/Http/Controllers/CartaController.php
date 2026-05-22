@@ -36,8 +36,9 @@ class CartaController extends Controller
             $query->where('rareza', $request->rareza);
         }
 
+        //NO IMPLEMENTADO EN LA VERSION FINAL
         // Filtro por set de expansión — búsqueda exacta
-        // Ejemplo: ?set=Fossil → devuelve solo cartas del set Fossil
+        // Ejemplo: ?set=Fossil → devuelve solo cartas del set Fossil 
         if ($request->has('set')) {
             $query->where('set_expansion', $request->set);
         }
@@ -89,6 +90,7 @@ class CartaController extends Controller
         return response()->json($carta, 201);
     }
 
+    //NO IMPLEMENTADO EN LA VERSION FINAL
     // --- Actualizar una carta existente ---
     // Endpoint: PUT /api/cartas/{id}
     // Acceso: protegido — solo administradores (middleware EsAdmin)
@@ -110,6 +112,7 @@ class CartaController extends Controller
         return response()->json($carta);
     }
 
+    //NO IMPLEMENTADO EN LA VERSION FINAL
     // --- Eliminar una carta ---
     // Endpoint: DELETE /api/cartas/{id}
     // Acceso: protegido — solo administradores (middleware EsAdmin)
