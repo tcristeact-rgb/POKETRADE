@@ -15,7 +15,7 @@ class InventarioSeeder extends Seeder
         // carta_id → id de la carta (referencia a la tabla cartas)
         // cantidad → cuántas copias tiene el usuario de esa carta
         $datos = [
-            // --- Inventario de Daniel (user_id: 1) ---
+            // --- Inventario de Admin (user_id: 1) ---
             ['user_id' => 1, 'carta_id' => 1, 'cantidad' => 1], // 1x Charizard
             ['user_id' => 1, 'carta_id' => 2, 'cantidad' => 2], // 2x Pikachu
             ['user_id' => 1, 'carta_id' => 4, 'cantidad' => 1], // 1x Blastoise

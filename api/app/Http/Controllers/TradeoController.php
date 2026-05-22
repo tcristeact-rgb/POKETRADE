@@ -56,14 +56,37 @@ class TradeoController extends Controller
             'cartas_busca'  => 'required|array|min:1',     // Al menos 1 carta buscada
         ]);
 
-        // Si la validación falla devolvemos el primer error con código 400
+        // Si la validación falla devolvemos el primer error con código 422
         if ($validacion->fails()) {
-            return response()->json(['error' => $validacion->errors()->first()], 400);
+            return response()->json(['error' => $validacion->errors()->first()], 422);
         }
 
         try {
             // Iniciamos la transacción — si algo falla se revierten todos los cambios
             DB::beginTransaction();
+
+            // Retiramos del inventario del usuario las cartas que va a ofrecer,
+            // dentro de la misma transacción que la creación del tradeo. Se
+            // verifica la propiedad y se descuenta por cantidad (no se borra la
+            // fila entera si el usuario tiene varias copias de la carta).
+            foreach ($request->cartas_ofrece as $cartaId) {
+                $entrada = Inventario::where('user_id', auth()->id())
+                    ->where('carta_id', $cartaId)
+                    ->first();
+
+                if (!$entrada) {
+                    DB::rollBack();
+                    return response()->json([
+                        'error' => 'No tienes en tu inventario alguna de las cartas que intentas ofrecer.'
+                    ], 422);
+                }
+
+                if ($entrada->cantidad > 1) {
+                    $entrada->decrement('cantidad');
+                } else {
+                    $entrada->delete();
+                }
+            }
 
             // Creamos el tradeo principal
             $tradeo = Tradeo::create([
@@ -73,7 +96,6 @@ class TradeoController extends Controller
             ]);
 
             // Asociamos las cartas que ofrece en la tabla pivote tradeo_cartas_ofrece
-            // attach() recibe un array de IDs y crea las filas en la tabla pivote
             $tradeo->cartasOfrece()->attach($request->cartas_ofrece);
 
             // Las cartas buscadas pueden llegar como datos completos de Pokémon
@@ -85,19 +107,19 @@ class TradeoController extends Controller
             DB::commit();
 
             // Devolvemos 201 con el tradeo completo incluyendo las cartas asociadas
-            // load() recarga las relaciones después de hacer el attach()
             return response()->json([
                 'mensaje' => 'Tradeo publicado correctamente',
                 'tradeo'  => $tradeo->load(['cartasOfrece', 'cartasBusca'])
             ], 201);
 
+        } catch (\InvalidArgumentException $e) {
+            // Datos de una carta buscada incompletos: error del cliente
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 422);
         } catch (\Exception $e) {
             // Si algo falla revertimos todos los cambios de la transacción
-            // Así no quedan tradeos sin cartas o cartas huérfanas en las tablas pivote
             DB::rollBack();
-            return response()->json([
-                'error' => $e->getMessage()
-            ], 500);
+            return response()->json(['error' => 'No se pudo publicar el tradeo.'], 500);
         }
     }
 
@@ -109,8 +131,11 @@ class TradeoController extends Controller
         $ids = [];
         foreach ($cartas as $c) {
             if (is_array($c)) {
+                if (empty($c['numero'])) {
+                    throw new \InvalidArgumentException('Falta el número de Pokédex de una carta buscada.');
+                }
                 $carta = Carta::firstOrCreate(
-                    ['numero' => $c['numero'] ?? null],
+                    ['numero' => $c['numero']],
                     [
                         'nombre'        => $c['nombre']        ?? 'Carta',
                         'tipo'          => $c['tipo']          ?? null,
@@ -147,7 +172,15 @@ class TradeoController extends Controller
             return response()->json(['error' => 'No tienes permiso para modificar este tradeo'], 403);
         }
 
-        // Actualizamos el estado del tradeo (ej: 'cerrado' o 'cancelado')
+        // Validamos que el estado recibido sea uno de los permitidos
+        $validacion = Validator::make($request->all(), [
+            'estado' => 'required|in:cerrado,cancelado',
+        ]);
+        if ($validacion->fails()) {
+            return response()->json(['error' => $validacion->errors()->first()], 422);
+        }
+
+        // Actualizamos el estado del tradeo ('cerrado' o 'cancelado')
         $tradeo->update(['estado' => $request->estado]);
 
         return response()->json(['mensaje' => 'Tradeo actualizado correctamente']);
@@ -237,14 +270,21 @@ class TradeoController extends Controller
             $aceptanteId = auth()->id();
             $creadorId   = $tradeo->user_id;
 
-            // 1. Quitar cartas_busca del inventario del aceptante
+            // 1. Quitar cartas_busca del inventario del aceptante.
+            //    Se descuenta por cantidad: si tiene varias copias se resta una
+            //    y solo se borra la fila cuando se queda sin copias.
             foreach ($tradeo->cartasBusca as $carta) {
-                $eliminado = Inventario::where('user_id', $aceptanteId)
+                $entrada = Inventario::where('user_id', $aceptanteId)
                     ->where('carta_id', $carta->id)
-                    ->delete();
-                if (!$eliminado) {
+                    ->first();
+                if (!$entrada) {
                     DB::rollBack();
                     return response()->json(['error' => "No tienes la carta requerida: {$carta->nombre}"], 422);
+                }
+                if ($entrada->cantidad > 1) {
+                    $entrada->decrement('cantidad');
+                } else {
+                    $entrada->delete();
                 }
             }
 
@@ -279,7 +319,7 @@ class TradeoController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['error' => 'Error durante el intercambio: ' . $e->getMessage()], 500);
+            return response()->json(['error' => 'No se pudo completar el intercambio.'], 500);
         }
     }
 }
