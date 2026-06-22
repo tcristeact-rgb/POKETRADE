@@ -267,6 +267,20 @@ class TradeoController extends Controller
         try {
             DB::beginTransaction();
 
+            // Bloqueamos la fila del tradeo y la recargamos dentro de la transacción.
+            // La comprobación de estado anterior es solo un filtro rápido sin bloqueo:
+            // dos usuarios podrían pasarla a la vez. lockForUpdate() serializa el acceso
+            // a esta fila, de modo que el segundo en entrar espera al primero y, al
+            // re-verificar el estado, ve que el tradeo ya está cerrado y se detiene.
+            $tradeo = Tradeo::with(['cartasOfrece', 'cartasBusca'])
+                ->lockForUpdate()
+                ->find($id);
+
+            if (!$tradeo || $tradeo->estado !== 'activo') {
+                DB::rollBack();
+                return response()->json(['error' => 'Este tradeo ya no está disponible'], 409);
+            }
+
             $aceptanteId = auth()->id();
             $creadorId   = $tradeo->user_id;
 
