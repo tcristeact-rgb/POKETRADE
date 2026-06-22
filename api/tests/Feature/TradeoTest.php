@@ -7,6 +7,7 @@ use Tests\TestCase;
 use App\Models\User;
 use App\Models\Carta;
 use App\Models\Tradeo;
+use App\Models\Inventario;
 
 class TradeoTest extends TestCase
 {
@@ -74,6 +75,14 @@ class TradeoTest extends TestCase
         $carta1  = $this->crearCarta('Pikachu');
         $carta2  = $this->crearCarta('Mewtwo');
 
+        // El controlador exige que el usuario tenga en su inventario las cartas
+        // que va a ofrecer (las retira al publicar el tradeo), así que se la añadimos
+        Inventario::create([
+            'user_id'  => $usuario->id,
+            'carta_id' => $carta1->id,
+            'cantidad' => 1,
+        ]);
+
         // Generamos el token JWT del usuario
         $token = auth()->login($usuario);
 
@@ -111,8 +120,8 @@ class TradeoTest extends TestCase
                               'cartas_busca'  => [], // Array vacío — debe fallar
                           ]);
 
-        // Debe devolver 400 porque la validación exige al menos 1 carta
-        $respuesta->assertStatus(400);
+        // Debe devolver 422 porque la validación exige al menos 1 carta
+        $respuesta->assertStatus(422);
     }
 
     // --- Test 5: Solo el propietario puede eliminar su tradeo ---

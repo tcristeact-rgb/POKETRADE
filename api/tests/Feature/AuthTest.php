@@ -57,8 +57,8 @@ class AuthTest extends TestCase
             'password' => '123456',
         ]);
 
-        // Debe devolver 400 (error de validación)
-        $respuesta->assertStatus(400);
+        // Debe devolver 422 (error de validación: email ya existe)
+        $respuesta->assertStatus(422);
     }
 
     // --- Test 3: Login exitoso ---
@@ -95,8 +95,8 @@ class AuthTest extends TestCase
             'password' => 'wrongpassword',
         ]);
 
-        // Debe devolver 400 con el mensaje de error correspondiente
-        $respuesta->assertStatus(400)
+        // Debe devolver 401 (no autorizado) con el mensaje de error correspondiente
+        $respuesta->assertStatus(401)
                   ->assertJsonFragment(['error' => 'Email o contraseña incorrectos']);
     }
 
@@ -109,7 +109,7 @@ class AuthTest extends TestCase
             'nombre' => 'Solo nombre',
         ]);
 
-        // Debe devolver 400 (error de validación)
-        $respuesta->assertStatus(400);
+        // Debe devolver 422 (error de validación: faltan campos obligatorios)
+        $respuesta->assertStatus(422);
     }
 }
