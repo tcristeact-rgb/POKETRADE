@@ -27,7 +27,7 @@ datos de usuarios, inventario y tradeos se gestionan con una API REST propia.
 | Frontend    | JavaScript ES6 (módulos `import`/`export`), HTML5, CSS3 |
 | Backend     | Laravel 12 + autenticación JWT (carpeta `api/`)         |
 | API externa | PokeAPI v2                                              |
-| Tests       | Jest (pruebas unitarias del frontend)                   |
+| Tests       | PHPUnit (pruebas de la API en `api/tests/`)             |
 
 El frontend es **vanilla JS**: sin frameworks, organizado en módulos ES6.
 
@@ -40,8 +40,8 @@ POKETRADE/
 ├── api/                  Backend Laravel
 ├── frontend/
 │   ├── index.html        Página de inicio
-│   ├── 404.html          Página de error 404
-│   ├── favicon.svg
+│   ├── robots.txt
+│   ├── sitemap.xml
 │   ├── css/
 │   │   └── estilos.css   Hoja de estilos única (todo el CSS centralizado)
 │   ├── js/
@@ -50,9 +50,8 @@ POKETRADE/
 │   │   ├── header.js     Inyecta la cabecera y el pie comunes
 │   │   ├── utils.js      Utilidades compartidas
 │   │   └── *.js          Un módulo por página
-│   ├── pages/            Resto de páginas HTML
-│   ├── tests/            Pruebas unitarias (Jest)
-│   └── package.json
+│   ├── img/              Imágenes y favicon
+│   └── pages/            Resto de páginas HTML (incluye 404.html)
 └── README.md
 ```
 
@@ -74,6 +73,13 @@ php artisan migrate --seed
 php artisan serve            # queda sirviendo en http://localhost:8000
 ```
 
+> **CORS.** Los orígenes permitidos se controlan con la variable `FRONTEND_URL`
+> del `.env` (lista separada por comas, sin barra final). Por defecto cubre los
+> puertos habituales de desarrollo local (Live Server y `npx serve`). En
+> **producción** hay que fijarla a la URL real del frontend, por ejemplo:
+> `FRONTEND_URL=https://poketrade.tudominio.com`. Evita usar `*`: dejaría la API
+> abierta a cualquier origen.
+
 ### 2. Frontend
 
 El frontend usa **módulos ES6**, por lo que **debe servirse mediante HTTP**
@@ -92,14 +98,15 @@ define `window.POKETRADE_API_URL` antes de cargar los scripts.
 
 ## Pruebas
 
-```bash
-cd frontend
-npm install      # instala Jest (solo la primera vez)
-npm test         # ejecuta las pruebas unitarias
-```
+La API incluye pruebas de integración con **PHPUnit** (carpeta
+[`api/tests/`](api/tests/)) que cubren autenticación, catálogo de cartas y
+tradeos. Se ejecutan sobre una base de datos **SQLite en memoria**, por lo que
+no necesitan ninguna configuración de base de datos adicional:
 
-Las pruebas cubren las funciones puras de [`frontend/js/utils.js`](frontend/js/utils.js)
-(escape de HTML, cálculo de rareza y generación, traducción de tipos…).
+```bash
+cd api
+php artisan test
+```
 
 ---
 
@@ -114,7 +121,7 @@ Las pruebas cubren las funciones puras de [`frontend/js/utils.js`](frontend/js/u
 - `POST /api/auth/logout`
 - `GET/PUT /api/usuario/perfil` · `PUT /api/usuario/password`
 - `GET/POST /api/inventario` · `DELETE /api/inventario/{id}`
-- `POST/PUT/DELETE /api/tradeos` · `GET /api/mis-tradeos`
+- `POST/PUT/DELETE /api/tradeos` · `POST /api/tradeos/{id}/aceptar` · `GET /api/mis-tradeos`
 
 ---
 
