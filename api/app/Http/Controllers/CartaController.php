@@ -18,10 +18,14 @@ class CartaController extends Controller
         // Iremos añadiendo filtros dinámicamente según los parámetros recibidos
         $query = Carta::query();
 
-        // Filtro por nombre — búsqueda parcial con LIKE
+        // Filtro por nombre — búsqueda parcial e insensible a mayúsculas
         // Ejemplo: ?nombre=char → devuelve Charizard
+        // PostgreSQL distingue mayúsculas con LIKE, por eso en ese motor
+        // usamos ILIKE (insensible). SQLite/MySQL ya son insensibles con
+        // LIKE y no soportan ILIKE, así que ahí mantenemos LIKE.
         if ($request->has('nombre')) {
-            $query->where('nombre', 'like', '%' . $request->nombre . '%');
+            $operadorLike = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+            $query->where('nombre', $operadorLike, '%' . $request->nombre . '%');
         }
 
         // Filtro por tipo — búsqueda exacta

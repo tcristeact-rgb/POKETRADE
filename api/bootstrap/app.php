@@ -16,6 +16,12 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\HandleCors::class,
         ]);
 
+        // En Render (y en general detrás de un proxy/load balancer) la app
+        // recibe las peticiones a través del proxy, no del cliente directo.
+        // Confiar en el proxy permite a Laravel detectar correctamente el
+        // esquema HTTPS y la IP real del cliente desde las cabeceras X-Forwarded-*.
+        $middleware->trustProxies(at: '*');
+
         // Alias del middleware de administrador, usado en routes/api.php
         $middleware->alias([
             'es.admin' => \App\Http\Middleware\EsAdmin::class,
