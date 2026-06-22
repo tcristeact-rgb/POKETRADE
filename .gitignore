@@ -3,3 +3,7 @@ node_modules/
 dist/
 .DS_Store
 CLAUDE.md
+
+# Artefactos de despliegue (no forman parte del código fuente)
+PokeTrade_Despliegue/
+PokeTrade_Despliegue.zip
