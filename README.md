@@ -86,12 +86,7 @@ Frontend (must be served over HTTP, not `file://`)
 npx serve frontend          # or use VS Code Live Server
 ```
 
-Demo accounts (seeded locally only — production starts with an empty database):
-
-| Role | Email | Password |
-|---|---|---|
-| Admin | admin@poketrade.es | admin123 |
-| User | teo@poketrade.es | 123456 |
+Running `php artisan migrate --seed` populates your local database with sample data (cards, users and trades) so you can explore the app right away during development. The production database starts empty and is not seeded, so on the live demo you can simply sign up to try it.
 
 ## Testing
 
