@@ -47,16 +47,32 @@
   --sombra-hover:    0 8px 28px rgba(0,0,0,0.11), 0 4px 8px rgba(0,0,0,0.06);
   --sombra-card:     0 2px 8px rgba(0,0,0,0.06);
 
-  /* Transiciones */
-  --trans:           0.2s ease;
-  --trans-fast:      0.12s ease;
+  /* Movimiento — las animaciones futuras deben animar únicamente
+     transform y opacity (composited); nunca width/height/top/left. */
+  --transition-fast: 150ms;
+  --transition-base: 250ms;
+  --ease-out:        cubic-bezier(0.22, 1, 0.36, 1);
+  --trans:           var(--transition-base) var(--ease-out);
+  --trans-fast:      var(--transition-fast) var(--ease-out);
 
-  /* Tipografía — una sola familia en todo el sitio: DM Sans.
-     Sustituye a Syne (display), cuyas proporciones achatadas restaban
-     legibilidad. DM Sans tiene buena altura de x y letras bien
-     diferenciadas, más adecuada según los principios de accesibilidad. */
-  --font-display:    'DM Sans', sans-serif;
+  /* Tipografía — tokens semánticos. Hoy las tres familias apuntan a
+     DM Sans; el cambio de fuente se hace solo en estas tres líneas.
+     --font-heading: titulares y h1-h3 · --font-body: texto corrido y
+     controles · --font-display: cifras grandes, contadores y badges. */
+  --font-heading:    'DM Sans', sans-serif;
   --font-body:       'DM Sans', sans-serif;
+  --font-display:    var(--font-heading);
+
+  /* Escala tipográfica */
+  --text-xs:         0.75rem;
+  --text-sm:         0.875rem;
+  --text-base:       1rem;
+  --text-lg:         1.1rem;
+  --text-xl:         1.5rem;
+  --text-2xl:        1.75rem;
+  --text-3xl:        3rem;
+  --leading-tight:   1.2;
+  --leading-normal:  1.6;
 
   /* Layout */
   --max-w:           1200px;
@@ -104,11 +120,24 @@
 [hidden] { display: none !important; }
 html { scroll-behavior: smooth; overflow-x: hidden; }
 
+/* ── Accesibilidad: usuarios con movimiento reducido (WCAG 2.3.3) ──
+   Desactiva transiciones y animaciones globalmente. Cualquier
+   animación futura queda cubierta sin trabajo extra. */
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 body {
   font-family: var(--font-body);
+  font-size: var(--text-base);
   background: var(--fondo);
   color: var(--texto);
-  line-height: 1.6;
+  line-height: var(--leading-normal);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -188,7 +217,7 @@ nav {
 
 /* Logo */
 .logo {
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
   font-size: 1.3rem;
   font-weight: 800;
   color: white;
@@ -242,7 +271,7 @@ nav {
 .nav-links a {
   color: rgba(255,255,255,0.78);
   text-decoration: none;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 500;
   padding: 0.45rem 0.9rem;
   border-radius: var(--radius-sm);
@@ -265,7 +294,7 @@ nav {
 #menu-usuario a {
   color: rgba(255,255,255,0.82);
   text-decoration: none;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 500;
   padding: 0.45rem 0.9rem;
   border-radius: var(--radius-sm);
@@ -303,7 +332,7 @@ nav {
   outline: none;
   color: white;
   font-family: var(--font-body);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   width: 190px;
 }
 .buscador-contenedor input::placeholder { color: rgba(255,255,255,0.45); }
@@ -346,7 +375,7 @@ nav {
 #menu-no-auth a:first-child {
   color: rgba(255,255,255,0.82);
   text-decoration: none;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 500;
   padding: 0.4rem 0.75rem;
   border-radius: var(--radius-sm);
@@ -360,7 +389,7 @@ nav {
   border: 1px solid rgba(255,255,255,0.18);
   color: white;
   font-family: var(--font-body);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 500;
   cursor: pointer;
   display: flex;
@@ -487,8 +516,8 @@ footer a:hover { color: white; }
 }
 .formulario-contenedor h1,
 .formulario-contenedor h2 {
-  font-family: var(--font-display);
-  font-size: 1.5rem;
+  font-family: var(--font-heading);
+  font-size: var(--text-xl);
   font-weight: 700;
   text-align: center;
   margin-bottom: 1.75rem;
@@ -500,7 +529,7 @@ footer a:hover { color: white; }
   display: block;
   margin-bottom: 0.4rem;
   font-weight: 500;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: var(--texto);
 }
 .formulario-grupo input,
@@ -562,7 +591,7 @@ footer a:hover { color: white; }
 
 .error-texto {
   color: var(--error);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   margin-bottom: 1rem;
   min-height: 1.2rem;
   font-weight: 500;
@@ -570,7 +599,7 @@ footer a:hover { color: white; }
 .formulario-pie {
   text-align: center;
   margin-top: 1.25rem;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: var(--muted);
 }
 .formulario-pie a {
@@ -582,7 +611,7 @@ footer a:hover { color: white; }
 
 /* ── Ayudas contextuales, errores por campo y validación ── */
 .formulario-intro {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: var(--muted);
   text-align: center;
   margin: -1rem 0 1.5rem;
@@ -624,8 +653,8 @@ footer a:hover { color: white; }
   padding: 0 2rem;
 }
 .catalogo-contenedor h1 {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
   font-weight: 700;
   margin-bottom: 0.35rem;
   color: var(--texto);
@@ -716,7 +745,7 @@ footer a:hover { color: white; }
   flex: 1;
 }
 .carta-info h3 {
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
   font-size: 0.9rem;
   font-weight: 700;
   color: var(--texto);
@@ -833,7 +862,7 @@ footer a:hover { color: white; }
   color: white;
 }
 .hero h1 {
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
   font-size: 2.5rem;
   font-weight: 800;
   margin-bottom: 1rem;
@@ -856,8 +885,8 @@ footer a:hover { color: white; }
   border-bottom: 1px solid var(--borde);
 }
 .como-funciona h2 {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
   font-weight: 700;
   margin-bottom: 2.5rem;
   color: var(--texto);
@@ -879,13 +908,13 @@ footer a:hover { color: white; }
 .paso:hover { transform: translateY(-3px); box-shadow: var(--sombra); }
 .paso-icono { display: flex; justify-content: center; font-size: 2.5rem; line-height: 1; margin-bottom: 0.75rem; }
 .paso h3 {
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
   font-weight: 700;
   margin-bottom: 0.5rem;
   color: var(--primario);
   font-size: 1rem;
 }
-.paso p { font-size: 0.875rem; color: var(--muted); }
+.paso p { font-size: var(--text-sm); color: var(--muted); }
 
 /* ══════════════════════════════════════════════════
    VACIO MSG
@@ -913,7 +942,7 @@ footer a:hover { color: white; }
   box-shadow: var(--sombra-sm);
 }
 .seccion-card h2 {
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
   font-size: 1rem;
   font-weight: 700;
   margin-bottom: 0.85rem;
@@ -1025,7 +1054,7 @@ footer a:hover { color: white; }
   box-shadow: 0 8px 32px rgba(0,0,0,0.25);
   z-index: 9999;
   font-family: var(--font-body);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   max-width: 340px;
   opacity: 0;
   transform: translateY(12px);
@@ -1207,7 +1236,7 @@ footer a:hover { color: white; }
   color: rgba(255,255,255,0.65);
   cursor: pointer;
   font-family: var(--font-body);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   text-align: left;
   transition: background var(--trans), color var(--trans), border-color var(--trans);
 }
@@ -1268,7 +1297,7 @@ body.nav-drawer-abierto { overflow: hidden; }
 .dropdown-menu li button {
   color: var(--texto) !important;
   font-family: var(--font-body) !important;
-  font-size: 0.875rem !important;
+  font-size: var(--text-sm) !important;
   font-weight: 500 !important;
   display: flex !important;
   align-items: center !important;
@@ -1359,10 +1388,10 @@ body.nav-drawer-abierto { overflow: hidden; }
 }
 .hero-contenido { position: relative; z-index: 1; max-width: 660px; }
 .hero h1 {
-  font-family: var(--font-display);
-  font-size: 3rem;
+  font-family: var(--font-heading);
+  font-size: var(--text-3xl);
   font-weight: 800;
-  line-height: 1.15;
+  line-height: var(--leading-tight);
   margin: 0 0 1.1rem;
   color: white;
   letter-spacing: -0.01em;
@@ -1417,6 +1446,7 @@ body.nav-drawer-abierto { overflow: hidden; }
 .stat-item:hover { transform: translateY(-3px); background: rgba(255,255,255,0.1); }
 .stat-numero {
   font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
   font-size: 2.2rem;
   font-weight: 800;
   color: var(--color-primario);
@@ -1455,7 +1485,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   padding-bottom: 0.85rem;
 }
 .seccion-header h2 {
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
   font-size: 1.6rem;
   font-weight: 700;
   margin: 0;
@@ -1464,7 +1494,7 @@ body.nav-drawer-abierto { overflow: hidden; }
 .ver-todos {
   color: var(--primario);
   text-decoration: none;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   display: flex;
   align-items: center;
@@ -1519,7 +1549,7 @@ body.nav-drawer-abierto { overflow: hidden; }
 }
 .cta-contenido { position: relative; z-index: 1; }
 .cta-seccion h2 {
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
   font-size: 2rem;
   font-weight: 800;
   margin: 0 0 0.75rem;
@@ -1543,7 +1573,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   padding: 3rem 2rem 2rem;
 }
 .footer-col h3 {
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
   color: white;
   margin: 0 0 1rem;
   font-size: 0.82rem;
@@ -1602,7 +1632,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   color: var(--texto);
   cursor: pointer;
   font-family: var(--font-body);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 500;
   transition: border-color var(--trans), background var(--trans), color var(--trans);
   min-width: 38px;
@@ -1618,7 +1648,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   gap: 0.4rem;
   margin-left: 0.5rem;
   color: var(--muted);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
 }
 .paginacion-ir label { white-space: nowrap; }
 .input-ir-pagina {
@@ -1629,7 +1659,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   background: var(--fondo-card);
   color: var(--texto);
   font-family: var(--font-body);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   text-align: center;
 }
 .input-ir-pagina:focus {
@@ -1640,7 +1670,7 @@ body.nav-drawer-abierto { overflow: hidden; }
 .paginacion-info {
   text-align: center;
   color: var(--muted);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   margin-bottom: 1rem;
 }
 
@@ -1695,8 +1725,8 @@ body.nav-drawer-abierto { overflow: hidden; }
   gap: 1rem;
 }
 .inventario-header h1 {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
   font-weight: 700;
   color: var(--texto);
 }
@@ -1728,8 +1758,8 @@ body.nav-drawer-abierto { overflow: hidden; }
   padding: 0.75rem;
 }
 .carta-inventario h3 {
-  font-family: var(--font-display);
-  font-size: 0.875rem;
+  font-family: var(--font-heading);
+  font-size: var(--text-sm);
   font-weight: 700;
   padding: 0 0.75rem;
   margin: 0.5rem 0 0.2rem;
@@ -1755,7 +1785,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   box-shadow: 0 2px 8px rgba(231,76,60,0.4);
 }
@@ -1795,7 +1825,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   border-bottom: 1px solid var(--borde);
 }
 .inv-modal-header h2 {
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
   font-size: 1.2rem;
   font-weight: 700;
   color: var(--texto);
@@ -1847,8 +1877,8 @@ body.nav-drawer-abierto { overflow: hidden; }
   width: 34px;
   height: 34px;
   border-radius: var(--radius-sm);
-  font-size: 1.1rem;
-  font-weight: bold;
+  font-size: var(--text-lg);
+  font-weight: 700;
   cursor: pointer;
   transition: background var(--trans), transform var(--trans);
   display: flex;
@@ -1858,6 +1888,7 @@ body.nav-drawer-abierto { overflow: hidden; }
 .cantidad-control button:hover { background: var(--primario-hover); transform: scale(1.05); }
 .cantidad-control span {
   font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
   font-weight: 700;
   font-size: 1.15rem;
   min-width: 2ch;
@@ -1874,14 +1905,14 @@ body.nav-drawer-abierto { overflow: hidden; }
   padding: 0 2rem;
 }
 .publicar-contenedor h1 {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
   font-weight: 700;
   margin-bottom: 2rem;
   color: var(--texto);
 }
 .descripcion-seccion {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: var(--muted);
   margin-bottom: 1.25rem;
   line-height: 1.55;
@@ -2051,7 +2082,7 @@ body.nav-drawer-abierto { overflow: hidden; }
 }
 .detalle-info { flex: 1; min-width: 220px; }
 .detalle-info h1 {
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
   font-size: 1.85rem;
   font-weight: 800;
   margin-bottom: 1.25rem;
@@ -2074,7 +2105,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   font-weight: 600;
   color: var(--muted);
   min-width: 90px;
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   text-transform: uppercase;
   letter-spacing: 0.07em;
 }
@@ -2144,7 +2175,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   max-width: none;
   margin: 0 0 1.25rem;
   padding: 0;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: var(--muted);
 }
 .breadcrumb a {
@@ -2170,7 +2201,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   box-shadow: var(--sombra);
 }
 .stats-titulo {
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
   font-size: 1.1rem;
   font-weight: 700;
   margin-bottom: 1.25rem;
@@ -2186,7 +2217,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   grid-template-columns: 110px 40px 1fr;
   align-items: center;
   gap: 0.75rem;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
 }
 .stat-nombre {
   font-weight: 600;
@@ -2235,8 +2266,8 @@ body.nav-drawer-abierto { overflow: hidden; }
   gap: 1rem;
 }
 .tradeos-header h1 {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
   font-weight: 700;
   color: var(--texto);
 }
@@ -2254,7 +2285,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   color: var(--muted);
   cursor: pointer;
   font-family: var(--font-body);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 500;
   transition: border-color var(--trans), color var(--trans), background var(--trans);
 }
@@ -2299,7 +2330,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   font-weight: 700;
 }
 .mistradeo-descripcion {
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: var(--muted);
   margin-bottom: 1rem;
   font-style: italic;
@@ -2335,8 +2366,8 @@ body.nav-drawer-abierto { overflow: hidden; }
   padding: 0 2rem;
 }
 .perfil-contenedor h1 {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
   font-weight: 700;
   margin-bottom: 2rem;
   color: var(--texto);
@@ -2375,7 +2406,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   text-align: center;
 }
 .marketplace-hero h1 {
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
   font-size: 2rem;
   font-weight: 800;
   margin-bottom: 0.5rem;
@@ -2436,7 +2467,7 @@ body.nav-drawer-abierto { overflow: hidden; }
 }
 .contador-resultados {
   color: var(--muted);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 500;
 }
 .grid-tradeos {
@@ -2489,7 +2520,7 @@ body.nav-drawer-abierto { overflow: hidden; }
 }
 .usuario-nombre {
   font-weight: 600;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   color: var(--texto);
 }
 .tradeo-fecha { font-size: 0.775rem; color: var(--muted); }
@@ -2535,7 +2566,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   padding: 0.6rem 1rem;
   border-radius: var(--radius-sm);
   font-family: var(--font-body);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   font-weight: 600;
   cursor: pointer;
   text-align: center;
@@ -2619,7 +2650,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   border-bottom: 1px solid var(--borde);
 }
 .modal-header h3 {
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
   font-size: 1.1rem;
   font-weight: 700;
   color: var(--texto);
@@ -2665,7 +2696,7 @@ body.nav-drawer-abierto { overflow: hidden; }
 .modal-carta-info { flex: 1; min-width: 0; }
 .modal-carta-info strong {
   display: block;
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2675,11 +2706,11 @@ body.nav-drawer-abierto { overflow: hidden; }
 .modal-check { font-size: 0.8rem; font-weight: 700; white-space: nowrap; flex-shrink: 0; }
 .modal-check.exito { color: var(--exito); }
 .modal-check.error { color: var(--primario); }
-.modal-vacio { color: var(--muted); font-size: 0.875rem; font-style: italic; }
+.modal-vacio { color: var(--muted); font-size: var(--text-sm); font-style: italic; }
 .modal-estado {
   padding: 0.65rem 0.9rem;
   border-radius: var(--radius-sm);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   margin-bottom: 1rem;
   border-left: 3px solid;
 }
@@ -2729,8 +2760,8 @@ body.nav-drawer-abierto { overflow: hidden; }
   padding: 0 2rem;
 }
 .novedades-contenedor h1 {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
   font-weight: 700;
   margin-bottom: 0.35rem;
   color: var(--texto);
@@ -2745,8 +2776,8 @@ body.nav-drawer-abierto { overflow: hidden; }
   padding: 0 2rem;
 }
 .mv-contenedor h1 {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
   font-weight: 700;
   margin-bottom: 0.35rem;
   color: var(--texto);
@@ -2771,7 +2802,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   margin-top: 0.4rem;
   background: var(--primario-soft);
   color: var(--primario);
-  font-size: 0.75rem;
+  font-size: var(--text-xs);
   font-weight: 700;
   padding: 0.2rem 0.55rem;
   border-radius: 20px;
@@ -2786,19 +2817,19 @@ body.nav-drawer-abierto { overflow: hidden; }
   padding: 0 2rem 4rem;
 }
 .legal-contenedor h1 {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
   font-weight: 700;
   margin-bottom: 0.3rem;
   color: var(--texto);
 }
 .legal-fecha {
   color: var(--muted);
-  font-size: 0.875rem;
+  font-size: var(--text-sm);
   margin-bottom: 2rem;
 }
 .legal-contenedor h2 {
-  font-family: var(--font-display);
+  font-family: var(--font-heading);
   font-size: 1.1rem;
   font-weight: 700;
   margin: 2rem 0 0.5rem;
@@ -2822,8 +2853,8 @@ body.nav-drawer-abierto { overflow: hidden; }
   padding: 0 2rem 4rem;
 }
 .soporte-contenedor h1 {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
   font-weight: 700;
   margin-bottom: 0.35rem;
   color: var(--texto);
@@ -2887,8 +2918,8 @@ body.nav-drawer-abierto { overflow: hidden; }
   margin-bottom: 0.5rem;
 }
 .error-404 h1 {
-  font-family: var(--font-display);
-  font-size: 1.75rem;
+  font-family: var(--font-heading);
+  font-size: var(--text-2xl);
   font-weight: 700;
   color: var(--texto);
 }
@@ -2952,13 +2983,13 @@ body.nav-drawer-abierto { overflow: hidden; }
 }
 @media (max-width: 480px) {
   .hero { padding: 3.5rem 1rem 3rem; gap: 2rem; }
-  .hero h1 { font-size: 1.75rem; }
+  .hero h1 { font-size: var(--text-2xl); }
   .hero p  { font-size: 1rem; }
   .hero-botones { flex-direction: column; align-items: center; }
   .hero-botones a, .hero-botones button { width: 100%; max-width: 280px; }
   .hero-stats { gap: 0.75rem; }
   .stat-item { min-width: 100px; padding: 0.85rem 1.25rem; }
-  .stat-numero { font-size: 1.75rem; }
+  .stat-numero { font-size: var(--text-2xl); }
   .novedades-seccion .grid-cartas .carta-card,
   .novedades-seccion .grid-cartas .skeleton { flex: 0 0 175px; }
   .pasos { grid-template-columns: 1fr; }
