@@ -17,6 +17,15 @@ export function formatearFecha(iso) {
     return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
 }
 
+// Formatea el precio medio de Cardmarket en EUR (es-ES).
+// Devuelve null si la carta no tiene precio publicado, para que el
+// llamador decida no pintar nada (manejo con gracia de la ausencia).
+export function formatearPrecio(precio) {
+    const valor = Number(precio);
+    if (precio === null || precio === undefined || Number.isNaN(valor)) return null;
+    return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(valor);
+}
+
 export function mostrarAlerta(msg, tipo, elementoId = 'alerta') {
     const el = document.getElementById(elementoId);
     if (!el) return;
@@ -32,9 +41,13 @@ export function tarjetaCarta(carta) {
     const id     = carta.id || 0;
     const url    = paginaUrl(`pages/detalle-carta.html?id=${id}`);
     const nombreSeguro = escapeHtml(nombre);
-    const imgHTML = carta.imagen_url
-        ? `<img src="${escapeHtml(carta.imagen_url)}" alt="${nombreSeguro}" loading="lazy" />`
+    // En grids usamos la versión ligera de la ilustración (low.webp);
+    // imagen_url queda como respaldo para filas antiguas sin variante
+    const imagen  = carta.imagen_low || carta.imagen_url;
+    const imgHTML = imagen
+        ? `<img src="${escapeHtml(imagen)}" alt="${nombreSeguro}" loading="lazy" />`
         : `<div class="carta-sin-imagen" aria-hidden="true"><img class="icono" src="${paginaUrl('img/icons/carta.svg')}" alt="" /></div>`;
+    const precio = formatearPrecio(carta.precio_cardmarket);
     return `
         <a class="carta-card" href="${url}" aria-label="Ver detalle de ${nombreSeguro}">
             ${imgHTML}
@@ -43,6 +56,7 @@ export function tarjetaCarta(carta) {
                 ${carta.tipo          ? `<span class="carta-tipo">${escapeHtml(carta.tipo)}</span>`         : ''}
                 ${carta.rareza        ? `<span class="carta-rareza">${escapeHtml(carta.rareza)}</span>`     : ''}
                 ${carta.set_expansion ? `<span class="carta-set">${escapeHtml(carta.set_expansion)}</span>` : ''}
+                ${precio              ? `<span class="carta-precio">${precio}</span>`                       : ''}
             </div>
         </a>`;
 }
@@ -93,14 +107,16 @@ export function cerrarModalAccesible() {
 // Miniaturas de cartas para tarjetas de trade
 export function miniaturas(cartas) {
     if (!cartas?.length) return '<span class="miniaturas-vacio">—</span>';
-    return cartas.map(c => `
+    return cartas.map(c => {
+        const imagen = c.imagen_low || c.imagen_url;
+        return `
         <div class="miniatura">
-            ${c.imagen_url
-                ? `<img src="${escapeHtml(c.imagen_url)}" alt="${escapeHtml(c.nombre)}" loading="lazy" />`
+            ${imagen
+                ? `<img src="${escapeHtml(imagen)}" alt="${escapeHtml(c.nombre)}" loading="lazy" />`
                 : `<div class="miniatura-sin-img" aria-hidden="true">?</div>`}
             <span>${escapeHtml(c.nombre)}</span>
-        </div>`
-    ).join('');
+        </div>`;
+    }).join('');
 }
 
 // ─── Funciones para la PokeAPI ────────────────────────────

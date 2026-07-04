@@ -1,14 +1,14 @@
+// catalogo.js — Catálogo de cartas TCG servido por nuestra API (módulo ES6)
+// El filtrado y la paginación ocurren en el backend (GET /api/cartas);
+// aquí solo pedimos la página que toca y pintamos los resultados.
 
-import { tarjetaCarta, pokemonACarta } from './utils.js';
+import { API_URL } from './auth.js';
+import { tarjetaCarta } from './utils.js';
 
-const CARTAS_POR_PAGINA = 20;       
-let paginaActual        = 1;        
-let totalPokemon        = 0;        
-let cartasFiltradas     = [];       
-let todasLasCartas      = [];       
-let cargandoTodo        = false;    
-let cargaCompletada     = false;    
-let conteoFiltradoPrevio = -1;      
+const CARTAS_POR_PAGINA = 20;
+let paginaActual = 1;
+let totalCartas  = 0;
+let totalPaginas = 1;
 
 // Retrasa la ejecución de fn hasta que pasen ms sin nuevas llamadas.
 function debounce(fn, ms) {
@@ -43,112 +43,86 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function iniciarCatalogo() {
-    const grid = document.getElementById('grid-cartas');
-    grid.innerHTML = Array(8).fill('<div class="carta-card skeleton" aria-hidden="true"></div>').join('');
+    // Los <select> de tipo y rareza se rellenan con los valores reales
+    // que hay en la BD (no hace falta esperar a que termine)
+    cargarFiltros();
+
+    const params = new URLSearchParams(window.location.search);
+
+    // Búsqueda llegada desde el buscador del header (?q=)
+    const q = params.get('q');
+    if (q) {
+        const inputNombre = document.getElementById('filtro-nombre');
+        if (inputNombre) inputNombre.value = q;
+    }
+
+    // Página inicial: si la URL trae ?page=N volvemos a esa página
+    const paginaInicial = Math.max(1, parseInt(params.get('page'), 10) || 1);
 
     try {
-        // Pedimos el total de Pokémon disponibles en la PokeAPI
-        const resTotal = await fetch('https://pokeapi.co/api/v2/pokemon?limit=1');
-        if (!resTotal.ok) throw new Error('Error al conectar con la PokeAPI');
-        const datosTotales = await resTotal.json();
-
-        // Solo usamos los Pokémon con ID hasta 1010 (excluye formas especiales por errores en la PokeAPI)
-        totalPokemon = Math.min(datosTotales.count, 1010);
-
-        // Página inicial: si la URL trae ?page=N volvemos a esa página
-        const params       = new URLSearchParams(window.location.search);
-        const totalPaginas = Math.ceil(totalPokemon / CARTAS_POR_PAGINA);
-        let paginaInicial  = parseInt(params.get('page'), 10) || 1;
-        paginaInicial      = Math.min(Math.max(1, paginaInicial), totalPaginas);
         await cargarPagina(paginaInicial);
-
-        // Búsqueda desde el header (?q=): filtramos de inmediato con lo que
-        // ya hay en cache y dejamos que la carga de fondo complete resultados.
-        const q = params.get('q');
-        if (q) {
-            const inputNombre = document.getElementById('filtro-nombre');
-            if (inputNombre) {
-                inputNombre.value = q;
-                cargarTodoEnSegundoPlano();   
-                filtrar();                    
-            }
-        } else {
-            // Sin búsqueda cargamos el resto en segundo plano
-            cargarTodoEnSegundoPlano();
-        }
-
     } catch (e) {
-        grid.innerHTML = `<p class="grid-mensaje error-texto">Error al cargar las cartas: ${e.message}</p>`;
+        document.getElementById('grid-cartas').innerHTML =
+            `<p class="grid-mensaje error-texto">Error al cargar las cartas: ${e.message}</p>`;
     }
+}
+
+// Rellena los <select> con los valores distintos presentes en la BD.
+// Si falla no pasa nada: los filtros se quedan solo con "Todos".
+async function cargarFiltros() {
+    try {
+        const res = await fetch(`${API_URL}/cartas/filtros`);
+        if (!res.ok) return;
+        const filtros = await res.json();
+        rellenarSelect('filtro-tipo',   filtros.tipos);
+        rellenarSelect('filtro-rareza', filtros.rarezas);
+    } catch (_) { /* los filtros son secundarios: no rompemos el catálogo */ }
+}
+
+// Conserva la primera opción ("Todos los ...") y añade el resto
+function rellenarSelect(id, valores) {
+    const select = document.getElementById(id);
+    if (!select || !Array.isArray(valores)) return;
+    select.length = 1;
+    valores.forEach(v => select.add(new Option(v, v)));
+}
+
+// Valores actuales de los filtros de la barra superior
+function filtrosActuales() {
+    return {
+        nombre: document.getElementById('filtro-nombre')?.value.trim() || '',
+        tipo:   document.getElementById('filtro-tipo')?.value || '',
+        rareza: document.getElementById('filtro-rareza')?.value || '',
+    };
 }
 
 async function cargarPagina(pagina) {
     const grid = document.getElementById('grid-cartas');
     grid.innerHTML = Array(8).fill('<div class="carta-card skeleton" aria-hidden="true"></div>').join('');
 
-    const offset   = (pagina - 1) * CARTAS_POR_PAGINA;
-    const res      = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=${CARTAS_POR_PAGINA}&offset=${offset}`);
-    if (!res.ok) throw new Error('Error al conectar con la PokeAPI');
-    const datos    = await res.json();
+    const { nombre, tipo, rareza } = filtrosActuales();
+    const params = new URLSearchParams({ page: pagina, por_pagina: CARTAS_POR_PAGINA });
+    if (nombre) params.set('nombre', nombre);
+    if (tipo)   params.set('tipo', tipo);
+    if (rareza) params.set('rareza', rareza);
 
-    // Cargamos los datos completos de cada Pokémon en paralelo
-    const promesas = datos.results.map(p => fetch(p.url).then(r => r.json()));
-    const pokemons = await Promise.all(promesas);
-    const cartas   = pokemons.map(p => pokemonACarta(p));
+    const res = await fetch(`${API_URL}/cartas?${params}`);
+    if (!res.ok) throw new Error('Error al conectar con la API');
+    const datos = await res.json();
 
-    // Guardamos en cache las que no estaban aún
-    cartas.forEach(c => {
-        if (!todasLasCartas.find(x => x.id === c.id)) {
-            todasLasCartas.push(c);
-        }
-    });
+    // Respuesta del paginador de Laravel: data, total, current_page,
+    // last_page, from, to...
+    totalCartas  = datos.total;
+    totalPaginas = Math.max(1, datos.last_page);
+    paginaActual = datos.current_page;
 
-    paginaActual = pagina;
-    actualizarUrlPagina(pagina);
-    mostrarCartas(cartas);
-    actualizarPaginacion();
-    actualizarInfo(offset + 1, Math.min(offset + CARTAS_POR_PAGINA, totalPokemon), totalPokemon);
+    actualizarUrlPagina(paginaActual);
+    mostrarCartas(datos.data);
+    actualizarPaginacion(totalCartas === 0);
+    actualizarInfo(datos.from ?? 0, datos.to ?? 0, totalCartas);
 
     // Scroll suave al inicio del catálogo
     document.querySelector('.catalogo-contenedor')?.scrollIntoView({ behavior: 'smooth' });
-}
-
-// Carga todos los Pokémon en segundo plano sin bloquear la UI
-async function cargarTodoEnSegundoPlano() {
-    if (cargandoTodo || cargaCompletada) return;
-    cargandoTodo = true;
-
-    const totalPaginas = Math.ceil(totalPokemon / CARTAS_POR_PAGINA);
-
-    for (let p = 1; p <= totalPaginas; p++) {
-        const offset     = (p - 1) * CARTAS_POR_PAGINA;
-        const yaEnCache  = todasLasCartas.some(c => c.id === offset + 1);
-        if (yaEnCache) continue;
-
-        try {
-            const res = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=${CARTAS_POR_PAGINA}&offset=${offset}`);
-            if (!res.ok) continue;
-            const datos    = await res.json();
-            const promesas = datos.results.map(p => fetch(p.url).then(r => r.json()));
-            const pokemons = await Promise.all(promesas);
-            pokemons.forEach(poke => {
-                if (!todasLasCartas.find(x => x.id === poke.id)) {
-                    todasLasCartas.push(pokemonACarta(poke));
-                }
-            });
-            // Si hay una búsqueda activa, refrescamos los resultados
-            // conforme van llegando más cartas (sin esperar a terminar).
-            refrescarBusquedaSiActiva();
-        } catch (_) {}
-
-        // Pequeña pausa para no saturar la API
-        await new Promise(r => setTimeout(r, 100));
-    }
-
-    cargandoTodo         = false;
-    cargaCompletada      = true;
-    conteoFiltradoPrevio = -1;        // fuerza el render del estado final
-    refrescarBusquedaSiActiva();
 }
 
 function mostrarCartas(cartas) {
@@ -156,7 +130,6 @@ function mostrarCartas(cartas) {
 
     if (!cartas.length) {
         grid.innerHTML = '<p class="grid-mensaje">No se encontraron cartas.</p>';
-        actualizarPaginacion(true);
         return;
     }
 
@@ -177,9 +150,7 @@ function actualizarPaginacion(ocultar = false) {
     const contenedor = document.getElementById('paginacion');
     if (!contenedor) return;
 
-    if (ocultar) { contenedor.innerHTML = ''; return; }
-
-    const totalPaginas = Math.ceil(totalPokemon / CARTAS_POR_PAGINA);
+    if (ocultar || totalPaginas <= 1) { contenedor.innerHTML = ''; return; }
 
     let inicio = Math.max(1, paginaActual - 2);
     let fin    = Math.min(totalPaginas, inicio + 4);
@@ -220,23 +191,12 @@ function actualizarPaginacion(ocultar = false) {
 // Actualiza el texto de información de paginación
 function actualizarInfo(desde, hasta, total) {
     const info = document.getElementById('paginacion-info');
-    if (info) info.textContent = `Mostrando ${desde}–${hasta} de ${total.toLocaleString('es-ES')} Pokémon`;
+    if (info) info.textContent = `Mostrando ${desde}–${hasta} de ${total.toLocaleString('es-ES')} cartas`;
 }
 
 // Navega a una página específica
 async function irAPagina(pagina) {
-    const totalPaginas = Math.ceil(totalPokemon / CARTAS_POR_PAGINA);
     if (pagina < 1 || pagina > totalPaginas) return;
-
-    const nombre = document.getElementById('filtro-nombre')?.value.toLowerCase() || '';
-    const tipo   = document.getElementById('filtro-tipo')?.value || '';
-    const rareza = document.getElementById('filtro-rareza')?.value || '';
-
-    if (nombre || tipo || rareza) {
-        paginaActual = pagina;
-        mostrarPaginaFiltrada();
-        return;
-    }
 
     try {
         await cargarPagina(pagina);
@@ -263,102 +223,14 @@ function actualizarUrlPagina(pagina) {
 function saltarAPaginaEscrita() {
     const input = document.getElementById('input-ir-pagina');
     if (!input) return;
-    const totalPaginas = Math.ceil(totalPokemon / CARTAS_POR_PAGINA);
     let pagina = parseInt(input.value, 10);
     if (!pagina) return;
     pagina = Math.min(Math.max(1, pagina), totalPaginas);
     irAPagina(pagina);
 }
 
-// ¿Hay algún filtro activo ahora mismo?
-function hayFiltrosActivos() {
-    const nombre = document.getElementById('filtro-nombre')?.value.trim() || '';
-    const tipo   = document.getElementById('filtro-tipo')?.value || '';
-    const rareza = document.getElementById('filtro-rareza')?.value || '';
-    return Boolean(nombre || tipo || rareza);
-}
-
-// Recalcula cartasFiltradas a partir del cache disponible ahora mismo
-function calcularFiltradas() {
-    const nombre = document.getElementById('filtro-nombre')?.value.toLowerCase().trim() || '';
-    const tipo   = document.getElementById('filtro-tipo')?.value || '';
-    const rareza = document.getElementById('filtro-rareza')?.value || '';
-
-    cartasFiltradas = todasLasCartas.filter(c => {
-        const coincideNombre = c.nombre.toLowerCase().includes(nombre);
-        const coincideTipo   = !tipo   || c.tipo   === tipo;
-        const coincideRareza = !rareza || c.rareza === rareza;
-        return coincideNombre && coincideTipo && coincideRareza;
-    });
-}
-
-// Aplica los filtros desde cero (vuelve a la página 1 de resultados)
+// Los filtros cambiaron: pedimos la página 1 con los filtros nuevos
+// (el backend aplica nombre/tipo/rareza sobre todo el catálogo)
 function filtrar() {
-    if (!hayFiltrosActivos()) {
-        // Sin filtros volvemos a la paginación normal
-        paginaActual = 1;
-        cargarPagina(1);
-        return;
-    }
-    calcularFiltradas();
-    conteoFiltradoPrevio = cartasFiltradas.length;
-    paginaActual = 1;
-    mostrarPaginaFiltrada();
-}
-
-// Refresca una búsqueda activa sin perder la página del usuario.
-// Lo invoca la carga de fondo conforme entran más cartas al cache.
-function refrescarBusquedaSiActiva() {
-    if (!hayFiltrosActivos()) return;
-    calcularFiltradas();
-    if (cartasFiltradas.length === conteoFiltradoPrevio) return;  
-    conteoFiltradoPrevio = cartasFiltradas.length;
-    const totPags = Math.max(1, Math.ceil(cartasFiltradas.length / CARTAS_POR_PAGINA));
-    paginaActual  = Math.min(paginaActual, totPags);
-    mostrarPaginaFiltrada();
-}
-
-// Muestra la página actual de los resultados filtrados
-function mostrarPaginaFiltrada() {
-    const inicio  = (paginaActual - 1) * CARTAS_POR_PAGINA;
-    const fin     = inicio + CARTAS_POR_PAGINA;
-    const pagina  = cartasFiltradas.slice(inicio, fin);
-    const total   = cartasFiltradas.length;
-    const totPags = Math.ceil(total / CARTAS_POR_PAGINA);
-
-    // Sin resultados todavía pero la carga de fondo sigue: estado "buscando"
-    if (!total && cargandoTodo) {
-        document.getElementById('grid-cartas').innerHTML =
-            '<p class="grid-mensaje">Buscando en el catálogo completo…</p>';
-        const cont = document.getElementById('paginacion');
-        if (cont) cont.innerHTML = '';
-        const info = document.getElementById('paginacion-info');
-        if (info) info.textContent = '';
-        return;
-    }
-
-    mostrarCartas(pagina);
-
-    const contenedor = document.getElementById('paginacion');
-    if (contenedor) {
-        if (totPags <= 1) {
-            contenedor.innerHTML = '';
-        } else {
-            let html = '';
-            html += `<button class="btn-pagina" type="button" data-pagina="${paginaActual - 1}" aria-label="Página anterior" ${paginaActual === 1 ? 'disabled' : ''}>← Ant</button>`;
-            for (let i = 1; i <= Math.min(totPags, 10); i++) {
-                html += botonPagina(i, String(i), { activa: i === paginaActual });
-            }
-            html += `<button class="btn-pagina" type="button" data-pagina="${paginaActual + 1}" aria-label="Página siguiente" ${paginaActual === totPags ? 'disabled' : ''}>Sig →</button>`;
-            contenedor.innerHTML = html;
-        }
-    }
-
-    actualizarInfo(inicio + 1, Math.min(fin, total), total);
-
-    // Aviso de que la búsqueda todavía sigue completándose en segundo plano
-    if (cargandoTodo) {
-        const info = document.getElementById('paginacion-info');
-        if (info) info.textContent += ' · buscando más…';
-    }
+    irAPagina(1);
 }

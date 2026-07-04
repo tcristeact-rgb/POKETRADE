@@ -1,7 +1,7 @@
 // inicio.js — Lógica de la página principal (módulo ES6)
 
 import { API_URL, estaLogueado } from './auth.js';
-import { tarjetaCarta, pokemonACarta } from './utils.js';
+import { tarjetaCarta } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     const btnTradeo = document.querySelector('#btn-hero-tradeo');
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnReintentar) btnReintentar.addEventListener('click', cargarNovedades);
 });
 
-// ─── Novedades: los 8 Pokémon más recientes con imagen oficial ────────────
+// ─── Novedades: las 8 cartas más recientes del catálogo ────────────
 
 async function cargarNovedades() {
     const grid     = document.getElementById('grid-novedades');
@@ -34,31 +34,17 @@ async function cargarNovedades() {
     errorBox.hidden = true;
 
     try {
-        // Pedimos el total para calcular el offset desde el final
-        const resTotal = await fetch('https://pokeapi.co/api/v2/pokemon?limit=1');
-        if (!resTotal.ok) throw new Error('Error al conectar con la PokeAPI');
-        const datosTotales = await resTotal.json();
-        const total = Math.min(datosTotales.count, 1010);
-
-        // Cogemos los últimos 40 para tener margen de filtrar los sin imagen
-        const offset = Math.max(0, total - 40);
-        const res = await fetch(`https://pokeapi.co/api/v2/pokemon?limit=40&offset=${offset}`);
-        if (!res.ok) throw new Error('Error al conectar con la PokeAPI');
+        // Últimas cartas añadidas al catálogo, desde nuestra API
+        const res = await fetch(`${API_URL}/cartas?orden=recientes&por_pagina=8`);
+        if (!res.ok) throw new Error('Error al conectar con la API');
         const datos = await res.json();
 
-        // Invertimos para mostrar del más nuevo al más antiguo
-        const listaInvertida = [...datos.results].reverse();
+        if (!datos.data.length) {
+            grid.innerHTML = '<p class="grid-mensaje">Aún no hay cartas en el catálogo.</p>';
+            return;
+        }
 
-        // Cargamos datos completos en paralelo
-        const promesas = listaInvertida.map(p => fetch(p.url).then(r => r.json()));
-        const pokemons = await Promise.all(promesas);
-
-        // Filtramos los que tienen artwork oficial y cogemos los primeros 8
-        const conImagen = pokemons
-            .filter(p => p.sprites?.other?.['official-artwork']?.front_default)
-            .slice(0, 8);
-
-        grid.innerHTML = conImagen.map(p => tarjetaCarta(pokemonACarta(p))).join('');
+        grid.innerHTML = datos.data.map(c => tarjetaCarta(c)).join('');
 
     } catch (error) {
         grid.innerHTML = '';
@@ -71,15 +57,17 @@ async function cargarNovedades() {
 
 async function cargarEstadisticas() {
     try {
-        const [resPoke, resTradeos] = await Promise.all([
-            fetch('https://pokeapi.co/api/v2/pokemon?limit=1'),
+        // El total de cartas sale del paginador de nuestra API
+        // (pedimos 1 sola carta: el campo total trae el recuento)
+        const [resCartas, resTradeos] = await Promise.all([
+            fetch(`${API_URL}/cartas?por_pagina=1`),
             fetch(`${API_URL}/tradeos`)
         ]);
 
-        const datosPoke = resPoke.ok ? await resPoke.json() : null;
-        const tradeos   = resTradeos.ok ? await resTradeos.json() : [];
+        const datosCartas = resCartas.ok ? await resCartas.json() : null;
+        const tradeos     = resTradeos.ok ? await resTradeos.json() : [];
 
-        const totalCartas  = datosPoke?.count ?? 0;
+        const totalCartas  = datosCartas?.total ?? 0;
         const totalTradeos = Array.isArray(tradeos) ? tradeos.length : 0;
 
         const statCartas  = document.querySelector('#stat-cartas  .stat-numero');

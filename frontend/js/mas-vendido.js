@@ -1,7 +1,7 @@
 // mas-vendido.js — Ranking de cartas más demandadas en tradeos
 
 import { API_URL, paginaUrl } from './auth.js';
-import { pokemonACarta, escapeHtml } from './utils.js';
+import { escapeHtml } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     cargarMasVendido();
@@ -38,33 +38,19 @@ async function cargarMasVendido() {
         const ranking = Object.values(conteo).sort((a, b) => b.veces - a.veces);
 
         if (!ranking.length) {
-            // Si no hay tradeos, mostramos los 8 Pokémon más populares de la PokeAPI
-            await cargarPopularesPokeAPI(grid);
+            // Si no hay tradeos, mostramos las cartas más valiosas del catálogo
+            await cargarDestacadas(grid);
             return;
         }
 
-        // Para las cartas del ranking intentamos mejorar la imagen con la PokeAPI
-        const cartasConImagen = await Promise.all(
-            ranking.map(async (entry) => {
-                if (entry.carta.imagen_url) return entry;
-                try {
-                    const numero = Number(entry.carta.numero) || entry.carta.id;
-                    const res2 = await fetch(`https://pokeapi.co/api/v2/pokemon/${numero}`);
-                    if (res2.ok) {
-                        const poke = await res2.json();
-                        entry.carta.imagen_url = poke.sprites?.other?.['official-artwork']?.front_default || null;
-                    }
-                } catch (_) {}
-                return entry;
-            })
-        );
-
-        grid.innerHTML = cartasConImagen.map((entry, i) => tarjetaRanking(entry, i + 1)).join('');
+        // Las cartas del ranking vienen de nuestra API con su ilustración
+        // TCGdex ya incluida (imagen_low/imagen_high)
+        grid.innerHTML = ranking.map((entry, i) => tarjetaRanking(entry, i + 1)).join('');
 
     } catch (e) {
-        // Si falla nuestra API mostramos populares de la PokeAPI igualmente
+        // Si falla la carga de tradeos probamos con las destacadas
         try {
-            await cargarPopularesPokeAPI(grid);
+            await cargarDestacadas(grid);
         } catch (_) {
             grid.innerHTML = '';
             errorBox.hidden = false;
@@ -73,18 +59,16 @@ async function cargarMasVendido() {
     }
 }
 
-// Fallback: muestra los Pokémon más icónicos cuando no hay tradeos
-async function cargarPopularesPokeAPI(grid) {
-    const populares = [6, 25, 150, 9, 3, 94, 149, 131];
-    const promesas  = populares.map(id =>
-        fetch(`https://pokeapi.co/api/v2/pokemon/${id}`).then(r => r.json())
-    );
-    const pokemons = await Promise.all(promesas);
+// Fallback: muestra las 8 cartas con mayor precio de Cardmarket
+// cuando todavía no hay tradeos publicados
+async function cargarDestacadas(grid) {
+    const res = await fetch(`${API_URL}/cartas?orden=precio&por_pagina=8`);
+    if (!res.ok) throw new Error('API');
+    const datos = await res.json();
 
-    grid.innerHTML = pokemons.map((p, i) => {
-        const carta = pokemonACarta(p);
-        return tarjetaRanking({ carta, veces: null }, i + 1);
-    }).join('');
+    grid.innerHTML = datos.data.map((carta, i) =>
+        tarjetaRanking({ carta, veces: null }, i + 1)
+    ).join('');
 }
 
 // Tarjeta de carta con posición en el ranking. Toda la tarjeta es un
@@ -94,11 +78,11 @@ function tarjetaRanking({ carta, veces }, posicion) {
     const medalla = medallas[posicion]
         ? `<img class="icono" src="${paginaUrl('img/icons/medalla-' + medallas[posicion] + '.svg')}" alt="" />`
         : `#${posicion}`;
-    const idDetalle = carta.numero ? Number(carta.numero) : carta.id;
-    const url       = paginaUrl(`pages/detalle-carta.html?id=${idDetalle}`);
-    const nombre    = escapeHtml(carta.nombre);
-    const imgHTML = carta.imagen_url
-        ? `<img src="${escapeHtml(carta.imagen_url)}" alt="${nombre}" loading="lazy" />`
+    const url    = paginaUrl(`pages/detalle-carta.html?id=${carta.id}`);
+    const nombre = escapeHtml(carta.nombre);
+    const imagen = carta.imagen_low || carta.imagen_url;
+    const imgHTML = imagen
+        ? `<img src="${escapeHtml(imagen)}" alt="${nombre}" loading="lazy" />`
         : `<div class="carta-sin-imagen" aria-hidden="true"><img class="icono" src="${paginaUrl('img/icons/carta.svg')}" alt="" /></div>`;
     const contadorHTML = veces !== null
         ? `<span class="mv-contador">${veces} ${veces === 1 ? 'tradeo' : 'tradeos'}</span>`

@@ -1,8 +1,7 @@
 // inventario.js — Gestión del inventario del usuario
 
 import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
-import { escapeHtml, mostrarAlerta, abrirModalAccesible, cerrarModalAccesible,
-         capitalizarNombre, pokemonACarta } from './utils.js';
+import { escapeHtml, mostrarAlerta, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
 
 protegerRuta();
 
@@ -81,8 +80,8 @@ function renderizarInventario(items) {
         return `
         <div class="carta-inventario">
             <span class="badge-cantidad">${item.cantidad}</span>
-            ${item.carta?.imagen_url
-                ? `<img src="${escapeHtml(item.carta.imagen_url)}" alt="${escapeHtml(nombre)}" />`
+            ${item.carta?.imagen_low || item.carta?.imagen_url
+                ? `<img src="${escapeHtml(item.carta.imagen_low || item.carta.imagen_url)}" alt="${escapeHtml(nombre)}" />`
                 : `<div class="carta-sin-imagen" aria-hidden="true">?</div>`}
             <h3>${escapeHtml(nombre)}</h3>
             <span class="carta-tipo">${escapeHtml(item.carta?.tipo || '—')}</span>
@@ -112,26 +111,40 @@ async function eliminarItem(id) {
 
 async function cargarCatalogoPModal() {
     try {
-        const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=10000');
-        if (!res.ok) throw new Error('Error al conectar con la PokeAPI');
-        const datos = await res.json();
-
-        todasLasCartasCatalogo = datos.results
-            .map(p => {
-                const id = Number(p.url.split('/').filter(Boolean).pop());
-                return {
-                    id,
-                    nombre:     capitalizarNombre(p.name),
-                    imagen_url: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
-                };
-            })
-            .filter(c => c.id <= 1010);   // excluye formas especiales
-
+        // Catálogo completo desde nuestra API (los sets curados caben
+        // de sobra en una petición; el tope del backend es 100... por
+        // eso paginamos aquí hasta traerlo todo)
+        todasLasCartasCatalogo = await cargarCatalogoCompleto();
         renderizarModal(todasLasCartasCatalogo.slice(0, MAX_MODAL_VISIBLE));
     } catch (e) {
         document.getElementById('lista-cartas-modal').innerHTML =
             `<p class="error-texto">No se pudo cargar el catálogo: ${e.message}</p>`;
     }
+}
+
+// Descarga el catálogo completo página a página (100 por petición)
+async function cargarCatalogoCompleto() {
+    const cartas = [];
+    let pagina = 1;
+    let ultimaPagina = 1;
+
+    do {
+        const res = await fetch(`${API_URL}/cartas?por_pagina=100&page=${pagina}`);
+        if (!res.ok) throw new Error('Error al conectar con la API');
+        const datos = await res.json();
+        ultimaPagina = datos.last_page;
+        for (const c of datos.data) {
+            cartas.push({
+                id:         c.id,
+                nombre:     c.nombre,
+                numero:     c.numero,
+                imagen_url: c.imagen_low || c.imagen_url,
+            });
+        }
+        pagina++;
+    } while (pagina <= ultimaPagina);
+
+    return cartas;
 }
 
 function renderizarModal(cartas) {
@@ -182,24 +195,12 @@ function cambiarCantidad(delta) {
 async function confirmarAnadir() {
     if (!cartaSeleccionadaId) return;
     try {
-        // Pedimos los datos completos del Pokémon a la PokeAPI. El backend
-        // crea la carta si aún no existe en el catálogo
-        const resPoke = await fetch(`https://pokeapi.co/api/v2/pokemon/${cartaSeleccionadaId}`);
-        if (!resPoke.ok) throw new Error('No se pudieron cargar los datos de la carta.');
-        const carta = pokemonACarta(await resPoke.json());
-
+        // La carta ya existe en el catálogo del backend: basta con su ID
         const res = await fetch(`${API_URL}/inventario`, {
             method: 'POST',
             headers: headersAuth(),
             body: JSON.stringify({
-                carta: {
-                    nombre:        carta.nombre,
-                    numero:        String(carta.id).padStart(3, '0'),
-                    tipo:          carta.tipo,
-                    rareza:        carta.rareza,
-                    set_expansion: carta.set_expansion,
-                    imagen_url:    carta.imagen_url,
-                },
+                carta_id: cartaSeleccionadaId,
                 cantidad: cantidadSeleccionada
             })
         });

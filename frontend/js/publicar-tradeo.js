@@ -1,7 +1,7 @@
 // publicar-tradeo.js — Crear y publicar un tradeo (módulo ES6)
 
 import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
-import { escapeHtml, mostrarAlerta, capitalizarNombre, pokemonACarta } from './utils.js';
+import { escapeHtml, mostrarAlerta } from './utils.js';
 
 protegerRuta();
 
@@ -68,20 +68,27 @@ async function cargarInventarioOfrece() {
 async function cargarCatalogoBusca() {
     const grid = document.getElementById('grid-busca');
     try {
-        const res = await fetch('https://pokeapi.co/api/v2/pokemon?limit=10000');
-        if (!res.ok) throw new Error('Error al conectar con la PokeAPI');
-        const datos = await res.json();
+        // Catálogo completo desde nuestra API, página a página
+        // (100 por petición, el tope del backend)
+        catalogoCartas = [];
+        let pagina = 1;
+        let ultimaPagina = 1;
 
-        catalogoCartas = datos.results
-            .map(p => {
-                const id = Number(p.url.split('/').filter(Boolean).pop());
-                return {
-                    id,
-                    nombre:     capitalizarNombre(p.name),
-                    imagen_url: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/${id}.png`,
-                };
-            })
-            .filter(c => c.id <= 1010);   
+        do {
+            const res = await fetch(`${API_URL}/cartas?por_pagina=100&page=${pagina}`);
+            if (!res.ok) throw new Error('Error al conectar con la API');
+            const datos = await res.json();
+            ultimaPagina = datos.last_page;
+            for (const c of datos.data) {
+                catalogoCartas.push({
+                    id:         c.id,
+                    nombre:     c.nombre,
+                    numero:     c.numero,
+                    imagen_url: c.imagen_low || c.imagen_url,
+                });
+            }
+            pagina++;
+        } while (pagina <= ultimaPagina);
 
         renderizarBusca(catalogoCartas.slice(0, MAX_BUSCA_VISIBLE));
     } catch (e) {
@@ -94,8 +101,9 @@ async function cargarCatalogoBusca() {
 // HTML de una carta seleccionable accesible (teclado + ratón)
 function cartaSeleccionableHTML(carta, seleccionada, infoExtra) {
     const nombre = escapeHtml(carta.nombre);
-    const img = carta.imagen_url
-        ? `<img src="${escapeHtml(carta.imagen_url)}" alt="${nombre}" loading="lazy" />`
+    const imagen = carta.imagen_low || carta.imagen_url;
+    const img = imagen
+        ? `<img src="${escapeHtml(imagen)}" alt="${nombre}" loading="lazy" />`
         : `<div class="placeholder-img" aria-hidden="true">?</div>`;
     return `
         <div class="carta-seleccionable${seleccionada ? ' seleccionada' : ''}"
@@ -129,7 +137,7 @@ function renderizarBusca(cartas) {
     }
 
     grid.innerHTML = cartas.map(carta =>
-        cartaSeleccionableHTML(carta, idsBusca.has(carta.id), 'Nº ' + String(carta.id).padStart(3, '0'))
+        cartaSeleccionableHTML(carta, idsBusca.has(carta.id), carta.numero ? `Nº ${carta.numero}` : '')
     ).join('');
 }
 
@@ -215,29 +223,11 @@ async function publicarTradeo() {
         return;
     }
 
-    let cartasBusca;
-    try {
-        cartasBusca = await Promise.all([...idsBusca].map(async (id) => {
-            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
-            if (!res.ok) throw new Error('PokeAPI');
-            const carta = pokemonACarta(await res.json());
-            return {
-                nombre:        carta.nombre,
-                numero:        String(carta.id).padStart(3, '0'),
-                tipo:          carta.tipo,
-                rareza:        carta.rareza,
-                set_expansion: carta.set_expansion,
-                imagen_url:    carta.imagen_url,
-            };
-        }));
-    } catch (_) {
-        mostrarAlerta('No se pudieron cargar los datos de las cartas buscadas. Inténtalo de nuevo.', 'error');
-        return;
-    }
-
+    // Las cartas buscadas ya son cartas del catálogo del backend:
+    // basta con enviar sus IDs, igual que las ofrecidas
     const payload = {
         cartas_ofrece: [...idsOfrece],
-        cartas_busca:  cartasBusca,
+        cartas_busca:  [...idsBusca],
         descripcion:   document.getElementById('descripcion').value.trim() || null,
     };
 

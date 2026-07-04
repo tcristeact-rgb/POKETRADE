@@ -1,12 +1,12 @@
-// detalle-carta.js — Detalle de una carta desde la PokeAPI (módulo ES6)
-// Recibe el ID del Pokémon por parámetro ?id= en la URL.
+// detalle-carta.js — Detalle de una carta del catálogo (módulo ES6)
+// Recibe el ID interno de la carta por parámetro ?id= en la URL y pide
+// los datos a nuestra API (que incluye anterior_id/siguiente_id para
+// navegar por el catálogo sin asumir IDs consecutivos).
 
 import { API_URL, estaLogueado, headersAuth, manejarErrorHTTP, parsearRespuesta } from './auth.js';
-import { pokemonACarta, traducirTipo, escapeHtml, mostrarAlerta } from './utils.js';
+import { escapeHtml, mostrarAlerta, formatearPrecio } from './utils.js';
 
 let cartaActual = null;
-
-const MAX_POKEMON = 1010;
 
 document.addEventListener('DOMContentLoaded', () => {
     const id = new URLSearchParams(window.location.search).get('id');
@@ -32,28 +32,28 @@ async function cargarDetalle(id) {
         '<div class="skeleton-detalle"></div>';
 
     try {
-        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+        const res = await fetch(`${API_URL}/cartas/${id}`);
 
         if (res.status === 404) { mostrarError('Esta carta no existe.'); return; }
-        if (!res.ok) throw new Error('Error al conectar con la PokeAPI');
+        if (!res.ok) throw new Error('Error al conectar con la API');
 
-        const poke = await res.json();
-
-        // También pedimos la especie para obtener la descripción en español
-        const resEspecie = await fetch(poke.species.url);
-        const especie    = resEspecie.ok ? await resEspecie.json() : null;
-
-        const descripcion = especie?.flavor_text_entries
-            ?.find(e => e.language.name === 'es')
-            ?.flavor_text
-            ?.replace(/\f/g, ' ') || null;
-
-        cartaActual = { ...pokemonACarta(poke), descripcion };
+        cartaActual = await res.json();
         renderizarDetalle(cartaActual);
 
     } catch (e) {
         mostrarError(`Error al cargar la carta: ${e.message}`);
     }
+}
+
+// Fila de atributo del panel de detalle; si la carta no tiene ese dato
+// (ilustrador, precio, hp...) no se pinta nada
+function filaAtributo(label, valorHTML) {
+    if (!valorHTML) return '';
+    return `
+        <div class="atributo-fila">
+            <span class="atributo-label">${label}</span>
+            ${valorHTML}
+        </div>`;
 }
 
 function renderizarDetalle(carta) {
@@ -67,73 +67,38 @@ function renderizarDetalle(carta) {
         ? `<button class="btn-inventario" id="btn-add-inventario" type="button">+ Añadir a mi inventario</button>`
         : `<a href="login.html" class="btn-primario">Inicia sesión para añadir</a>`;
 
-    // Barras de stats del Pokémon
-    const statsHTML = carta.stats ? `
-        <div class="stats-seccion">
-            <h2 class="stats-titulo">Estadísticas base</h2>
-            <div class="stats-lista">
-                ${carta.stats.map(s => {
-                    const nombreStat = traducirStat(s.stat.name);
-                    const valor      = s.base_stat;
-                    const porcentaje = Math.min(100, Math.round((valor / 255) * 100));
-                    return `
-                    <div class="stat-fila">
-                        <span class="stat-nombre">${nombreStat}</span>
-                        <span class="stat-valor">${valor}</span>
-                        <div class="stat-barra-fondo">
-                            <div class="stat-barra stat-barra-${claseStat(valor)}" style="width:${porcentaje}%"></div>
-                        </div>
-                    </div>`;
-                }).join('')}
-            </div>
-        </div>` : '';
+    // En el detalle usamos la ilustración en alta calidad (high.webp);
+    // imagen_url queda como respaldo para filas antiguas
+    const imagen = carta.imagen_high || carta.imagen_url;
 
-    // Todos los tipos del Pokémon
-    const tiposHTML = carta.tipos
-        ? carta.tipos.map(t => `<span class="badge-tipo">${escapeHtml(traducirTipo(t.type.name))}</span>`).join(' ')
-        : carta.tipo ? `<span class="badge-tipo">${escapeHtml(carta.tipo)}</span>` : '';
+    // Precio medio de Cardmarket en EUR — puede no existir
+    const precio = formatearPrecio(carta.precio_cardmarket);
 
-    // IDs de la carta anterior y siguiente para las flechas laterales
-    const idAnterior  = carta.id - 1;
-    const idSiguiente = carta.id + 1;
+    // Set + número de coleccionista dentro del set (ej: "151 · Nº 006")
+    const setHTML = carta.set_expansion
+        ? `<span>${escapeHtml(carta.set_expansion)}${carta.numero ? ` · Nº ${escapeHtml(carta.numero)}` : ''}</span>`
+        : '';
 
     document.getElementById('contenido-detalle').innerHTML = `
         <div class="detalle-nav">
-        <button class="detalle-flecha" id="detalle-flecha-prev" type="button" aria-label="Ver carta anterior" ${idAnterior < 1 ? 'disabled' : ''}>❮</button>
+        <button class="detalle-flecha" id="detalle-flecha-prev" type="button" aria-label="Ver carta anterior" ${carta.anterior_id ? '' : 'disabled'}>❮</button>
         <div class="detalle-card">
             <div class="detalle-imagen">
-                ${carta.imagen_url
-                    ? `<img src="${escapeHtml(carta.imagen_url)}" alt="${nombreSeguro}" />`
+                ${imagen
+                    ? `<img src="${escapeHtml(imagen)}" alt="${nombreSeguro}" />`
                     : `<div class="sin-imagen-grande" aria-hidden="true">?</div>`}
             </div>
             <div class="detalle-info">
                 <h1>${nombreSeguro}</h1>
                 <div class="atributos">
-                    ${tiposHTML ? `
-                    <div class="atributo-fila">
-                        <span class="atributo-label">Tipo</span>
-                        <div class="detalle-tipos">${tiposHTML}</div>
-                    </div>` : ''}
-                    ${carta.rareza ? `
-                    <div class="atributo-fila">
-                        <span class="atributo-label">Rareza</span>
-                        <span class="badge-rareza">${escapeHtml(carta.rareza)}</span>
-                    </div>` : ''}
-                    ${carta.set_expansion ? `
-                    <div class="atributo-fila">
-                        <span class="atributo-label">Generación</span>
-                        <span>${escapeHtml(carta.set_expansion)}</span>
-                    </div>` : ''}
-                    ${carta.altura ? `
-                    <div class="atributo-fila">
-                        <span class="atributo-label">Altura</span>
-                        <span>${(carta.altura / 10).toFixed(1)} m</span>
-                    </div>` : ''}
-                    ${carta.peso ? `
-                    <div class="atributo-fila">
-                        <span class="atributo-label">Peso</span>
-                        <span>${(carta.peso / 10).toFixed(1)} kg</span>
-                    </div>` : ''}
+                    ${filaAtributo('Tipo',        carta.tipo   ? `<span class="badge-tipo">${escapeHtml(carta.tipo)}</span>`       : '')}
+                    ${filaAtributo('Rareza',      carta.rareza ? `<span class="badge-rareza">${escapeHtml(carta.rareza)}</span>`   : '')}
+                    ${filaAtributo('Set',         setHTML)}
+                    ${filaAtributo('PS',          carta.hp ? `<span>${carta.hp} PS</span>` : '')}
+                    ${filaAtributo('Ilustración', carta.ilustrador ? `<span>${escapeHtml(carta.ilustrador)}</span>` : '')}
+                    ${filaAtributo('Precio medio', precio
+                        ? `<span class="precio-cardmarket">${precio}</span> <span class="precio-fuente">(Cardmarket)</span>`
+                        : '')}
                 </div>
                 ${carta.descripcion ? `<p class="descripcion-carta">${escapeHtml(carta.descripcion)}</p>` : ''}
                 <div class="acciones-carta">
@@ -141,55 +106,30 @@ function renderizarDetalle(carta) {
                 </div>
             </div>
         </div>
-        <button class="detalle-flecha" id="detalle-flecha-next" type="button" aria-label="Ver carta siguiente" ${idSiguiente > MAX_POKEMON ? 'disabled' : ''}>❯</button>
+        <button class="detalle-flecha" id="detalle-flecha-next" type="button" aria-label="Ver carta siguiente" ${carta.siguiente_id ? '' : 'disabled'}>❯</button>
         </div>
-        ${statsHTML}
     `;
 
     // Enlazar el botón de inventario
     document.getElementById('btn-add-inventario')
         ?.addEventListener('click', () => anadirAInventario(carta));
 
-    // Flechas laterales: navegan a la carta anterior / siguiente
+    // Flechas laterales: navegan a la carta anterior / siguiente del catálogo
     document.getElementById('detalle-flecha-prev')
-        ?.addEventListener('click', () => irACarta(idAnterior));
+        ?.addEventListener('click', () => irACarta(carta.anterior_id));
     document.getElementById('detalle-flecha-next')
-        ?.addEventListener('click', () => irACarta(idSiguiente));
+        ?.addEventListener('click', () => irACarta(carta.siguiente_id));
 }
 
 // Navega a otra carta sin recargar toda la página
 function irACarta(id) {
-    if (id < 1 || id > MAX_POKEMON) return;
+    if (!id) return;
     history.pushState(null, '', `?id=${id}`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
     cargarDetalle(id);
 }
 
-// Traduce los nombres de las stats de inglés a español
-function traducirStat(stat) {
-    const stats = {
-        'hp':              'PS',
-        'attack':          'Ataque',
-        'defense':         'Defensa',
-        'special-attack':  'At. Especial',
-        'special-defense': 'Def. Especial',
-        'speed':           'Velocidad',
-    };
-    return stats[stat] || stat;
-}
-
-// Clase CSS de la barra según el valor de la stat
-function claseStat(valor) {
-    if (valor >= 150) return 'muy-alta';
-    if (valor >= 100) return 'alta';
-    if (valor >= 70)  return 'media';
-    if (valor >= 50)  return 'baja';
-    return 'muy-baja';
-}
-
-// El detalle se nutre de la PokeAPI. Por eso enviamos los datos completos del Pokémon:
-// el backend lo busca por numero (nº de Pokédex) y, si no está en el
-// catálogo, lo crea en el momento. Así funciona para cualquier Pokémon.
+// La carta ya existe en el catálogo del backend: basta con enviar su ID
 async function anadirAInventario(carta) {
     const btn = document.getElementById('btn-add-inventario');
     btn.disabled = true;
@@ -199,18 +139,7 @@ async function anadirAInventario(carta) {
         const res = await fetch(`${API_URL}/inventario`, {
             method: 'POST',
             headers: headersAuth(),
-            body: JSON.stringify({
-                carta: {
-                    nombre:        carta.nombre,
-                    numero:        String(carta.id).padStart(3, '0'),
-                    tipo:          carta.tipo,
-                    rareza:        carta.rareza,
-                    set_expansion: carta.set_expansion,
-                    imagen_url:    carta.imagen_url,
-                    descripcion:   carta.descripcion,
-                },
-                cantidad: 1
-            })
+            body: JSON.stringify({ carta_id: carta.id, cantidad: 1 })
         });
         const datos = await parsearRespuesta(res);
         if (!res.ok) throw new Error(datos.error || manejarErrorHTTP(res.status));

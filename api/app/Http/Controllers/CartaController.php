@@ -55,9 +55,15 @@ class CartaController extends Controller
         }
 
         // Orden: por defecto el orden natural del catálogo (id ascendente);
-        // con ?orden=recientes devolvemos las últimas añadidas primero
+        // ?orden=recientes → últimas añadidas primero (novedades del home)
+        // ?orden=precio    → más caras primero (destacadas); las cartas sin
+        //                    precio van al final (expresión portable
+        //                    SQLite/PostgreSQL, sin NULLS LAST)
         if ($request->orden === 'recientes') {
             $query->orderByDesc('id');
+        } elseif ($request->orden === 'precio') {
+            $query->orderByRaw('precio_cardmarket IS NULL')
+                  ->orderByDesc('precio_cardmarket');
         } else {
             $query->orderBy('id');
         }
