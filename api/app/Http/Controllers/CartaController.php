@@ -8,10 +8,18 @@ use Illuminate\Support\Facades\Validator; // Para validar los datos recibidos
 
 class CartaController extends Controller
 {
-    // --- Listar todas las cartas con filtros opcionales ---
+    // --- Listar cartas del catálogo, paginadas y con filtros ---
     // Endpoint: GET /api/cartas
     // Acceso: público (sin token)
-    // Parámetros opcionales de query: ?nombre=X &tipo=X &rareza=X &set=X
+    // Query params opcionales:
+    //   ?nombre=X       → búsqueda parcial insensible a mayúsculas
+    //   ?tipo=X         → filtro exacto (ej: "Fuego")
+    //   ?rareza=X       → filtro exacto (ej: "Rara Doble")
+    //   ?set=X          → filtro exacto por nombre de set (ej: "151")
+    //   ?orden=recientes→ más nuevas primero (para novedades del home)
+    //   ?page=N&por_pagina=M → paginación (24 por defecto, máx. 100)
+    // Respuesta: paginador estándar de Laravel
+    //   { data: [...], total, current_page, last_page, per_page, ... }
     public function index(Request $request)
     {
         // Iniciamos una query base sobre la tabla cartas
@@ -35,25 +43,51 @@ class CartaController extends Controller
         }
 
         // Filtro por rareza — búsqueda exacta
-        // Ejemplo: ?rareza=Ultra Rara → devuelve solo cartas Ultra Raras
+        // Ejemplo: ?rareza=Rara Doble → devuelve solo esa rareza
         if ($request->has('rareza')) {
             $query->where('rareza', $request->rareza);
         }
 
-        //NO IMPLEMENTADO EN LA VERSION FINAL
         // Filtro por set de expansión — búsqueda exacta
-        // Ejemplo: ?set=Fossil → devuelve solo cartas del set Fossil 
+        // Ejemplo: ?set=151 → devuelve solo cartas del set "151"
         if ($request->has('set')) {
             $query->where('set_expansion', $request->set);
         }
 
-        // Ejecutamos la query con los filtros aplicados y devolvemos el resultado
-        return response()->json($query->get());
+        // Orden: por defecto el orden natural del catálogo (id ascendente);
+        // con ?orden=recientes devolvemos las últimas añadidas primero
+        if ($request->orden === 'recientes') {
+            $query->orderByDesc('id');
+        } else {
+            $query->orderBy('id');
+        }
+
+        // Paginamos para no enviar todo el catálogo de golpe.
+        // por_pagina acotado entre 1 y 100 para proteger el backend.
+        $porPagina = min(100, max(1, (int) $request->input('por_pagina', 24)));
+
+        return response()->json($query->paginate($porPagina));
+    }
+
+    // --- Valores disponibles para los filtros del catálogo ---
+    // Endpoint: GET /api/cartas/filtros
+    // Acceso: público (sin token)
+    // Devuelve los valores distintos presentes en la BD para que el
+    // frontend construya los <select> sin hardcodear rarezas/tipos.
+    public function filtros()
+    {
+        return response()->json([
+            'tipos'   => Carta::whereNotNull('tipo')->distinct()->orderBy('tipo')->pluck('tipo'),
+            'rarezas' => Carta::whereNotNull('rareza')->distinct()->orderBy('rareza')->pluck('rareza'),
+            'sets'    => Carta::whereNotNull('set_expansion')->distinct()->orderBy('set_expansion')->pluck('set_expansion'),
+        ]);
     }
 
     // --- Ver detalle de una carta ---
     // Endpoint: GET /api/cartas/{id}
     // Acceso: público (sin token)
+    // Incluye anterior_id / siguiente_id para que el frontend pueda
+    // navegar entre cartas del catálogo sin asumir IDs consecutivos.
     public function show($id)
     {
         // Buscamos la carta por su ID
@@ -64,7 +98,10 @@ class CartaController extends Controller
             return response()->json(['error' => 'Carta no encontrada'], 404);
         }
 
-        return response()->json($carta);
+        return response()->json(array_merge($carta->toArray(), [
+            'anterior_id'  => Carta::where('id', '<', $carta->id)->max('id'),
+            'siguiente_id' => Carta::where('id', '>', $carta->id)->min('id'),
+        ]));
     }
 
     // --- Crear una nueva carta ---

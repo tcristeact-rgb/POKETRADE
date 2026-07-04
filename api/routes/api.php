@@ -18,8 +18,11 @@ Route::post('/auth/registro', [AuthController::class, 'registro']);
 Route::post('/auth/login',    [AuthController::class, 'login']);
 
 // Catálogo — lectura pública
-Route::get('/cartas',      [CartaController::class, 'index']);
-Route::get('/cartas/{id}', [CartaController::class, 'show']);
+// /cartas/filtros va antes de /cartas/{id} para que "filtros"
+// no se interprete como un ID de carta
+Route::get('/cartas',         [CartaController::class, 'index']);
+Route::get('/cartas/filtros', [CartaController::class, 'filtros']);
+Route::get('/cartas/{id}',    [CartaController::class, 'show']);
 
 // Tradeos — lectura pública
 Route::get('/tradeos',      [TradeoController::class, 'index']);
