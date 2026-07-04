@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Inventario;
-use App\Models\Carta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator; // Para validar los datos recibidos
 
@@ -32,46 +31,13 @@ class InventarioController extends Controller
     // Si la carta ya existe en el inventario, incrementa la cantidad
     // Si no existe, la crea con la cantidad indicada
     //
-    // El frontend puede enviar de dos formas la carta a añadir:
-    //   a) carta_id    → ID de una carta ya existente en el catálogo
-    //   b) carta {...} → datos completos de un Pokémon de la PokeAPI; si ese
-    //      Pokémon aún no está en el catálogo se crea en el momento.
-    // El catálogo del frontend tiene >1000 Pokémon (PokeAPI) y la tabla
-    // cartas solo guarda los que alguien posee o intercambia, creándose
-    // bajo demanda. Sin esto solo podrían añadirse las 15 cartas del seeder.
+    // El catálogo completo vive en la tabla cartas (sembrada desde
+    // TCGdex), así que basta con recibir el carta_id.
     public function store(Request $request)
     {
         $cartaId = $request->input('carta_id');
 
-        // Forma (b): llega un Pokémon de la PokeAPI sin carta_id.
-        // Lo buscamos por numero (nº de Pokédex, único por Pokémon) y,
-        // si no existe en el catálogo, lo creamos con los datos recibidos.
-        if (!$cartaId && $request->filled('carta')) {
-            $datos = $request->input('carta');
-
-            $validacionCarta = Validator::make($datos, [
-                'nombre' => 'required|string',
-                'numero' => 'required|string',
-            ]);
-            if ($validacionCarta->fails()) {
-                return response()->json(['error' => $validacionCarta->errors()->first()], 422);
-            }
-
-            $carta = Carta::firstOrCreate(
-                ['numero' => $datos['numero']],
-                [
-                    'nombre'        => $datos['nombre'],
-                    'tipo'          => $datos['tipo']          ?? null,
-                    'rareza'        => $datos['rareza']        ?? null,
-                    'set_expansion' => $datos['set_expansion'] ?? null,
-                    'imagen_url'    => $datos['imagen_url']    ?? null,
-                    'descripcion'   => $datos['descripcion']   ?? null,
-                ]
-            );
-            $cartaId = $carta->id;
-        }
-
-        // Validamos la carta resultante y la cantidad
+        // Validamos la carta y la cantidad
         $validacion = Validator::make(
             ['carta_id' => $cartaId, 'cantidad' => $request->cantidad],
             [

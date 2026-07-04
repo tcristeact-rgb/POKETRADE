@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Tradeo;
 use App\Models\Inventario;
-use App\Models\Carta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;        // Para usar transacciones SQL
 use Illuminate\Support\Facades\Validator; // Para validar los datos recibidos
@@ -52,8 +51,11 @@ class TradeoController extends Controller
         // Validamos los datos recibidos
         $validacion = Validator::make($request->all(), [
             'descripcion'   => 'nullable|string',          // Descripción opcional
-            'cartas_ofrece' => 'required|array|min:1',     // Al menos 1 carta ofrecida
-            'cartas_busca'  => 'required|array|min:1',     // Al menos 1 carta buscada
+            'cartas_ofrece'   => 'required|array|min:1',   // Al menos 1 carta ofrecida
+            'cartas_busca'    => 'required|array|min:1',   // Al menos 1 carta buscada
+            // Todas las cartas deben existir en el catálogo (tabla cartas)
+            'cartas_ofrece.*' => 'integer|exists:cartas,id',
+            'cartas_busca.*'  => 'integer|exists:cartas,id',
         ]);
 
         // Si la validación falla devolvemos el primer error con código 422
@@ -98,10 +100,10 @@ class TradeoController extends Controller
             // Asociamos las cartas que ofrece en la tabla pivote tradeo_cartas_ofrece
             $tradeo->cartasOfrece()->attach($request->cartas_ofrece);
 
-            // Las cartas buscadas pueden llegar como datos completos de Pokémon
-            // de la PokeAPI (el catálogo del backend solo tiene unas pocas).
-            // Las resolvemos a IDs de la tabla cartas, creando las que falten.
-            $tradeo->cartasBusca()->attach($this->resolverCartasBuscadas($request->cartas_busca));
+            // Asociamos las cartas que busca en la tabla pivote tradeo_cartas_busca
+            // (el catálogo completo vive en la tabla cartas, sembrada desde
+            // TCGdex, así que llegan directamente como IDs ya validados)
+            $tradeo->cartasBusca()->attach($request->cartas_busca);
 
             // Si todo fue bien confirmamos la transacción
             DB::commit();
@@ -112,44 +114,11 @@ class TradeoController extends Controller
                 'tradeo'  => $tradeo->load(['cartasOfrece', 'cartasBusca'])
             ], 201);
 
-        } catch (\InvalidArgumentException $e) {
-            // Datos de una carta buscada incompletos: error del cliente
-            DB::rollBack();
-            return response()->json(['error' => $e->getMessage()], 422);
         } catch (\Exception $e) {
             // Si algo falla revertimos todos los cambios de la transacción
             DB::rollBack();
             return response()->json(['error' => 'No se pudo publicar el tradeo.'], 500);
         }
-    }
-
-    // Convierte la lista de cartas buscadas en IDs de la tabla cartas.
-    // Cada elemento puede ser un ID (carta ya existente) o un objeto con los
-    // datos de un Pokémon de la PokeAPI, que se crea si no existe (por numero).
-    private function resolverCartasBuscadas(array $cartas): array
-    {
-        $ids = [];
-        foreach ($cartas as $c) {
-            if (is_array($c)) {
-                if (empty($c['numero'])) {
-                    throw new \InvalidArgumentException('Falta el número de Pokédex de una carta buscada.');
-                }
-                $carta = Carta::firstOrCreate(
-                    ['numero' => $c['numero']],
-                    [
-                        'nombre'        => $c['nombre']        ?? 'Carta',
-                        'tipo'          => $c['tipo']          ?? null,
-                        'rareza'        => $c['rareza']        ?? null,
-                        'set_expansion' => $c['set_expansion'] ?? null,
-                        'imagen_url'    => $c['imagen_url']    ?? null,
-                    ]
-                );
-                $ids[] = $carta->id;
-            } else {
-                $ids[] = $c;
-            }
-        }
-        return $ids;
     }
 
     // --- Actualizar estado de un tradeo ---

@@ -26,9 +26,10 @@ class CartaTest extends TestCase
         // Hacemos GET al catálogo sin token de autenticación
         $respuesta = $this->getJson('/api/cartas');
 
-        // Debe devolver 200 y exactamente 1 carta en el array
+        // Debe devolver 200 y exactamente 1 carta en el array "data"
+        // (el catálogo responde con el paginador de Laravel)
         $respuesta->assertStatus(200)
-                  ->assertJsonCount(1);
+                  ->assertJsonCount(1, 'data');
     }
 
     // --- Test 2: Detalle de carta ---
@@ -129,9 +130,10 @@ class CartaTest extends TestCase
         // Filtramos por tipo Fuego usando el parámetro de la query
         $respuesta = $this->getJson('/api/cartas?tipo=Fuego');
 
-        // Debe devolver 200, exactamente 1 carta y que sea Charizard
+        // Debe devolver 200, exactamente 1 carta en "data" y que sea Charizard
+        // (el catálogo responde con el paginador de Laravel)
         $respuesta->assertStatus(200)
-                  ->assertJsonCount(1)
+                  ->assertJsonCount(1, 'data')
                   ->assertJsonFragment(['nombre' => 'Charizard']);
     }
 }

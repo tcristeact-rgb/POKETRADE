@@ -11,8 +11,9 @@ class DatabaseSeeder extends Seeder
         // Guard de entorno: estos seeders crean usuarios de prueba con
         // credenciales fijas (hardcodeadas). NUNCA deben ejecutarse en
         // producción. Si no estamos en entorno local, avisamos y salimos
-        // sin insertar nada: la base de datos de producción arranca vacía
-        // y se llena solo con usuarios reales registrados vía la API.
+        // sin insertar nada. En producción solo se siembra el catálogo
+        // de cartas (sin usuarios ni datos de prueba), ejecutando:
+        //   php artisan db:seed --class=CartasSeeder --force
         if (! app()->environment('local')) {
             $this->command->warn('Seeders omitidos: solo se ejecutan en entorno local.');
             return;

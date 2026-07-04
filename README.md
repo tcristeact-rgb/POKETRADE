@@ -16,7 +16,7 @@
 
 ## About
 
-PokeTrade is a full-stack web application where collectors register their Pokémon cards, publish trade offers, and accept offers from other users. It combines a custom REST API (Laravel 12, JWT auth) with an external public API (PokeAPI v2) that feeds the card catalog with real data and artwork.
+PokeTrade is a full-stack web application where collectors register their Pokémon TCG cards, publish trade offers, and accept offers from other users. It combines a custom REST API (Laravel 12, JWT auth) with an external public API (TCGdex v2) that feeds the card catalog with real trading cards: official illustrations, sets, rarities, illustrators and Cardmarket prices.
 
 The frontend and backend are fully decoupled: a vanilla JavaScript client (no framework, no build step) talks to the API exclusively over HTTP/JSON.
 
@@ -26,8 +26,8 @@ This project was developed as the final project (Trabajo de Fin de Grado) for th
 
 - JWT authentication — register, login, logout, protected routes
 - User profile — view/edit profile, change password
-- Card catalog — paginated listing and detail view fed by PokeAPI, with filters by name, type and rarity (case-insensitive search)
-- Personal inventory — add cards (resolved on-demand from PokeAPI), remove them, manage quantities
+- Card catalog — server-side paginated listing and detail view of real TCG cards (official illustration, set and collector number, illustrator, HP, Cardmarket average price in EUR), with filters by name, type and rarity (case-insensitive search) built from the actual database values
+- Personal inventory — add cards from the catalog, remove them, manage quantities
 - Trades (the core feature) — publish a trade (offered cards are withdrawn from inventory inside a DB transaction), browse a public marketplace, and accept trades with an atomic card swap between both users' inventories
 - Admin role — card CRUD and user management behind role middleware
 - Accessibility — WCAG 2.1 AA: focus trap in modals, ARIA attributes, keyboard navigation, skip-to-content link
@@ -45,7 +45,7 @@ This project was developed as the final project (Trabajo de Fin de Grado) for th
 | Backend | Laravel 12 (PHP 8.2) |
 | Auth | JWT (tymon/jwt-auth) |
 | Frontend | Vanilla JavaScript (ES6 modules), HTML5, CSS3 — no framework, no build |
-| External API | PokeAPI v2 |
+| External API | TCGdex v2 (card data, seeded into the DB) |
 | Database | SQLite (local) · PostgreSQL / Supabase (production) |
 | Testing | PHPUnit (in-memory SQLite) |
 | Deployment | Render (backend) · Vercel (frontend) · Supabase (database) |
@@ -57,8 +57,10 @@ Decoupled client–server architecture. The frontend and backend are deployed in
 ```
 Browser (Vercel)  --HTTP/JSON-->  Laravel REST API (Render)  -->  PostgreSQL (Supabase)
                                             |
-                                            +-->  PokeAPI v2 (external)
+                                            +-->  TCGdex API v2 (seeder & sync only, cached)
 ```
+
+The card catalog is seeded into the database from TCGdex (curated sets "151" and "Cenit Supremo", ~437 cards) instead of being fetched live: the browser never waits on the external API, and TCGdex receives a minimum of requests (responses are also cached server-side for 24 h). A `cartas:sincronizar-tcgdex` artisan command refreshes prices and data on demand.
 
 ## Technical Highlights
 
@@ -86,7 +88,7 @@ Frontend (must be served over HTTP, not `file://`)
 npx serve frontend          # or use VS Code Live Server
 ```
 
-Running `php artisan migrate --seed` populates your local database with sample data (cards, users and trades) so you can explore the app right away during development. The production database starts empty and is not seeded, so on the live demo you can simply sign up to try it.
+Running `php artisan migrate --seed` populates your local database with the real TCG card catalog (fetched once from TCGdex) plus sample users, inventories and trades so you can explore the app right away during development. In production only the card catalog is seeded (`php artisan db:seed --class=CartasSeeder --force`); no demo users are created, so on the live demo you can simply sign up to try it.
 
 ## Testing
 

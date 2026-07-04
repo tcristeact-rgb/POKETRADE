@@ -10,34 +10,37 @@ class TradeosSeeder extends Seeder
 {
     public function run(): void
     {
-        // --- Tradeo 1: Admin ofrece Charizard, busca Mewtwo ---
+        // Los IDs corresponden a las primeras cartas del catálogo TCGdex
+        // (set "151"), sembradas por CartasSeeder antes que este seeder
+
+        // --- Tradeo 1: Admin ofrece Bulbasaur, busca Venusaur ex ---
         $tradeo1 = Tradeo::create([
             'user_id'     => 1,           // Admin
-            'descripcion' => 'Ofrezco Charizard en buen estado, busco Mewtwo.',
+            'descripcion' => 'Ofrezco Bulbasaur en buen estado, busco Venusaur ex.',
             'estado'      => 'activo',    // El tradeo está disponible
         ]);
-        $tradeo1->cartasOfrece()->attach(1); // Charizard (id: 1)
-        $tradeo1->cartasBusca()->attach(3);  // Mewtwo (id: 3)
+        $tradeo1->cartasOfrece()->attach(1); // Bulbasaur (id: 1)
+        $tradeo1->cartasBusca()->attach(3);  // Venusaur ex (id: 3)
         $this->retirarDelInventario(1, [1]);
 
-        // --- Tradeo 2: Teo ofrece Gengar y Gyarados, busca Blastoise ---
+        // --- Tradeo 2: Teo ofrece Charizard ex y Blastoise ex, busca Charmander ---
         $tradeo2 = Tradeo::create([
             'user_id'     => 2,           // Teo
-            'descripcion' => 'Tengo Gengar y Gyarados, me interesa Blastoise.',
+            'descripcion' => 'Tengo Charizard ex y Blastoise ex, me interesa Charmander.',
             'estado'      => 'activo',
         ]);
-        $tradeo2->cartasOfrece()->attach([6, 9]); // Gengar (id: 6) y Gyarados (id: 9)
-        $tradeo2->cartasBusca()->attach(4);       // Blastoise (id: 4)
+        $tradeo2->cartasOfrece()->attach([6, 9]); // Charizard ex (id: 6) y Blastoise ex (id: 9)
+        $tradeo2->cartasBusca()->attach(4);       // Charmander (id: 4)
         $this->retirarDelInventario(2, [6, 9]);
 
-        // --- Tradeo 3: María ofrece Dragonite, busca Eevee y Vaporeon ---
+        // --- Tradeo 3: María ofrece Caterpie, busca Squirtle y Beedrill ---
         $tradeo3 = Tradeo::create([
             'user_id'     => 3,           // María
-            'descripcion' => 'Cambio Dragonite por Eevee o Vaporeon.',
+            'descripcion' => 'Cambio Caterpie por Squirtle o Beedrill.',
             'estado'      => 'activo',
         ]);
-        $tradeo3->cartasOfrece()->attach(10);     // Dragonite (id: 10)
-        $tradeo3->cartasBusca()->attach([7, 15]); // Eevee (id: 7) y Vaporeon (id: 15)
+        $tradeo3->cartasOfrece()->attach(10);     // Caterpie (id: 10)
+        $tradeo3->cartasBusca()->attach([7, 15]); // Squirtle (id: 7) y Beedrill (id: 15)
         $this->retirarDelInventario(3, [10]);
 
         // --- Tradeo 4: Admin, ya cerrado (ejemplo de historial) ---
@@ -46,8 +49,8 @@ class TradeosSeeder extends Seeder
             'descripcion' => 'Tradeo ya completado.',
             'estado'      => 'cerrado',   // Este tradeo ya no está activo
         ]);
-        $tradeo4->cartasOfrece()->attach(2); // Pikachu (id: 2)
-        $tradeo4->cartasBusca()->attach(6);  // Gengar (id: 6)
+        $tradeo4->cartasOfrece()->attach(2); // Ivysaur (id: 2)
+        $tradeo4->cartasBusca()->attach(6);  // Charizard ex (id: 6)
         $this->retirarDelInventario(1, [2]);
     }
 
