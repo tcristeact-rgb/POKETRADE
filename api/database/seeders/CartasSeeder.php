@@ -2,49 +2,79 @@
 
 namespace Database\Seeders;
 
+use App\Models\Carta;
+use App\Services\TcgdexService;
 use Illuminate\Database\Seeder;
-use App\Models\Carta; // Modelo que representa la tabla cartas
 
 class CartasSeeder extends Seeder
 {
+    // Sets curados que forman el catálogo inicial (~437 cartas TCG reales):
+    //   sv03.5   → "151" (Escarlata y Púrpura: los 151 Pokémon originales)
+    //   swsh12.5 → "Cénit Supremo" (cierre de la era Espada y Escudo)
+    // Para ampliar el catálogo basta con añadir IDs de set de TCGdex aquí
+    // y volver a ejecutar el seeder (es idempotente: actualiza por tcgdex_id).
+    private const SETS = ['sv03.5', 'swsh12.5'];
+
+    // Este seeder NO crea datos de prueba, siembra el catálogo real.
+    // En producción se ejecuta directamente (salta el guard de entorno
+    // de DatabaseSeeder): php artisan db:seed --class=CartasSeeder --force
     public function run(): void
     {
-        // Array con los datos de las 15 cartas de prueba
-        // Cada carta tiene: nombre, número de pokédex, tipo, rareza,
-        // set de expansión e imagen obtenida desde la PokeAPI
-        $cartas = [
-            ['nombre' => 'Charizard',  'numero' => '006', 'tipo' => 'Fuego',     'rareza' => 'Rara Holo',  'set_expansion' => 'Base Set', 'imagen_url' => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/6.png'],
-            ['nombre' => 'Pikachu',    'numero' => '025', 'tipo' => 'Eléctrico', 'rareza' => 'Común',      'set_expansion' => 'Base Set', 'imagen_url' => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png'],
-            ['nombre' => 'Mewtwo',     'numero' => '150', 'tipo' => 'Psíquico',  'rareza' => 'Ultra Rara', 'set_expansion' => 'Base Set', 'imagen_url' => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/150.png'],
-            ['nombre' => 'Blastoise',  'numero' => '009', 'tipo' => 'Agua',      'rareza' => 'Rara Holo',  'set_expansion' => 'Base Set', 'imagen_url' => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/9.png'],
-            ['nombre' => 'Venusaur',   'numero' => '003', 'tipo' => 'Planta',    'rareza' => 'Rara Holo',  'set_expansion' => 'Base Set', 'imagen_url' => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/3.png'],
-            ['nombre' => 'Gengar',     'numero' => '094', 'tipo' => 'Fantasma',  'rareza' => 'Ultra Rara', 'set_expansion' => 'Fossil',   'imagen_url' => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/94.png'],
-            ['nombre' => 'Eevee',      'numero' => '133', 'tipo' => 'Normal',    'rareza' => 'Común',      'set_expansion' => 'Jungle',   'imagen_url' => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/133.png'],
-            ['nombre' => 'Snorlax',    'numero' => '143', 'tipo' => 'Normal',    'rareza' => 'Rara',       'set_expansion' => 'Base Set', 'imagen_url' => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/143.png'],
-            ['nombre' => 'Gyarados',   'numero' => '130', 'tipo' => 'Agua',      'rareza' => 'Ultra Rara', 'set_expansion' => 'Base Set', 'imagen_url' => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/130.png'],
-            ['nombre' => 'Dragonite',  'numero' => '149', 'tipo' => 'Dragón',    'rareza' => 'Rara Holo',  'set_expansion' => 'Fossil',   'imagen_url' => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/149.png'],
-            ['nombre' => 'Alakazam',   'numero' => '065', 'tipo' => 'Psíquico',  'rareza' => 'Rara Holo',  'set_expansion' => 'Base Set', 'imagen_url' => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/65.png'],
-            ['nombre' => 'Machamp',    'numero' => '068', 'tipo' => 'Lucha',     'rareza' => 'Rara Holo',  'set_expansion' => 'Base Set', 'imagen_url' => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/68.png'],
-            ['nombre' => 'Arcanine',   'numero' => '059', 'tipo' => 'Fuego',     'rareza' => 'Poco común', 'set_expansion' => 'Base Set', 'imagen_url' => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/59.png'],
-            ['nombre' => 'Lapras',     'numero' => '131', 'tipo' => 'Agua',      'rareza' => 'Rara',       'set_expansion' => 'Base Set', 'imagen_url' => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/131.png'],
-            ['nombre' => 'Vaporeon',   'numero' => '134', 'tipo' => 'Agua',      'rareza' => 'Poco común', 'set_expansion' => 'Jungle',   'imagen_url' => 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/134.png'],
-        ];
+        $tcgdex = app(TcgdexService::class);
 
-        // Recorremos cada carta del array y la insertamos en la base de datos
-        foreach ($cartas as $c) {
-            Carta::create([
-                'nombre'        => $c['nombre'],
-                'numero'        => $c['numero'],
-                'tipo'          => $c['tipo'],
-                'rareza'        => $c['rareza'],
-                'set_expansion' => $c['set_expansion'],
-                'imagen_url'    => $c['imagen_url'],
-                // La descripción se genera automáticamente con el nombre de la carta
-                'descripcion'   => "Carta de {$c['nombre']} de la colección Pokémon TCG.",
-            ]);
+        foreach (self::SETS as $setId) {
+            $set = $tcgdex->obtenerSet($setId);
 
-            // Mensaje de confirmación en consola por cada carta insertada
-            echo "Insertada: {$c['nombre']}\n";
+            if (!$set || empty($set['cards'])) {
+                $this->command->error("No se pudo obtener el set {$setId} de TCGdex. ¿Hay conexión?");
+                continue;
+            }
+
+            $total = count($set['cards']);
+            $this->command->info("Sembrando set \"{$set['name']}\" ({$total} cartas)...");
+
+            foreach ($set['cards'] as $i => $resumen) {
+                // El resumen del set solo trae id/localId/name/image; el
+                // detalle añade rareza, tipos, ilustrador, hp y precio
+                $carta = $tcgdex->obtenerCarta($resumen['id']);
+
+                if (!$carta) {
+                    $this->command->warn("  Sin datos, omitida: {$resumen['id']}");
+                    continue;
+                }
+
+                // updateOrCreate por tcgdex_id → re-ejecutable sin duplicar
+                Carta::updateOrCreate(
+                    ['tcgdex_id' => $carta['id']],
+                    [
+                        'nombre'            => $carta['name'],
+                        'tipo'              => $carta['types'][0] ?? null,
+                        'rareza'            => $carta['rarity'] ?? null,
+                        'set_expansion'     => $carta['set']['name'] ?? $set['name'],
+                        'set_id'            => $carta['set']['id'] ?? $setId,
+                        'numero'            => $carta['localId'] ?? null,
+                        'imagen_url'        => $carta['image'] ?? null,
+                        'descripcion'       => $carta['description'] ?? null,
+                        'ilustrador'        => $carta['illustrator'] ?? null,
+                        'hp'                => $carta['hp'] ?? null,
+                        'precio_cardmarket' => $carta['pricing']['cardmarket']['avg']
+                                                ?? $carta['pricing']['cardmarket']['trend']
+                                                ?? null,
+                    ]
+                );
+
+                // Progreso cada 50 cartas para saber que sigue vivo
+                if (($i + 1) % 50 === 0) {
+                    $this->command->info('  ' . ($i + 1) . " / {$total}");
+                }
+
+                // Pausa breve entre peticiones: uso considerado de la API
+                // (en re-ejecuciones el caché evita las peticiones HTTP)
+                usleep(100_000);
+            }
         }
+
+        $sembradas = Carta::whereNotNull('tcgdex_id')->count();
+        $this->command->info("Catálogo TCGdex completo: {$sembradas} cartas en la BD.");
     }
 }
