@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
+    <title>Set - PokeTrade</title>
+    <meta name="description" content="Explora todas las cartas de un set de expansión del TCG de Pokémon en PokeTrade.">
+    <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
+    <link rel="stylesheet" href="../css/estilos.css">
+</head>
+<body>
+    <div id="app-header"></div>
+    <main>
+        <div class="catalogo-contenedor">
+            <nav class="breadcrumb" id="breadcrumb" aria-label="Ruta de navegación">
+                <a href="../index.html">Inicio</a> ›
+                <a href="expansiones.html">Expansiones</a> ›
+                <span id="breadcrumb-set">Set</span>
+            </nav>
+
+            <!-- Cabecera del set: logo, nombre, año y nº de cartas.
+                 La rellena set.js con GET /api/sets/{id} -->
+            <div id="cabecera-set" class="set-cabecera">
+                <div class="skeleton skeleton-cabecera-set" aria-hidden="true"></div>
+            </div>
+
+            <!-- Info de paginación -->
+            <p class="paginacion-info" id="paginacion-info"></p>
+
+            <!-- Grid de cartas del set -->
+            <div id="grid-cartas" class="grid-cartas">
+                <div class="carta-card skeleton" aria-hidden="true"></div>
+                <div class="carta-card skeleton" aria-hidden="true"></div>
+                <div class="carta-card skeleton" aria-hidden="true"></div>
+                <div class="carta-card skeleton" aria-hidden="true"></div>
+                <div class="carta-card skeleton" aria-hidden="true"></div>
+                <div class="carta-card skeleton" aria-hidden="true"></div>
+                <div class="carta-card skeleton" aria-hidden="true"></div>
+                <div class="carta-card skeleton" aria-hidden="true"></div>
+            </div>
+
+            <!-- Paginación -->
+            <nav class="paginacion" id="paginacion" aria-label="Paginación del set"></nav>
+        </div>
+    </main>
+
+    <div id="app-footer"></div>
+
+    <script type="module" src="../js/header.js"></script>
+    <script type="module" src="../js/set.js"></script>
+</body>
+</html>

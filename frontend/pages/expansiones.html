@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
+    <title>Expansiones - PokeTrade</title>
+    <meta name="description" content="Explora todas las expansiones del TCG de Pokémon organizadas por serie: de la colección Base a las últimas novedades, con todos sus sets y cartas.">
+    <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
+    <link rel="stylesheet" href="../css/estilos.css">
+</head>
+<body>
+    <div id="app-header"></div>
+    <main>
+        <div class="catalogo-contenedor">
+            <!-- El breadcrumb y el título los ajusta expansiones.js según
+                 la vista: lista de series o sets de una serie (?serie=) -->
+            <nav class="breadcrumb" id="breadcrumb" aria-label="Ruta de navegación">
+                <a href="../index.html">Inicio</a> ›
+                <span>Expansiones</span>
+            </nav>
+
+            <h1 id="titulo-expansiones">Expansiones</h1>
+            <p class="subtitulo" id="subtitulo-expansiones">Todas las series y sets del TCG de Pokémon, de los más recientes a los clásicos.</p>
+
+            <!-- Grid de series o de sets -->
+            <div id="grid-expansiones" class="grid-sets">
+                <div class="set-card skeleton" aria-hidden="true"></div>
+                <div class="set-card skeleton" aria-hidden="true"></div>
+                <div class="set-card skeleton" aria-hidden="true"></div>
+                <div class="set-card skeleton" aria-hidden="true"></div>
+                <div class="set-card skeleton" aria-hidden="true"></div>
+                <div class="set-card skeleton" aria-hidden="true"></div>
+                <div class="set-card skeleton" aria-hidden="true"></div>
+                <div class="set-card skeleton" aria-hidden="true"></div>
+            </div>
+        </div>
+    </main>
+
+    <div id="app-footer"></div>
+
+    <script type="module" src="../js/header.js"></script>
+    <script type="module" src="../js/expansiones.js"></script>
+</body>
+</html>

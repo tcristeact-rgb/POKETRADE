@@ -2981,3 +2981,92 @@ body.nav-drawer-abierto { overflow: hidden; }
 
   .error-404-codigo { font-size: 4.5rem; }
 }
+/* ══════════════════════════════════════════════════
+   EXPANSIONES — series y sets del TCG
+══════════════════════════════════════════════════ */
+.grid-sets {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1.25rem;
+}
+/* Tarjeta de serie o de set (toda la tarjeta es un enlace <a>) */
+.set-card {
+  background: var(--fondo-card);
+  border: 1px solid var(--borde);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem 1rem 1.1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  text-decoration: none;
+  color: inherit;
+  transition: transform var(--trans), box-shadow var(--trans), border-color var(--trans);
+  box-shadow: var(--sombra-card);
+}
+.set-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--sombra-hover);
+  border-color: var(--borde-hover);
+}
+.set-card.skeleton { min-height: 190px; }
+/* Zona del logo con altura fija para que el grid quede alineado
+   aunque unos sets tengan logo apaisado y otros solo símbolo */
+.set-logo {
+  height: 82px;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.set-logo img {
+  max-height: 100%;
+  max-width: 85%;
+  object-fit: contain;
+}
+/* Símbolo pequeño como respaldo cuando el set no tiene logo */
+.set-logo img.set-simbolo { max-height: 46px; }
+/* Último recurso: icono neutro (nunca una imagen rota) */
+.set-sin-logo img.icono {
+  width: 42px;
+  height: 42px;
+  opacity: 0.35;
+}
+.set-info { text-align: center; }
+.set-info h3 {
+  font-family: var(--font-heading);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--texto);
+  margin: 0 0 0.25rem;
+}
+.set-meta {
+  font-size: var(--text-sm);
+  color: var(--muted);
+  margin: 0;
+}
+
+/* Cabecera de la página de un set: logo + nombre + año y nº de cartas */
+.set-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.5rem;
+}
+.set-cabecera h1 { margin: 0 0 0.25rem; }
+.set-cabecera-logo img {
+  max-height: 72px;
+  max-width: 230px;
+  object-fit: contain;
+}
+.skeleton-cabecera-set {
+  min-height: 82px;
+  width: min(420px, 100%);
+}
+
+@media (max-width: 600px) {
+  .grid-sets { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 0.85rem; }
+  .set-cabecera { gap: 1rem; }
+  .set-cabecera-logo img { max-height: 56px; max-width: 180px; }
+}
