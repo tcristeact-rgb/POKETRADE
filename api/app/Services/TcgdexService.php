@@ -50,9 +50,23 @@ class TcgdexService
     // --- Detalle de un set con su lista de cartas resumidas ---
     // GET /v2/{lang}/sets/{id} → { id, name, logo, symbol, releaseDate,
     //   cardCount, cards: [{id, localId, name, image}] }
+    //
+    // Ojo: en el catálogo español algunos sets existen solo como
+    // metadatos, con la lista de cartas vacía o incompleta (p. ej. neo1
+    // declara 111 cartas y no trae ninguna). Si la lista española no
+    // alcanza el total declarado, usamos la versión inglesa; y si esa
+    // tampoco responde, devolvemos la española (los metadatos siguen
+    // sirviendo para el índice de sets).
     public function obtenerSet(string $setId): ?array
     {
-        return $this->get('es', "sets/{$setId}") ?? $this->get('en', "sets/{$setId}");
+        $set = $this->get('es', "sets/{$setId}");
+
+        $total = $set['cardCount']['total'] ?? 0;
+        if (!$set || count($set['cards'] ?? []) < $total) {
+            return $this->get('en', "sets/{$setId}") ?? $set;
+        }
+
+        return $set;
     }
 
     // --- Detalle completo de una carta, con fallback es→en ---

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Carta;
+use App\Services\TcgdexService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator; // Para validar los datos recibidos
 
@@ -104,10 +105,47 @@ class CartaController extends Controller
             return response()->json(['error' => 'Carta no encontrada'], 404);
         }
 
+        // Hidratación perezosa: las cartas cacheadas desde el resumen de
+        // un set (cache-aside) solo traen nombre, número e imagen; la
+        // primera vez que alguien abre la carta completamos su detalle
+        // desde TCGdex y lo persistimos para las visitas siguientes
+        if ($carta->tcgdex_id && !$carta->detalle_synced_at) {
+            $this->hidratarDetalle($carta);
+        }
+
         return response()->json(array_merge($carta->toArray(), [
             'anterior_id'  => Carta::where('id', '<', $carta->id)->max('id'),
             'siguiente_id' => Carta::where('id', '>', $carta->id)->min('id'),
         ]));
+    }
+
+    // Completa el detalle de la carta desde TCGdex (rareza, tipo, precio,
+    // descripción...). Si la API externa no responde, no pasa nada: se
+    // sirve lo que haya en la BD y la marca queda a null para reintentar
+    // en la próxima visita. Mismo mapeo de campos que el comando
+    // cartas:sincronizar-tcgdex.
+    private function hidratarDetalle(Carta $carta): void
+    {
+        $datos = app(TcgdexService::class)->obtenerCarta($carta->tcgdex_id);
+
+        if (!$datos) {
+            return;
+        }
+
+        $carta->update([
+            'nombre'            => $datos['name'] ?? $carta->nombre,
+            'tipo'              => $datos['types'][0] ?? $carta->tipo,
+            'rareza'            => $datos['rarity'] ?? $carta->rareza,
+            'numero'            => $datos['localId'] ?? $carta->numero,
+            'imagen_url'        => $datos['image'] ?? $carta->imagen_url,
+            'descripcion'       => $datos['description'] ?? $carta->descripcion,
+            'ilustrador'        => $datos['illustrator'] ?? $carta->ilustrador,
+            'hp'                => $datos['hp'] ?? $carta->hp,
+            'precio_cardmarket' => $datos['pricing']['cardmarket']['avg']
+                                    ?? $datos['pricing']['cardmarket']['trend']
+                                    ?? $carta->precio_cardmarket,
+            'detalle_synced_at' => now(),
+        ]);
     }
 
     // --- Crear una nueva carta ---

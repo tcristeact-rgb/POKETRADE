@@ -32,6 +32,8 @@ Route::get('/series',      [SerieController::class, 'index']);
 Route::get('/series/{id}', [SerieController::class, 'show']);
 Route::get('/sets',        [SetController::class, 'index']);
 Route::get('/sets/{id}',   [SetController::class, 'show']);
+// La ruta que dispara el cacheo bajo demanda de las cartas del set
+Route::get('/sets/{id}/cartas', [SetController::class, 'cartas']);
 
 // Tradeos — lectura pública
 Route::get('/tradeos',      [TradeoController::class, 'index']);

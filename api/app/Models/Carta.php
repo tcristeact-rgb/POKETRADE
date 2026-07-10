@@ -20,12 +20,14 @@ class Carta extends Model
         'ilustrador',
         'hp',
         'precio_cardmarket',
+        'detalle_synced_at',
     ];
 
     // Tipado de atributos al serializar a JSON
     protected $casts = [
         'hp'                => 'integer',
         'precio_cardmarket' => 'float',
+        'detalle_synced_at' => 'datetime',
     ];
 
     // URLs de imagen listas para el frontend. TCGdex sirve la imagen
