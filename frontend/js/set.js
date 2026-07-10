@@ -8,9 +8,15 @@
 import { API_URL } from './auth.js';
 import { escapeHtml, tarjetaCarta } from './utils.js';
 import { crearPaginacion } from './paginacion.js';
+import { activarLightboxEnGrid } from './lightbox.js';
 
 const CARTAS_POR_PAGINA = 20;
 let setId = null;
+let cartasActuales = [];
+
+// Zoom: click en la ilustración de una tarjeta → lightbox con las
+// cartas de la página actual (flechas ←/→ para moverse entre ellas)
+activarLightboxEnGrid('grid-cartas', () => cartasActuales);
 
 const paginacion = crearPaginacion({
     contenedorId: 'paginacion',
@@ -111,6 +117,7 @@ async function cargarPagina(pagina) {
 
 function mostrarCartas(cartas) {
     const grid = document.getElementById('grid-cartas');
+    cartasActuales = cartas;
 
     if (!cartas.length) {
         grid.innerHTML = '<p class="grid-mensaje">Este set no tiene cartas.</p>';

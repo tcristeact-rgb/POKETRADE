@@ -5,6 +5,7 @@
 
 import { API_URL, estaLogueado, headersAuth, manejarErrorHTTP, parsearRespuesta } from './auth.js';
 import { escapeHtml, mostrarAlerta, formatearPrecio } from './utils.js';
+import { abrirLightbox } from './lightbox.js';
 
 let cartaActual = null;
 
@@ -85,7 +86,10 @@ function renderizarDetalle(carta) {
         <div class="detalle-card">
             <div class="detalle-imagen">
                 ${imagen
-                    ? `<img src="${escapeHtml(imagen)}" alt="${nombreSeguro}" />`
+                    ? `<button class="detalle-imagen-zoom" id="btn-zoom-carta" type="button"
+                          aria-label="Ampliar ilustración de ${nombreSeguro}">
+                          <img src="${escapeHtml(imagen)}" alt="${nombreSeguro}" />
+                       </button>`
                     : `<div class="sin-imagen-grande" aria-hidden="true">?</div>`}
             </div>
             <div class="detalle-info">
@@ -113,6 +117,10 @@ function renderizarDetalle(carta) {
     // Enlazar el botón de inventario
     document.getElementById('btn-add-inventario')
         ?.addEventListener('click', () => anadirAInventario(carta));
+
+    // Zoom de la ilustración: botón accesible también con teclado
+    document.getElementById('btn-zoom-carta')
+        ?.addEventListener('click', () => abrirLightbox([carta]));
 
     // Flechas laterales: navegan a la carta anterior / siguiente del catálogo
     document.getElementById('detalle-flecha-prev')
