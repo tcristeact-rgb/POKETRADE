@@ -28,8 +28,28 @@ class TcgdexService
     private const CAMPOS_FALLBACK  = ['name', 'rarity', 'image', 'illustrator', 'description'];
     private const CAMPOS_CRITICOS  = ['name', 'rarity', 'image'];
 
+    // --- Listado de todas las series del TCG en un idioma ---
+    // GET /v2/{lang}/series → [{ id, name }]
+    // Sin fallback es→en aquí: el catálogo "es" de TCGdex omite series y
+    // sets antiguos que nunca se tradujeron (Gym, e-Card, Base 4 y 5...),
+    // así que el comando tcgdex:sync-sets recorre ambos idiomas y combina:
+    // español preferido, inglés solo para completar los huecos.
+    public function listarSeries(string $idioma = 'es'): ?array
+    {
+        return $this->get($idioma, 'series');
+    }
+
+    // --- Detalle de una serie con sus sets resumidos ---
+    // GET /v2/{lang}/series/{id} → { id, name, logo, sets: [{id, name,
+    //   logo, symbol, cardCount: {total, official}}] }
+    public function obtenerSerie(string $serieId, string $idioma = 'es'): ?array
+    {
+        return $this->get($idioma, "series/{$serieId}");
+    }
+
     // --- Detalle de un set con su lista de cartas resumidas ---
-    // GET /v2/{lang}/sets/{id} → { id, name, cardCount, cards: [{id, localId, name, image}] }
+    // GET /v2/{lang}/sets/{id} → { id, name, logo, symbol, releaseDate,
+    //   cardCount, cards: [{id, localId, name, image}] }
     public function obtenerSet(string $setId): ?array
     {
         return $this->get('es', "sets/{$setId}") ?? $this->get('en', "sets/{$setId}");

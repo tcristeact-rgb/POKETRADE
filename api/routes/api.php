@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartaController;
+use App\Http\Controllers\SerieController;
+use App\Http\Controllers\SetController;
 use App\Http\Controllers\TradeoController;
 use App\Http\Controllers\InventarioController;
 use App\Http\Controllers\UsuarioController;
@@ -23,6 +25,13 @@ Route::post('/auth/login',    [AuthController::class, 'login']);
 Route::get('/cartas',         [CartaController::class, 'index']);
 Route::get('/cartas/filtros', [CartaController::class, 'filtros']);
 Route::get('/cartas/{id}',    [CartaController::class, 'show']);
+
+// Expansiones — índice de series y sets del TCG, lectura pública
+// (el índice lo siembra el comando: php artisan tcgdex:sync-sets)
+Route::get('/series',      [SerieController::class, 'index']);
+Route::get('/series/{id}', [SerieController::class, 'show']);
+Route::get('/sets',        [SetController::class, 'index']);
+Route::get('/sets/{id}',   [SetController::class, 'show']);
 
 // Tradeos — lectura pública
 Route::get('/tradeos',      [TradeoController::class, 'index']);
