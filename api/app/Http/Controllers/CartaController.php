@@ -113,9 +113,15 @@ class CartaController extends Controller
             $this->hidratarDetalle($carta);
         }
 
+        // Navegación anterior/siguiente acotada al set de la carta, para
+        // recorrer la expansión completa en orden; las cartas sin set
+        // (creadas a mano por un admin) navegan por todo el catálogo
+        $vecinas = Carta::query()
+            ->when($carta->set_id, fn ($q) => $q->where('set_id', $carta->set_id));
+
         return response()->json(array_merge($carta->toArray(), [
-            'anterior_id'  => Carta::where('id', '<', $carta->id)->max('id'),
-            'siguiente_id' => Carta::where('id', '>', $carta->id)->min('id'),
+            'anterior_id'  => (clone $vecinas)->where('id', '<', $carta->id)->max('id'),
+            'siguiente_id' => (clone $vecinas)->where('id', '>', $carta->id)->min('id'),
         ]));
     }
 

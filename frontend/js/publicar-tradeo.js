@@ -1,14 +1,15 @@
 // publicar-tradeo.js — Crear y publicar un tradeo (módulo ES6)
 
 import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
-import { escapeHtml, mostrarAlerta } from './utils.js';
+import { buscarCartasCatalogo, debounce, escapeHtml, mostrarAlerta } from './utils.js';
 
 protegerRuta();
 
-const MAX_BUSCA_VISIBLE = 60;   
+const MAX_BUSCA_VISIBLE = 60;
 
-let inventario     = [];
-let catalogoCartas = [];        
+let inventario      = [];
+let resultadosBusca = [];             // Resultados de la búsqueda actual
+const cartasConocidas = new Map();    // id → carta, para las previews
 let idsOfrece = new Set();
 let idsBusca  = new Set();
 
@@ -16,8 +17,10 @@ document.addEventListener('DOMContentLoaded', () => {
     cargarInventarioOfrece();
     cargarCatalogoBusca();
 
-    // Controles estáticos
-    document.getElementById('buscar-busca')?.addEventListener('input', filtrarBusca);
+    // Controles estáticos. La búsqueda va al backend (el catálogo por
+    // expansiones ya no cabe entero en el navegador), con debounce
+    // para no lanzar una petición por tecla
+    document.getElementById('buscar-busca')?.addEventListener('input', debounce(filtrarBusca, 300));
     document.getElementById('descripcion')?.addEventListener('input', actualizarContador);
     document.getElementById('btn-publicar')?.addEventListener('click', publicarTradeo);
 
@@ -65,32 +68,17 @@ async function cargarInventarioOfrece() {
     }
 }
 
-async function cargarCatalogoBusca() {
+// Pide al backend la primera página de resultados del filtro por
+// nombre (server-side: la BD crece con cada set que alguien visita y
+// descargarla entera al navegador ya no es viable). Las cartas vistas
+// se recuerdan en cartasConocidas para que las previews de selección
+// conserven el nombre aunque la búsqueda cambie.
+async function cargarCatalogoBusca(texto = '') {
     const grid = document.getElementById('grid-busca');
     try {
-        // Catálogo completo desde nuestra API, página a página
-        // (100 por petición, el tope del backend)
-        catalogoCartas = [];
-        let pagina = 1;
-        let ultimaPagina = 1;
-
-        do {
-            const res = await fetch(`${API_URL}/cartas?por_pagina=100&page=${pagina}`);
-            if (!res.ok) throw new Error('Error al conectar con la API');
-            const datos = await res.json();
-            ultimaPagina = datos.last_page;
-            for (const c of datos.data) {
-                catalogoCartas.push({
-                    id:         c.id,
-                    nombre:     c.nombre,
-                    numero:     c.numero,
-                    imagen_url: c.imagen_low || c.imagen_url,
-                });
-            }
-            pagina++;
-        } while (pagina <= ultimaPagina);
-
-        renderizarBusca(catalogoCartas.slice(0, MAX_BUSCA_VISIBLE));
+        resultadosBusca = await buscarCartasCatalogo(texto, MAX_BUSCA_VISIBLE);
+        resultadosBusca.forEach(c => cartasConocidas.set(c.id, c));
+        renderizarBusca(resultadosBusca);
     } catch (e) {
         grid.innerHTML = `<p class="vacio-seccion error-texto">Error al cargar catálogo: ${e.message}</p>`;
     }
@@ -166,7 +154,7 @@ function toggleBusca(id, el) {
         el.classList.add('seleccionada');
         el.setAttribute('aria-pressed', 'true');
     }
-    actualizarPreview('preview-busca', idsBusca, catalogoCartas);
+    actualizarPreview('preview-busca', idsBusca, [...cartasConocidas.values()]);
 }
 
 function actualizarPreview(contenedorId, ids, fuente) {
@@ -189,21 +177,14 @@ function quitarSeleccion(id, contenedorId) {
         renderizarOfrece(inventario);
     } else {
         idsBusca.delete(id);
-        actualizarPreview('preview-busca', idsBusca, catalogoCartas);
-        renderizarBusca(filtrarBuscaActual());
+        actualizarPreview('preview-busca', idsBusca, [...cartasConocidas.values()]);
+        renderizarBusca(resultadosBusca);
     }
 }
 
-function filtrarBuscaActual() {
-    const texto  = document.getElementById('buscar-busca').value.toLowerCase().trim();
-    const fuente = texto
-        ? catalogoCartas.filter(c => c.nombre.toLowerCase().includes(texto))
-        : catalogoCartas;
-    return fuente.slice(0, MAX_BUSCA_VISIBLE);
-}
-
+// El texto cambió: nueva búsqueda contra el backend
 function filtrarBusca() {
-    renderizarBusca(filtrarBuscaActual());
+    cargarCatalogoBusca(document.getElementById('buscar-busca').value.trim());
 }
 
 function actualizarContador() {

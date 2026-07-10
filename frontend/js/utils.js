@@ -1,7 +1,36 @@
 // utils.js – Funciones compartidas entre todas las páginas
 // Módulo ES6: importa paginaUrl de auth.js y exporta utilidades.
 
-import { paginaUrl } from './auth.js';
+import { API_URL, paginaUrl } from './auth.js';
+
+// Retrasa la ejecución de fn hasta que pasen ms sin nuevas llamadas.
+export function debounce(fn, ms) {
+    let temporizador;
+    return (...args) => {
+        clearTimeout(temporizador);
+        temporizador = setTimeout(() => fn(...args), ms);
+    };
+}
+
+// Búsqueda de cartas para los selectores (modal de inventario y
+// publicar tradeo). Con el catálogo completo por expansiones ya no se
+// puede descargar todo al navegador: se pide al backend la primera
+// página de resultados del filtro por nombre, que basta para elegir.
+export async function buscarCartasCatalogo(texto = '', limite = 60) {
+    const params = new URLSearchParams({ por_pagina: limite });
+    if (texto) params.set('nombre', texto);
+
+    const res = await fetch(`${API_URL}/cartas?${params}`);
+    if (!res.ok) throw new Error('Error al conectar con la API');
+    const datos = await res.json();
+
+    return datos.data.map(c => ({
+        id:         c.id,
+        nombre:     c.nombre,
+        numero:     c.numero,
+        imagen_url: c.imagen_low || c.imagen_url,
+    }));
+}
 
 export function escapeHtml(str) {
     if (!str) return '';

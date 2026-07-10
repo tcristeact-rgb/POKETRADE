@@ -1,6 +1,6 @@
 # PokeTrade
 
-> A full-stack Pokémon card trading platform — browse a catalog of 1,000+ cards, build your collection, and trade with other collectors.
+> A full-stack Pokémon card trading platform — browse the complete TCG catalog by expansion set, build your collection, and trade with other collectors.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 ![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)
@@ -27,6 +27,8 @@ This project was developed as the final project (Trabajo de Fin de Grado) for th
 - JWT authentication — register, login, logout, protected routes
 - User profile — view/edit profile, change password
 - Card catalog — server-side paginated listing and detail view of real TCG cards (official illustration, set and collector number, illustrator, HP, Cardmarket average price in EUR), with filters by name, type and rarity (case-insensitive search) built from the actual database values
+- Full TCG catalog by expansion — browse every series and set ever published (~21 series, ~214 sets) with breadcrumb navigation: series → sets (logo, year, card count) → paginated card grid. Card data is cached on demand per set, so any card of any set can be collected and traded
+- Illustration zoom — clicking any card illustration opens an accessible lightbox with the high-quality image (low-res placeholder while it loads, arrow-key navigation between cards, focus trap, Escape/outside-click close)
 - Personal inventory — add cards from the catalog, remove them, manage quantities
 - Trades (the core feature) — publish a trade (offered cards are withdrawn from inventory inside a DB transaction), browse a public marketplace, and accept trades with an atomic card swap between both users' inventories
 - Admin role — card CRUD and user management behind role middleware
@@ -57,10 +59,29 @@ Decoupled client–server architecture. The frontend and backend are deployed in
 ```
 Browser (Vercel)  --HTTP/JSON-->  Laravel REST API (Render)  -->  PostgreSQL (Supabase)
                                             |
-                                            +-->  TCGdex API v2 (seeder & sync only, cached)
+                                            +-->  TCGdex API v2 (sync command & cache-aside, cached 24 h)
 ```
 
-The card catalog is seeded into the database from TCGdex (curated sets "151" and "Cenit Supremo", ~437 cards) instead of being fetched live: the browser never waits on the external API, and TCGdex receives a minimum of requests (responses are also cached server-side for 24 h). A `cartas:sincronizar-tcgdex` artisan command refreshes prices and data on demand.
+### Card catalog: lightweight index + cache-aside
+
+The full TCG catalog is ~130k cards, so it is **not** stored upfront. Instead:
+
+1. **Series/sets index** — `php artisan tcgdex:sync-sets` seeds a lightweight index (~21 series, ~214 sets: name, logo, release date, card count). It is idempotent and merges the Spanish TCGdex catalog with the English one to fill gaps (some old sets were never translated). Run it once after deploying and re-run whenever new sets are released.
+2. **Cards on demand (cache-aside)** — the first time anyone opens a set, `GET /api/sets/{id}/cartas` fetches its card list from TCGdex (a single request), persists it inside a DB transaction and marks the set with `synced_at`; every later visit is served straight from the database. The DB only grows with the sets people actually visit. If TCGdex is down, the endpoint returns a clear 503 and the set is never left half-cached.
+3. **Lazy detail hydration** — cards enter the DB with just name, number and image; the first time a card's detail page is opened, `GET /api/cartas/{id}` completes rarity, type, price and description from TCGdex and persists them (`detalle_synced_at`).
+
+The browser never talks to TCGdex directly, and all external responses are cached server-side for 24 h. `cartas:sincronizar-tcgdex` still refreshes prices/data of already-stored cards on demand.
+
+### Catalog & expansion endpoints
+
+| Method & path | Description |
+|---|---|
+| `GET /api/series` | All series, newest first, with set counts |
+| `GET /api/series/{id}` | One serie with its sets (accepts TCGdex or internal ID) |
+| `GET /api/sets` | All sets, `?serie=X` to filter |
+| `GET /api/sets/{id}` | Set header info (logo, release date, card count) |
+| `GET /api/sets/{id}/cartas` | Paginated cards of a set — triggers the on-demand caching |
+| `GET /api/cartas/{id}` | Card detail — triggers lazy hydration from TCGdex |
 
 ## Technical Highlights
 
@@ -80,6 +101,7 @@ cp .env.example .env
 php artisan key:generate
 php artisan jwt:secret
 php artisan migrate --seed
+php artisan tcgdex:sync-sets # series/sets index for the expansions browser (~3 min the first time)
 php artisan serve            # http://localhost:8000
 ```
 
@@ -88,13 +110,13 @@ Frontend (must be served over HTTP, not `file://`)
 npx serve frontend          # or use VS Code Live Server
 ```
 
-Running `php artisan migrate --seed` populates your local database with the real TCG card catalog (fetched once from TCGdex) plus sample users, inventories and trades so you can explore the app right away during development. In production only the card catalog is seeded (`php artisan db:seed --class=CartasSeeder --force`); no demo users are created, so on the live demo you can simply sign up to try it.
+Running `php artisan migrate --seed` populates your local database with a starter card catalog (two curated sets fetched once from TCGdex) plus sample users, inventories and trades so you can explore the app right away during development. `php artisan tcgdex:sync-sets` adds the series/sets index so the expansions browser works; the cards of any other set are cached automatically the first time you open it. In production only the catalog is set up (`php artisan db:seed --class=CartasSeeder --force` plus `php artisan tcgdex:sync-sets`, which needs no `--force` because it has no environment guard); no demo users are created, so on the live demo you can simply sign up to try it.
 
 ## Testing
 
 ```bash
 cd api
-php artisan test            # 17 tests, in-memory SQLite
+php artisan test            # 31 tests, in-memory SQLite (TCGdex mocked with Http::fake)
 ```
 
 ## License

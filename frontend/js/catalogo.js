@@ -4,7 +4,7 @@
 // La barra de paginación es el componente compartido de paginacion.js.
 
 import { API_URL } from './auth.js';
-import { tarjetaCarta } from './utils.js';
+import { debounce, tarjetaCarta } from './utils.js';
 import { crearPaginacion } from './paginacion.js';
 import { activarLightboxEnGrid } from './lightbox.js';
 
@@ -20,15 +20,6 @@ const paginacion = crearPaginacion({
     infoId:       'paginacion-info',
     alCambiar:    irAPagina,
 });
-
-// Retrasa la ejecución de fn hasta que pasen ms sin nuevas llamadas.
-function debounce(fn, ms) {
-    let temporizador;
-    return (...args) => {
-        clearTimeout(temporizador);
-        temporizador = setTimeout(() => fn(...args), ms);
-    };
-}
 
 document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filtro-nombre')?.addEventListener('input', debounce(filtrar, 300));

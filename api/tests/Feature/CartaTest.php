@@ -119,6 +119,24 @@ class CartaTest extends TestCase
                   ->assertJsonFragment(['nombre' => 'Mewtwo']);
     }
 
+    // --- Test 5b: Navegación anterior/siguiente acotada al set ---
+    // El detalle debe saltar a la siguiente carta DEL MISMO SET aunque
+    // haya cartas de otros sets con IDs intermedios
+    public function test_navegacion_del_detalle_se_limita_al_set()
+    {
+        // detalle_synced_at evita que el detalle intente hidratarse
+        // contra TCGdex durante el test
+        $primera = Carta::create(['nombre' => 'Bulbasaur', 'tcgdex_id' => 'sv03.5-001', 'set_id' => 'sv03.5', 'detalle_synced_at' => now()]);
+        Carta::create(['nombre' => 'Ampharos', 'tcgdex_id' => 'neo1-1', 'set_id' => 'neo1', 'detalle_synced_at' => now()]);
+        $tercera = Carta::create(['nombre' => 'Ivysaur', 'tcgdex_id' => 'sv03.5-002', 'set_id' => 'sv03.5', 'detalle_synced_at' => now()]);
+
+        $respuesta = $this->getJson("/api/cartas/{$primera->id}");
+
+        $respuesta->assertStatus(200)
+                  ->assertJsonPath('siguiente_id', $tercera->id)
+                  ->assertJsonPath('anterior_id', null);
+    }
+
     // --- Test 6: Filtrar cartas por tipo ---
     // Comprueba que el filtro por tipo del catálogo funciona correctamente
     public function test_se_puede_filtrar_cartas_por_tipo()

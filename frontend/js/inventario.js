@@ -1,24 +1,26 @@
 // inventario.js — Gestión del inventario del usuario
 
 import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
-import { escapeHtml, mostrarAlerta, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
+import { buscarCartasCatalogo, debounce, escapeHtml, mostrarAlerta, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
 
 protegerRuta();
 
-const MAX_MODAL_VISIBLE = 60;   
+const MAX_MODAL_VISIBLE = 60;
 
-let todasLasCartasCatalogo = [];   
-let cartaSeleccionadaId    = null;
-let cantidadSeleccionada   = 1;
+let resultadosModal      = [];   // Resultados de la búsqueda actual
+let cartaSeleccionadaId  = null;
+let cantidadSeleccionada = 1;
 
 document.addEventListener('DOMContentLoaded', () => {
     cargarInventario();
-    cargarCatalogoPModal();
+    cargarCatalogoModal();
 
-    // Botones estáticos
+    // Botones estáticos. La búsqueda del modal va al backend (el
+    // catálogo por expansiones ya no cabe entero en el navegador),
+    // con debounce para no lanzar una petición por tecla
     document.getElementById('btn-abrir-modal')?.addEventListener('click', abrirModal);
     document.getElementById('btn-cerrar-modal-inv')?.addEventListener('click', cerrarModal);
-    document.getElementById('modal-buscar')?.addEventListener('input', filtrarModal);
+    document.getElementById('modal-buscar')?.addEventListener('input', debounce(filtrarModal, 300));
     document.getElementById('btn-cantidad-menos')?.addEventListener('click', () => cambiarCantidad(-1));
     document.getElementById('btn-cantidad-mas')?.addEventListener('click', () => cambiarCantidad(1));
     document.getElementById('btn-confirmar-anadir')?.addEventListener('click', confirmarAnadir);
@@ -109,42 +111,17 @@ async function eliminarItem(id) {
 
 // ─── Modal: catálogo ──────────────────────────────────
 
-async function cargarCatalogoPModal() {
+// Pide al backend la primera página de resultados del filtro por
+// nombre (server-side: la BD crece con cada set que alguien visita y
+// descargarla entera al navegador ya no es viable)
+async function cargarCatalogoModal(texto = '') {
     try {
-        // Catálogo completo desde nuestra API (los sets curados caben
-        // de sobra en una petición; el tope del backend es 100... por
-        // eso paginamos aquí hasta traerlo todo)
-        todasLasCartasCatalogo = await cargarCatalogoCompleto();
-        renderizarModal(todasLasCartasCatalogo.slice(0, MAX_MODAL_VISIBLE));
+        resultadosModal = await buscarCartasCatalogo(texto, MAX_MODAL_VISIBLE);
+        renderizarModal(resultadosModal);
     } catch (e) {
         document.getElementById('lista-cartas-modal').innerHTML =
             `<p class="error-texto">No se pudo cargar el catálogo: ${e.message}</p>`;
     }
-}
-
-// Descarga el catálogo completo página a página (100 por petición)
-async function cargarCatalogoCompleto() {
-    const cartas = [];
-    let pagina = 1;
-    let ultimaPagina = 1;
-
-    do {
-        const res = await fetch(`${API_URL}/cartas?por_pagina=100&page=${pagina}`);
-        if (!res.ok) throw new Error('Error al conectar con la API');
-        const datos = await res.json();
-        ultimaPagina = datos.last_page;
-        for (const c of datos.data) {
-            cartas.push({
-                id:         c.id,
-                nombre:     c.nombre,
-                numero:     c.numero,
-                imagen_url: c.imagen_low || c.imagen_url,
-            });
-        }
-        pagina++;
-    } while (pagina <= ultimaPagina);
-
-    return cartas;
 }
 
 function renderizarModal(cartas) {
@@ -167,16 +144,14 @@ function renderizarModal(cartas) {
     `).join('');
 }
 
+// El texto cambió: nueva búsqueda contra el backend
 function filtrarModal() {
-    const texto  = document.getElementById('modal-buscar').value.toLowerCase().trim();
-    const fuente = texto
-        ? todasLasCartasCatalogo.filter(c => c.nombre.toLowerCase().includes(texto))
-        : todasLasCartasCatalogo;
-    renderizarModal(fuente.slice(0, MAX_MODAL_VISIBLE));
+    cargarCatalogoModal(document.getElementById('modal-buscar').value.trim());
 }
 
 function seleccionarCarta(id, el) {
-    const carta = todasLasCartasCatalogo.find(c => c.id === id);
+    // La carta seleccionada siempre está en los resultados visibles
+    const carta = resultadosModal.find(c => c.id === id);
     cartaSeleccionadaId  = id;
     cantidadSeleccionada = 1;
     document.getElementById('nombre-seleccionada').textContent = carta?.nombre || `Carta #${id}`;
@@ -226,7 +201,7 @@ function abrirModal() {
 function cerrarModal() {
     document.getElementById('modal-overlay').hidden = true;
     document.getElementById('modal-buscar').value = '';
-    renderizarModal(todasLasCartasCatalogo.slice(0, MAX_MODAL_VISIBLE));
+    cargarCatalogoModal();
     // Accesibilidad: devuelve el foco al botón que abrió el modal
     cerrarModalAccesible();
 }
