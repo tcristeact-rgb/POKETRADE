@@ -119,6 +119,24 @@ function inyectarHeader() {
   configurarDrawer();
   configurarBuscadores();
   configurarTema();
+  configurarScrollCristal();
+}
+
+// ── Cristal al hacer scroll ────────────────────────
+// La píldora hunde su tinte y endurece la sombra al despegarse del
+// top (.scrolled solo cambia color y sombra: cero saltos de layout).
+function configurarScrollCristal() {
+  const header = document.querySelector('header');
+  if (!header) return;
+  let pendiente = false;
+  function actualizar() {
+    pendiente = false;
+    header.classList.toggle('scrolled', window.scrollY > 8);
+  }
+  window.addEventListener('scroll', () => {
+    if (!pendiente) { pendiente = true; requestAnimationFrame(actualizar); }
+  }, { passive: true });
+  actualizar();
 }
 
 // ── Lógica del drawer ──────────
