@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
     <title>Catálogo - PokeTrade</title>
-    <meta name="description" content="Explora el catálogo de cartas Pokémon de PokeTrade y filtra por nombre, tipo o rareza para encontrar la carta que buscas.">
+    <meta name="description" content="Explora el catálogo completo del TCG de Pokémon por series y sets de expansión, busca cartas por nombre y filtra por tipo o rareza.">
     <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
 </head>
@@ -13,38 +13,58 @@
     <div id="app-header"></div>
     <main>
         <div class="catalogo-contenedor">
-            <h1>Catálogo de cartas</h1>
+            <!-- Breadcrumb y cabecera: los ajusta catalogo.js según la
+                 vista (series, sets de una serie ?serie=, cartas de un
+                 set ?set= o resultados de la búsqueda global) -->
+            <nav class="breadcrumb" id="breadcrumb" aria-label="Ruta de navegación">
+                <a href="../index.html">Inicio</a> ›
+                <span>Catálogo</span>
+            </nav>
 
-            <!-- Filtros -->
-            <div class="filtros" role="search" aria-label="Filtros del catálogo">
-                <input type="text" id="filtro-nombre" placeholder="Buscar por nombre..."
+            <div id="cabecera-catalogo" class="set-cabecera">
+                <div>
+                    <h1 id="titulo-catalogo">Catálogo</h1>
+                    <p class="set-meta" id="subtitulo-catalogo"></p>
+                </div>
+            </div>
+
+            <!-- Barra de filtros persistente: visible en todos los
+                 niveles, sticky bajo el header. Su estado vive en la
+                 URL (q, tipo, rareza) → filtros-catalogo.js -->
+            <div class="filtros filtros-catalogo" role="search" aria-label="Filtros del catálogo">
+                <input type="text" id="filtro-nombre" placeholder="Buscar carta por nombre..."
                        aria-label="Buscar carta por nombre" />
-                <!-- Las opciones de tipo y rareza las rellena catalogo.js
-                     con los valores reales del catálogo (GET /cartas/filtros) -->
                 <select id="filtro-tipo" aria-label="Filtrar por tipo">
                     <option value="">Todos los tipos</option>
                 </select>
                 <select id="filtro-rareza" aria-label="Filtrar por rareza">
                     <option value="">Todas las rarezas</option>
                 </select>
+                <button id="btn-limpiar-filtros" class="btn-limpiar-filtros" type="button" hidden>
+                    ✕ Limpiar filtros
+                </button>
             </div>
+
+            <!-- Indicador de modo: "Buscando en todo el catálogo" o
+                 "Filtrando en {set}" -->
+            <p class="modo-filtro" id="modo-filtro" aria-live="polite" hidden></p>
 
             <!-- Info de paginación -->
             <p class="paginacion-info" id="paginacion-info"></p>
 
-            <!-- Grid de cartas -->
-            <div id="grid-cartas" class="grid-cartas">
-                <div class="carta-card skeleton" aria-hidden="true"></div>
-                <div class="carta-card skeleton" aria-hidden="true"></div>
-                <div class="carta-card skeleton" aria-hidden="true"></div>
-                <div class="carta-card skeleton" aria-hidden="true"></div>
-                <div class="carta-card skeleton" aria-hidden="true"></div>
-                <div class="carta-card skeleton" aria-hidden="true"></div>
-                <div class="carta-card skeleton" aria-hidden="true"></div>
-                <div class="carta-card skeleton" aria-hidden="true"></div>
+            <!-- Grid de series, sets o cartas según la vista -->
+            <div id="grid-catalogo" class="grid-sets">
+                <div class="set-card skeleton" aria-hidden="true"></div>
+                <div class="set-card skeleton" aria-hidden="true"></div>
+                <div class="set-card skeleton" aria-hidden="true"></div>
+                <div class="set-card skeleton" aria-hidden="true"></div>
+                <div class="set-card skeleton" aria-hidden="true"></div>
+                <div class="set-card skeleton" aria-hidden="true"></div>
+                <div class="set-card skeleton" aria-hidden="true"></div>
+                <div class="set-card skeleton" aria-hidden="true"></div>
             </div>
 
-            <!-- Paginación -->
+            <!-- Paginación (solo en la vista de cartas de un set) -->
             <nav class="paginacion" id="paginacion" aria-label="Paginación del catálogo"></nav>
         </div>
     </main>

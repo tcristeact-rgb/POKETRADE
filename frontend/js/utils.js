@@ -67,8 +67,11 @@ export function mostrarAlerta(msg, tipo, elementoId = 'alerta') {
 
 export function tarjetaCarta(carta) {
     const nombre = carta.nombre || 'Sin nombre';
-    const id     = carta.id || 0;
-    const url    = paginaUrl(`pages/detalle-carta.html?id=${id}`);
+    // ID interno o, si la carta aún no está en BD (resultados de la
+    // búsqueda global), el de TCGdex: el detalle acepta ambos y crea
+    // la fila bajo demanda
+    const id     = carta.id ?? carta.tcgdex_id ?? 0;
+    const url    = paginaUrl(`pages/detalle-carta.html?id=${encodeURIComponent(id)}`);
     const nombreSeguro = escapeHtml(nombre);
     // En grids usamos la versión ligera de la ilustración (low.webp);
     // imagen_url queda como respaldo para filas antiguas sin variante

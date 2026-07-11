@@ -3179,3 +3179,49 @@ body.lightbox-abierto { overflow: hidden; }
   .lightbox { gap: 0.4rem; padding: 0.75rem; }
   .lightbox-flecha { width: 38px; height: 38px; }
 }
+
+/* ══════════════════════════════════════════════════
+   CATÁLOGO UNIFICADO — barra de filtros persistente
+══════════════════════════════════════════════════ */
+/* La barra hereda el estilo de .filtros y además se queda pegada
+   justo bajo el header (sticky) en todos los niveles de navegación */
+.filtros-catalogo {
+  position: sticky;
+  top: calc(var(--nav-h) + 0.5rem);
+  z-index: 50;
+}
+
+/* Botón "Limpiar filtros": discreto, alineado con los controles */
+.btn-limpiar-filtros {
+  border: 1px solid var(--borde);
+  background: var(--fondo);
+  color: var(--texto-sec);
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  padding: 0.5rem 0.9rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color var(--trans-fast), color var(--trans-fast);
+}
+.btn-limpiar-filtros:hover {
+  border-color: var(--primario);
+  color: var(--primario);
+}
+
+/* Indicador del alcance del filtro: "Buscando en todo el catálogo"
+   o "Filtrando en {set}" */
+.modo-filtro {
+  display: inline-block;
+  margin-bottom: 1rem;
+  padding: 0.3rem 0.8rem;
+  border-radius: 20px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  background: var(--primario-soft);
+  color: var(--primario);
+}
+
+/* Estado vacío del grid con botón para limpiar los filtros */
+.grid-mensaje .btn-primario { margin-top: 0.75rem; }
