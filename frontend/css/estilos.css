@@ -318,12 +318,18 @@ header.scrolled {
   box-shadow: var(--glass-sombra-scrolled);
 }
 /* Sin backdrop-filter (o con transparencia reducida por el usuario):
-   fondo casi opaco, mismo canto y sombra — legibilidad intacta */
+   fondo casi opaco, mismo canto y sombra — legibilidad intacta.
+   header.scrolled debe aparecer en ambos bloques: su especificidad
+   (0-1-1) perfora el `header` (0-0-1) del fallback y dejaría el tinte
+   translúcido SIN blur al hacer scroll (un velo con alpha, ni cristal
+   ni sólido). */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  header { background: var(--glass-fallback); }
+  header,
+  header.scrolled { background: var(--glass-fallback); }
 }
 @media (prefers-reduced-transparency: reduce) {
-  header {
+  header,
+  header.scrolled {
     background: var(--glass-fallback);
     -webkit-backdrop-filter: none;
     backdrop-filter: none;
