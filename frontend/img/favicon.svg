@@ -1,7 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="PokeTrade">
-  <circle cx="50" cy="50" r="47" fill="#ffffff" stroke="#1a252f" stroke-width="5"/>
+  <circle cx="50" cy="50" r="47" fill="#ffffff" stroke="#1A1A1A" stroke-width="5"/>
   <path d="M3.6 50a46.4 46.4 0 0 1 92.8 0Z" fill="#e74c3c"/>
-  <line x1="3.6" y1="50" x2="96.4" y2="50" stroke="#1a252f" stroke-width="5"/>
-  <circle cx="50" cy="50" r="15" fill="#ffffff" stroke="#1a252f" stroke-width="5"/>
-  <circle cx="50" cy="50" r="6" fill="#ffffff" stroke="#1a252f" stroke-width="4"/>
+  <line x1="3.6" y1="50" x2="96.4" y2="50" stroke="#1A1A1A" stroke-width="5"/>
+  <circle cx="50" cy="50" r="15" fill="#ffffff" stroke="#1A1A1A" stroke-width="5"/>
+  <circle cx="50" cy="50" r="6" fill="#ffffff" stroke="#1A1A1A" stroke-width="4"/>
 </svg>
