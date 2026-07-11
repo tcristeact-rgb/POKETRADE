@@ -61,6 +61,8 @@ class SetController extends Controller
     // Endpoint: GET /api/sets/{id}/cartas
     // Acceso: público (sin token)
     // Query params opcionales:
+    //   ?nombre=X            → búsqueda parcial insensible a mayúsculas
+    //   ?tipo=X&rareza=X     → filtros exactos (ver filtrarPorTipoYRareza)
     //   ?page=N&por_pagina=M → paginación (24 por defecto, máx. 100)
     //
     // La primera visita al set descarga su lista de cartas de TCGdex (una
@@ -92,17 +94,62 @@ class SetController extends Controller
             $this->cachearCartas($set, $datos['cards']);
         }
 
+        $query = $set->cartas();
+
+        // Filtro por nombre — en SQL, parcial e insensible a mayúsculas
+        // (ILIKE en PostgreSQL; LIKE ya es insensible en SQLite/MySQL)
+        if ($request->filled('nombre')) {
+            $operadorLike = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
+            $query->where('nombre', $operadorLike, '%' . $request->nombre . '%');
+        }
+
+        $this->filtrarPorTipoYRareza($query, $set, $tcgdex,
+            trim((string) $request->query('tipo')),
+            trim((string) $request->query('rareza')));
+
         // Orden de coleccionista: por longitud y luego alfabético, que
         // ordena bien números ("2" < "10") y deja las cartas secretas y
         // de galería ("TG01"...) tras el set principal; id como desempate
         $porPagina = min(100, max(1, (int) $request->input('por_pagina', 24)));
 
-        $cartas = $set->cartas()
+        $cartas = $query
             ->orderByRaw('LENGTH(numero), numero')
             ->orderBy('id')
             ->paginate($porPagina);
 
         return response()->json($cartas);
+    }
+
+    // Filtro por tipo y rareza sobre las cartas de un set. No puede ir
+    // directamente en SQL: la mayoría de cartas cacheadas bajo demanda
+    // aún no está hidratada (tipo y rareza a NULL). En su lugar se pide
+    // a TCGdex la lista de cartas del set que cumplen el filtro (una
+    // petición, cacheada) y se intersecta por tcgdex_id. Si TCGdex no
+    // responde, se degrada al filtro SQL sobre lo ya hidratado.
+    private function filtrarPorTipoYRareza($query, Set $set, TcgdexService $tcgdex, string $tipo, string $rareza): void
+    {
+        if ($tipo === '' && $rareza === '') {
+            return;
+        }
+
+        // 500 cubre de sobra el set más grande (~450 cartas)
+        $coincidentes = $tcgdex->buscarCartas(array_filter([
+            'set.id' => $set->tcgdex_id,
+            'types'  => $tipo,
+            'rarity' => $rareza,
+        ]), 500);
+
+        if ($coincidentes !== null) {
+            $query->whereIn('tcgdex_id', collect($coincidentes)->pluck('id'));
+            return;
+        }
+
+        if ($tipo !== '') {
+            $query->where('tipo', $tipo);
+        }
+        if ($rareza !== '') {
+            $query->where('rareza', $rareza);
+        }
     }
 
     // Persiste la lista de cartas del set en una transacción: o entran

@@ -79,15 +79,71 @@ class CartaController extends Controller
     // --- Valores disponibles para los filtros del catálogo ---
     // Endpoint: GET /api/cartas/filtros
     // Acceso: público (sin token)
-    // Devuelve los valores distintos presentes en la BD para que el
-    // frontend construya los <select> sin hardcodear rarezas/tipos.
-    public function filtros()
+    // Tipos y rarezas del TCG desde TCGdex (localizados y completos,
+    // cacheados 24 h): los DISTINCT de la BD se quedarían casi vacíos
+    // porque la mayoría de cartas cacheadas bajo demanda aún no está
+    // hidratada. Si TCGdex no responde, degradamos a la BD.
+    public function filtros(TcgdexService $tcgdex)
     {
         return response()->json([
-            'tipos'   => Carta::whereNotNull('tipo')->distinct()->orderBy('tipo')->pluck('tipo'),
-            'rarezas' => Carta::whereNotNull('rareza')->distinct()->orderBy('rareza')->pluck('rareza'),
+            'tipos'   => $tcgdex->listarTipos()
+                            ?? Carta::whereNotNull('tipo')->distinct()->orderBy('tipo')->pluck('tipo'),
+            'rarezas' => $tcgdex->listarRarezas()
+                            ?? Carta::whereNotNull('rareza')->distinct()->orderBy('rareza')->pluck('rareza'),
             'sets'    => Carta::whereNotNull('set_expansion')->distinct()->orderBy('set_expansion')->pluck('set_expansion'),
         ]);
+    }
+
+    // --- Búsqueda global en todo el catálogo del TCG ---
+    // Endpoint: GET /api/cartas/buscar?q=&tipo=&rareza=
+    // Acceso: público (sin token)
+    // Consulta TCGdex (no solo lo cacheado en BD) con caché corta de
+    // 10 min y tope de 60 resultados. NO persiste nada: los resúmenes
+    // se devuelven tal cual, y la fila en BD se crea solo si alguien
+    // abre el detalle (show acepta el tcgdex_id). Para las cartas que
+    // ya están en BD se incluye su id interno, así el frontend enlaza
+    // el detalle igual que en cualquier otro grid.
+    public function buscar(Request $request, TcgdexService $tcgdex)
+    {
+        $q      = trim((string) $request->query('q'));
+        $tipo   = trim((string) $request->query('tipo'));
+        $rareza = trim((string) $request->query('rareza'));
+
+        if ($q === '' && $tipo === '' && $rareza === '') {
+            return response()->json(['error' => 'Indica al menos un filtro: q, tipo o rareza'], 422);
+        }
+        if ($q !== '' && mb_strlen($q) < 2) {
+            return response()->json(['error' => 'La búsqueda necesita al menos 2 caracteres'], 422);
+        }
+
+        $resultados = $tcgdex->buscarCartas(array_filter([
+            'name'   => $q,
+            'types'  => $tipo,
+            'rarity' => $rareza,
+        ]));
+
+        if ($resultados === null) {
+            return response()->json([
+                'error' => 'El catálogo externo (TCGdex) no responde ahora mismo. Inténtalo de nuevo en unos minutos.',
+            ], 503);
+        }
+
+        // IDs internos de las cartas que ya están en la BD (una consulta)
+        $locales = Carta::whereIn('tcgdex_id', collect($resultados)->pluck('id'))
+            ->pluck('id', 'tcgdex_id');
+
+        // Misma forma que las cartas de la BD (imagen_low/imagen_high
+        // montadas aquí) para reutilizar tarjetaCarta() y el lightbox
+        $cartas = collect($resultados)->map(fn ($c) => [
+            'id'          => $locales[$c['id']] ?? null,
+            'tcgdex_id'   => $c['id'],
+            'nombre'      => $c['name'],
+            'numero'      => $c['localId'] ?? null,
+            'imagen_low'  => isset($c['image']) ? "{$c['image']}/low.webp" : null,
+            'imagen_high' => isset($c['image']) ? "{$c['image']}/high.webp" : null,
+        ])->values();
+
+        return response()->json(['data' => $cartas, 'total' => $cartas->count()]);
     }
 
     // --- Ver detalle de una carta ---
@@ -97,8 +153,13 @@ class CartaController extends Controller
     // navegar entre cartas del catálogo sin asumir IDs consecutivos.
     public function show($id)
     {
-        // Buscamos la carta por su ID
-        $carta = Carta::find($id);
+        // Por ID interno (numérico) o por ID de TCGdex (ej: "sv03.5-006",
+        // desde la búsqueda global). Si la carta de TCGdex aún no está en
+        // BD, se crea aquí bajo demanda: así la búsqueda global no
+        // persiste nada y la BD solo crece con cartas realmente abiertas.
+        $carta = ctype_digit((string) $id)
+            ? Carta::find($id)
+            : Carta::firstWhere('tcgdex_id', $id) ?? $this->crearDesdeTcgdex($id);
 
         // Si no existe devolvemos 404
         if (!$carta) {
@@ -123,6 +184,42 @@ class CartaController extends Controller
             'anterior_id'  => (clone $vecinas)->where('id', '<', $carta->id)->max('id'),
             'siguiente_id' => (clone $vecinas)->where('id', '>', $carta->id)->min('id'),
         ]));
+    }
+
+    // Crea la fila de una carta de TCGdex que aún no está en la BD
+    // (abierta desde la búsqueda global). Nace ya hidratada: el detalle
+    // completo viene en la misma petición que valida que existe.
+    private function crearDesdeTcgdex(string $tcgdexId): ?Carta
+    {
+        $datos = app(TcgdexService::class)->obtenerCarta($tcgdexId);
+
+        if (!$datos || empty($datos['name'])) {
+            return null;
+        }
+
+        // firstOrCreate por si dos usuarios abren la misma carta a la vez
+        // (tcgdex_id tiene índice único)
+        return Carta::firstOrCreate(
+            ['tcgdex_id' => $datos['id'] ?? $tcgdexId],
+            [
+                'nombre'            => $datos['name'],
+                'tipo'              => $datos['types'][0] ?? null,
+                'rareza'            => $datos['rarity'] ?? null,
+                // El id de TCGdex es "{set}-{numero}": si el detalle no
+                // trae el set, se deriva del prefijo
+                'set_id'            => $datos['set']['id'] ?? strtok($tcgdexId, '-'),
+                'set_expansion'     => $datos['set']['name'] ?? null,
+                'numero'            => $datos['localId'] ?? null,
+                'imagen_url'        => $datos['image'] ?? null,
+                'descripcion'       => $datos['description'] ?? null,
+                'ilustrador'        => $datos['illustrator'] ?? null,
+                'hp'                => $datos['hp'] ?? null,
+                'precio_cardmarket' => $datos['pricing']['cardmarket']['avg']
+                                        ?? $datos['pricing']['cardmarket']['trend']
+                                        ?? null,
+                'detalle_synced_at' => now(),
+            ]
+        );
     }
 
     // Completa el detalle de la carta desde TCGdex (rareza, tipo, precio,

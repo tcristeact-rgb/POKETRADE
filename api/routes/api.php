@@ -20,10 +20,11 @@ Route::post('/auth/registro', [AuthController::class, 'registro']);
 Route::post('/auth/login',    [AuthController::class, 'login']);
 
 // Catálogo — lectura pública
-// /cartas/filtros va antes de /cartas/{id} para que "filtros"
-// no se interprete como un ID de carta
+// /cartas/filtros y /cartas/buscar van antes de /cartas/{id} para que
+// no se interpreten como un ID de carta
 Route::get('/cartas',         [CartaController::class, 'index']);
 Route::get('/cartas/filtros', [CartaController::class, 'filtros']);
+Route::get('/cartas/buscar',  [CartaController::class, 'buscar']);
 Route::get('/cartas/{id}',    [CartaController::class, 'show']);
 
 // Expansiones — índice de series y sets del TCG, lectura pública
