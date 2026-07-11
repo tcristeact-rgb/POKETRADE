@@ -59,7 +59,19 @@ function filaAtributo(label, valorHTML) {
 
 function renderizarDetalle(carta) {
     document.title = `${carta.nombre} - PokeTrade`;
-    document.getElementById('breadcrumb-nombre').textContent = carta.nombre;
+
+    // Breadcrumb: Inicio › Catálogo › {Set} › {Carta}. El set enlaza a
+    // su vista dentro del catálogo unificado (?set=...)
+    const miga = document.getElementById('breadcrumb');
+    if (miga) {
+        miga.innerHTML =
+            `<a href="../index.html">Inicio</a> › ` +
+            `<a href="catalogo.html">Catálogo</a> › ` +
+            (carta.set_id && carta.set_expansion
+                ? `<a href="catalogo.html?set=${encodeURIComponent(carta.set_id)}">${escapeHtml(carta.set_expansion)}</a> › `
+                : '') +
+            `<span id="breadcrumb-nombre">${escapeHtml(carta.nombre)}</span>`;
+    }
 
     const nombreSeguro = escapeHtml(carta.nombre);
 

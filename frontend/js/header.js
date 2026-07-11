@@ -10,7 +10,6 @@ const rIndex       = paginaUrl('index.html');
 const rNovedades   = paginaUrl('pages/novedades.html');
 const rMasVendido  = paginaUrl('pages/mas-vendido.html');
 const rCatalogo    = paginaUrl('pages/catalogo.html');
-const rExpansiones = paginaUrl('pages/expansiones.html');
 const rMarketplace = paginaUrl('pages/marketplace.html');
 const rLogin       = paginaUrl('pages/login.html');
 const rRegistro    = paginaUrl('pages/registro.html');
@@ -48,7 +47,6 @@ function inyectarHeader() {
     '<li><a href="' + rNovedades + '"' + activa(rNovedades) + '>Novedades</a></li>' +
     '<li><a href="' + rMasVendido + '"' + activa(rMasVendido) + '>Más Vendido</a></li>' +
     '<li><a href="' + rCatalogo + '"' + activa(rCatalogo) + '>Catálogo</a></li>' +
-    '<li><a href="' + rExpansiones + '"' + activa(rExpansiones) + '>Expansiones</a></li>' +
     '<li><a href="' + rMarketplace + '"' + activa(rMarketplace) + '>Marketplace</a></li>' +
     '</ul>' +
     '<div class="buscador-contenedor" role="search">' +
@@ -79,7 +77,6 @@ function inyectarHeader() {
     '<li><a href="' + rNovedades + '">Novedades</a></li>' +
     '<li><a href="' + rMasVendido + '">Más Vendido</a></li>' +
     '<li><a href="' + rCatalogo + '">Catálogo</a></li>' +
-    '<li><a href="' + rExpansiones + '">Expansiones</a></li>' +
     '<li><a href="' + rMarketplace + '">Marketplace</a></li>' +
     '</ul>' +
     '</nav>' +

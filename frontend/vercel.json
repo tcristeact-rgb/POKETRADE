@@ -1,0 +1,20 @@
+{
+    "redirects": [
+        {
+            "source": "/pages/expansiones.html",
+            "destination": "/pages/catalogo.html",
+            "permanent": true
+        },
+        {
+            "source": "/pages/set.html",
+            "has": [{ "type": "query", "key": "id", "value": "(?<id>.+)" }],
+            "destination": "/pages/catalogo.html?set=$id",
+            "permanent": true
+        },
+        {
+            "source": "/pages/set.html",
+            "destination": "/pages/catalogo.html",
+            "permanent": true
+        }
+    ]
+}
