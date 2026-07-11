@@ -134,6 +134,12 @@ function renderizarDetalle(carta) {
     document.getElementById('btn-zoom-carta')
         ?.addEventListener('click', () => abrirLightbox([carta]));
 
+    // URL de imagen muerta → placeholder grande, nunca imagen rota
+    document.querySelector('.detalle-imagen img')?.addEventListener('error', () => {
+        const contenedor = document.querySelector('.detalle-imagen');
+        if (contenedor) contenedor.innerHTML = '<div class="sin-imagen-grande" aria-hidden="true">?</div>';
+    }, { once: true });
+
     // Flechas laterales: navegan a la carta anterior / siguiente del catálogo
     document.getElementById('detalle-flecha-prev')
         ?.addEventListener('click', () => irACarta(carta.anterior_id));

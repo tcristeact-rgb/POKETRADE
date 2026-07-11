@@ -93,6 +93,40 @@ export function tarjetaCarta(carta) {
         </a>`;
 }
 
+// ─── Red de seguridad para imágenes rotas ──
+// Si una URL de asset (TCGdex u otra) devuelve error, la imagen se
+// sustituye por el placeholder correspondiente en vez de dejar el
+// icono de imagen rota del navegador. Listener delegado en fase de
+// captura, porque los eventos error de <img> no burbujean.
+export function activarPlaceholderImagenes(idContenedor) {
+    const contenedor = document.getElementById(idContenedor);
+
+    contenedor?.addEventListener('error', (e) => {
+        const img = e.target;
+        if (!(img instanceof HTMLImageElement) || img.dataset.rota) return;
+        img.dataset.rota = '1';
+
+        const iconoCarta =
+            `<img class="icono" src="${paginaUrl('img/icons/carta.svg')}" alt="" />`;
+
+        const logo = img.closest('.set-logo, .set-cabecera-logo');
+        if (logo) {
+            // Logo de serie o set → icono neutro centrado
+            logo.outerHTML = `<div class="set-logo set-sin-logo" aria-hidden="true">${iconoCarta}</div>`;
+            return;
+        }
+
+        if (img.matches('.carta-card > img')) {
+            // Ilustración de una tarjeta de carta → placeholder de carta
+            img.outerHTML = `<div class="carta-sin-imagen" aria-hidden="true">${iconoCarta}</div>`;
+            return;
+        }
+
+        // Caso genérico (miniaturas, etc.): mejor hueco que imagen rota
+        img.style.visibility = 'hidden';
+    }, true);
+}
+
 // ─── Accesibilidad: gestión de foco en ventanas modales ──
 let _focoPrevioModal = null;
 let _trampaFocoModal = null;

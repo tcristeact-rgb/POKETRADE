@@ -121,6 +121,11 @@ function mostrarCarta() {
     const low  = carta.imagen_low  || carta.imagen_url || '';
     const high = carta.imagen_high || low;
 
+    // Si la URL está muerta se oculta la imagen (queda el nombre en el
+    // pie); al navegar a otra carta que sí cargue, se restaura
+    img.onload  = () => { img.style.visibility = ''; };
+    img.onerror = () => { img.style.visibility = 'hidden'; };
+
     img.src = low || high;
     img.alt = `Ilustración de ${carta.nombre || 'la carta'}`;
     lightbox.querySelector('.lightbox-nombre').textContent = carta.nombre || '';

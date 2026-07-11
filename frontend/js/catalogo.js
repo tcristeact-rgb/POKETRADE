@@ -13,7 +13,7 @@
 // local completa (GET /api/cartas) ya no se usa aquí.
 
 import { API_URL, paginaUrl } from './auth.js';
-import { escapeHtml, tarjetaCarta } from './utils.js';
+import { activarPlaceholderImagenes, escapeHtml, tarjetaCarta } from './utils.js';
 import { crearPaginacion } from './paginacion.js';
 import { activarLightboxEnGrid } from './lightbox.js';
 import { iniciarFiltros } from './filtros-catalogo.js';
@@ -27,6 +27,10 @@ let cartasActuales = []; // cartas visibles (para el lightbox)
 // Zoom: click en la ilustración de una tarjeta → lightbox con las
 // cartas visibles (flechas ←/→ para moverse entre ellas)
 activarLightboxEnGrid('grid-catalogo', () => cartasActuales);
+
+// URLs de imagen muertas → placeholder, nunca imagen rota
+activarPlaceholderImagenes('grid-catalogo');
+activarPlaceholderImagenes('cabecera-catalogo');
 
 const paginacion = crearPaginacion({
     contenedorId: 'paginacion',
