@@ -48,9 +48,17 @@ class SincronizarSetsTcgdex extends Command
         }
 
         $soloFaltantes = $idioma !== 'es';
+        $excluidas     = config('tcgdex.series_excluidas', []);
         $this->info('Sincronizando ' . count($series) . " series del catálogo \"{$idioma}\"...");
 
         foreach ($series as $resumen) {
+            // Series excluidas por config (Pocket, McDonald's...): ni se
+            // importan ni se actualizan
+            if (in_array($resumen['id'], $excluidas, true)) {
+                $this->line("Serie excluida por config, omitida: {$resumen['id']}");
+                continue;
+            }
+
             // El detalle de la serie añade el logo y la lista de sets
             $detalle = $tcgdex->obtenerSerie($resumen['id'], $idioma);
 
@@ -59,9 +67,18 @@ class SincronizarSetsTcgdex extends Command
                 continue;
             }
 
+            // Cascada de logo de serie (1º y 2º eslabón): el catálogo
+            // español no trae logo para la mayoría de series antiguas
+            // aunque el inglés sí; el 3º eslabón (logo del set más
+            // reciente) se aplica tras sincronizar sus sets
+            $logo = $detalle['logo'] ?? null;
+            if (!$logo && $idioma !== 'en') {
+                $logo = $tcgdex->obtenerSerie($detalle['id'], 'en')['logo'] ?? null;
+            }
+
             $datosSerie = [
                 'nombre'   => $detalle['name'],
-                'logo_url' => $detalle['logo'] ?? null,
+                'logo_url' => $logo,
             ];
 
             // updateOrCreate por tcgdex_id → re-ejecutable sin duplicar;
@@ -113,6 +130,21 @@ class SincronizarSetsTcgdex extends Command
 
             if ($soloFaltantes && $nuevos > 0) {
                 $this->info("Serie \"{$serie->nombre}\": +{$nuevos} sets del catálogo \"{$idioma}\"");
+            }
+
+            // Cascada de logo de serie (3º eslabón): si sigue sin logo
+            // en ambos idiomas, hereda el del set más reciente que
+            // tenga; si ninguno tiene, queda null → placeholder
+            if (!$serie->logo_url) {
+                $setConLogo = $serie->sets()
+                    ->whereNotNull('logo_url')
+                    ->orderByRaw('fecha_lanzamiento IS NULL')
+                    ->orderByDesc('fecha_lanzamiento')
+                    ->first();
+
+                if ($setConLogo) {
+                    $serie->update(['logo_url' => $setConLogo->logo_url]);
+                }
             }
         }
 

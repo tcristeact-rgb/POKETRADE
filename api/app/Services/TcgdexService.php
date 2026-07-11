@@ -152,6 +152,18 @@ class TcgdexService
             return $this->get('en', "sets/{$setId}") ?? $set;
         }
 
+        // Fallback por campo: el detalle español muchas veces no trae
+        // logo ni símbolo aunque el inglés sí (mismo patrón que en las
+        // cartas). La petición extra queda en el caché de 24 h
+        if (empty($set['logo']) || empty($set['symbol'])) {
+            $en = $this->get('en', "sets/{$setId}");
+            foreach (['logo', 'symbol'] as $campo) {
+                if (empty($set[$campo]) && !empty($en[$campo])) {
+                    $set[$campo] = $en[$campo];
+                }
+            }
+        }
+
         return $set;
     }
 
