@@ -1603,55 +1603,198 @@ body.nav-drawer-abierto { overflow: hidden; }
   border-color: white;
   transform: translateY(-1px);
 }
-.hero-stats {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  gap: 1.5rem;
-  justify-content: center;
-  flex-wrap: wrap;
-}
-.stat-item {
-  display: flex;
-  flex-direction: column;
+/* ── Hero escaparate: carta destacada protagonista ──
+   El hero del home pasa a rejilla texto|carta. El texto va primero
+   en el DOM (lectura y SEO); en móvil la carta sube arriba con
+   order. Con .hero-sin-escaparate (endpoint caído o sin datos) se
+   vuelve al hero centrado de solo texto. */
+.hero-showcase {
+  display: grid;
+  grid-template-columns: minmax(0, 55fr) minmax(0, 45fr);
   align-items: center;
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(255,255,255,0.12);
-  border-radius: 16px;
-  padding: 1.25rem 2rem;
-  min-width: 140px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  transition: transform var(--trans), background var(--trans);
+  gap: 2.5rem;
+  text-align: left;
+  /* Capa el contenido a --max-w sin encoger el fondo del hero */
+  padding-inline: max(2rem, calc((100% - var(--max-w)) / 2));
+}
+.hero-showcase .hero-texto,
+.hero-showcase .hero-escaparate {
+  position: relative;
+  z-index: 1;   /* por encima de los degradados decorativos del hero */
+}
+.hero-showcase .hero-texto p { margin-left: 0; }
+.hero-showcase.hero-sin-escaparate {
+  display: flex;
+  text-align: center;
+}
+.hero-showcase.hero-sin-escaparate .hero-texto p { margin-inline: auto; }
+
+/* Nombre + set · precio de la carta activa, junto al título */
+.hero-carta-info {
+  display: block;
+  margin-top: 2.25rem;
   text-decoration: none;
-  color: inherit;
-  cursor: pointer;
 }
-.stat-item:hover { transform: translateY(-3px); background: rgba(255,255,255,0.1); }
-.stat-numero {
+.hero-carta-nombre {
+  display: block;
   font-family: var(--font-display);
-  font-variant-numeric: tabular-nums;
-  font-size: 2.2rem;
+  font-size: var(--text-2xl);
   font-weight: 800;
-  color: var(--primario);
-  line-height: 1;
+  line-height: var(--leading-tight);
+  color: white;
+  letter-spacing: -0.01em;
+  transition: color var(--trans-fast);
 }
-.stat-label {
-  font-size: 0.78rem;
-  color: rgba(255,255,255,0.6);
-  margin-top: 0.4rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+.hero-carta-info:hover .hero-carta-nombre { color: var(--primario); }
+.hero-carta-meta {
+  display: block;
+  margin-top: 0.35rem;
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 600;
+  color: var(--primario);   /* ámbar sobre el hero carbón: 11:1 */
 }
-/* Skeleton específico de las stats del hero (fondo translúcido) */
-.stat-item.skeleton {
-  background: linear-gradient(90deg,
-    rgba(255,255,255,0.06) 25%,
-    rgba(255,255,255,0.12) 50%,
-    rgba(255,255,255,0.06) 75%);
-  background-size: 1200px 100%;
-  animation: shimmer 1.6s ease-in-out infinite;
-  min-height: 0;
+.hero-carta-info:focus-visible {
+  outline: 3px solid var(--primario);
+  outline-offset: 4px;
+  border-radius: var(--radius-sm);
+}
+
+/* Escena: carta + glow + flechas + puntos */
+.hero-escaparate {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  justify-items: center;
+  gap: 0.5rem;
+}
+.carrusel-escena {
+  position: relative;
+  display: block;
+  grid-column: 2;
+}
+/* Halo de profundidad tras la carta; --glow-color lo tiñe inicio.js
+   con el color dominante de cada ilustración (ámbar por defecto) */
+.carrusel-glow {
+  position: absolute;
+  inset: -22%;
+  background: radial-gradient(circle,
+    var(--glow-color, rgba(251, 191, 36, 0.35)) 0%, transparent 65%);
+  pointer-events: none;
+}
+/* Único dueño del transform: la futura animación de "sobre
+   abriéndose" sustituirá estas clases sin tocar la estructura */
+.carrusel-carta {
+  position: relative;
+  transition: opacity 0.2s var(--ease-out), transform 0.2s var(--ease-out);
+}
+.carrusel-carta.sale-izq  { opacity: 0; transform: translateX(-18px); }
+.carrusel-carta.sale-der  { opacity: 0; transform: translateX(18px); }
+.carrusel-carta.entra-der { opacity: 0; transform: translateX(18px); transition: none; }
+.carrusel-carta.entra-izq { opacity: 0; transform: translateX(-18px); transition: none; }
+
+.carrusel-img,
+.carrusel-marco {
+  display: block;
+  width: min(24vw, 360px);
+  aspect-ratio: 245 / 337;   /* proporción de la carta física */
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+.carrusel-marco.skeleton { background-color: rgba(255,255,255,0.08); }
+.carrusel-escena:focus-visible {
+  outline: 3px solid var(--primario);
+  outline-offset: 6px;
+  border-radius: 12px;
+}
+
+/* Flechas: mismas pastillas translúcidas que el lightbox */
+.carrusel-flecha {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #e8edf2;
+  font-size: 1.05rem;
+  cursor: pointer;
+  transition: background var(--trans-fast);
+}
+.carrusel-flecha:hover { background: rgba(255, 255, 255, 0.24); }
+.carrusel-flecha:focus-visible {
+  outline: 3px solid var(--primario);
+  outline-offset: 2px;
+}
+
+/* Puntos indicadores (zona pulsable mayor que el punto visible) */
+.carrusel-puntos {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  gap: 0.25rem;
+  margin-top: 0.75rem;
+}
+.carrusel-punto {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  position: relative;
+}
+.carrusel-punto::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+  transition: background var(--trans-fast), transform var(--trans-fast);
+}
+.carrusel-punto:hover::before { background: rgba(255, 255, 255, 0.55); }
+.carrusel-punto[aria-current="true"]::before {
+  background: var(--primario);
+  transform: translate(-50%, -50%) scale(1.25);
+}
+.carrusel-punto:focus-visible {
+  outline: 2px solid var(--primario);
+  outline-offset: -2px;
+  border-radius: 50%;
+}
+
+/* Breakpoints del escaparate: split 55/45 → 50/50 → apilado con la
+   carta arriba (solo visual: el DOM mantiene el texto primero) */
+@media (max-width: 1023px) {
+  .hero-showcase {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+  .carrusel-img,
+  .carrusel-marco { width: min(34vw, 300px); }
+}
+@media (max-width: 767px) {
+  .hero-showcase { grid-template-columns: 1fr; text-align: center; }
+  .hero-showcase .hero-escaparate { order: -1; }
+  .hero-showcase .hero-texto p { margin-inline: auto; }
+  .hero-carta-info { margin-top: 1.5rem; }
+  .carrusel-img,
+  .carrusel-marco { width: min(62vw, 300px); }
+}
+/* Landscape con poca altura: vuelta a dos columnas y carta acotada
+   a la altura del viewport para que el hero no desborde */
+@media (max-height: 480px) {
+  .hero-showcase {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    text-align: left;
+  }
+  .hero-showcase .hero-escaparate { order: 0; }
+  .carrusel-img,
+  .carrusel-marco { width: auto; height: 42vh; }
 }
 
 .novedades-seccion {
@@ -3077,8 +3220,6 @@ body.nav-drawer-abierto { overflow: hidden; }
 }
 @media (max-width: 768px) {
   .hero h1 { font-size: 2rem; }
-  .hero-stats { gap: 1rem; }
-  .stat-item { padding: 1rem 1.5rem; min-width: 120px; }
   .novedades-seccion { padding: 0 1rem; margin: 2.5rem auto; }
   .footer-grid { grid-template-columns: 1fr 1fr; gap: 1.5rem; padding: 2rem 1rem 1rem; }
 
@@ -3126,9 +3267,6 @@ body.nav-drawer-abierto { overflow: hidden; }
   .hero p  { font-size: 1rem; }
   .hero-botones { flex-direction: column; align-items: center; }
   .hero-botones a, .hero-botones button { width: 100%; max-width: 280px; }
-  .hero-stats { gap: 0.75rem; }
-  .stat-item { min-width: 100px; padding: 0.85rem 1.25rem; }
-  .stat-numero { font-size: var(--text-2xl); }
   .novedades-seccion .grid-cartas .carta-card,
   .novedades-seccion .grid-cartas .skeleton { flex: 0 0 175px; }
   .pasos { grid-template-columns: 1fr; }

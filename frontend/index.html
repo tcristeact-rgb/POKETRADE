@@ -17,45 +17,42 @@
   <main>
 
   <!-- ═══════════════════════════════════════════════
-       HERO / BANNER PRINCIPAL
-       Banner con 2 botones (Ver catálogo / Publicar tradeo)
-       + Stats cargadas vía AJAX (petición fetch → JSON → DOM)
+       HERO / ESCAPARATE
+       Título + una carta protagonista en grande rotando entre las
+       4 destacadas (las más caras de las novedades, fetch → JSON →
+       DOM). El nombre/set/precio de la carta activa acompañan al
+       título; carta e info enlazan al detalle. Si el endpoint falla
+       el hero queda solo con el texto (inicio.js añade la clase
+       hero-sin-escaparate). En el DOM el texto va primero (orden de
+       lectura y SEO); en móvil la carta sube arriba por CSS.
   ════════════════════════════════════════════════ -->
-  <section class="hero" aria-labelledby="hero-titulo">
-    <div class="hero-contenido">
+  <section class="hero hero-showcase" aria-labelledby="hero-titulo">
+    <div class="hero-texto">
       <h1 id="hero-titulo">Intercambia tus cartas Pokémon</h1>
       <p>
         Encuentra los tradeos que buscas, publica los tuyos y conecta
         con coleccionistas de toda España.
       </p>
-      <div class="hero-botones">
-        <a href="pages/catalogo.html" class="btn-primario">Ver catálogo</a>
-        <a
-          href="pages/publicar-tradeo.html"
-          class="btn-secundario"
-          id="btn-hero-tradeo"
-          title="Publicar tradeo"
-        >
-          Publicar tradeo
-        </a>
-      </div>
+      <a class="hero-carta-info" id="hero-carta-info"
+         href="pages/catalogo.html" hidden aria-live="polite">
+        <span class="hero-carta-nombre" id="hero-carta-nombre"></span>
+        <span class="hero-carta-meta" id="hero-carta-meta"></span>
+      </a>
     </div>
 
-    <!--
-      Stats cargadas asíncronamente: fetch → JSON → DOM
-      Mientras carga se muestran con clase .skeleton
-    -->
-    <div class="hero-stats" id="hero-stats" aria-live="polite" role="status">
-      <a class="stat-item skeleton" id="stat-cartas" href="pages/catalogo.html"
-         aria-label="Ver el catálogo de cartas disponibles">
-        <span class="stat-numero">—</span>
-        <span class="stat-label">Cartas disponibles</span>
+    <div class="hero-escaparate" id="hero-escaparate"
+         role="region" aria-label="Cartas destacadas">
+      <button class="carrusel-flecha" id="carrusel-prev" type="button"
+              aria-label="Carta anterior" hidden>❮</button>
+      <a class="carrusel-escena" id="carrusel-escena" href="pages/catalogo.html">
+        <span class="carrusel-glow" aria-hidden="true"></span>
+        <div class="carrusel-carta" id="carrusel-carta">
+          <div class="carrusel-marco skeleton" aria-hidden="true"></div>
+        </div>
       </a>
-      <a class="stat-item skeleton" id="stat-tradeos" href="pages/marketplace.html"
-         aria-label="Ver el marketplace de tradeos activos">
-        <span class="stat-numero">—</span>
-        <span class="stat-label">Tradeos activos</span>
-      </a>
+      <button class="carrusel-flecha" id="carrusel-next" type="button"
+              aria-label="Carta siguiente" hidden>❯</button>
+      <div class="carrusel-puntos" id="carrusel-puntos" hidden></div>
     </div>
   </section>
 
