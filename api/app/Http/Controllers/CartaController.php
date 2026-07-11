@@ -128,6 +128,15 @@ class CartaController extends Controller
             ], 503);
         }
 
+        // Fuera las cartas de series excluidas por config (Pocket,
+        // McDonald's...): TCGdex las devuelve igualmente porque el
+        // filtrado es nuestro, no suyo
+        $excluidos  = array_flip($tcgdex->setsExcluidos());
+        $resultados = array_values(array_filter(
+            $resultados,
+            fn ($c) => !isset($excluidos[$this->setDeCarta($c)])
+        ));
+
         // IDs internos de las cartas que ya están en la BD (una consulta)
         $locales = Carta::whereIn('tcgdex_id', collect($resultados)->pluck('id'))
             ->pluck('id', 'tcgdex_id');
@@ -184,6 +193,20 @@ class CartaController extends Controller
             'anterior_id'  => (clone $vecinas)->where('id', '<', $carta->id)->max('id'),
             'siguiente_id' => (clone $vecinas)->where('id', '>', $carta->id)->min('id'),
         ]));
+    }
+
+    // Deriva el ID del set desde el resumen de una carta. El id es
+    // "{set}-{localId}" y el set puede contener guiones ("tk-xy-su-4"
+    // → set "tk-xy-su"), así que se recorta el sufijo del localId
+    private function setDeCarta(array $carta): string
+    {
+        $localId = (string) ($carta['localId'] ?? '');
+
+        if ($localId !== '' && str_ends_with($carta['id'], "-{$localId}")) {
+            return substr($carta['id'], 0, -strlen("-{$localId}"));
+        }
+
+        return strtok($carta['id'], '-');
     }
 
     // Crea la fila de una carta de TCGdex que aún no está en la BD

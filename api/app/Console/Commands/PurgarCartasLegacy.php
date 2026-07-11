@@ -3,10 +3,8 @@
 namespace App\Console\Commands;
 
 use App\Models\Carta;
-use App\Models\Inventario;
-use App\Models\Tradeo;
+use App\Services\PurgaDeCartas;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 
 class PurgarCartasLegacy extends Command
 {
@@ -19,7 +17,7 @@ class PurgarCartasLegacy extends Command
     // Descripción que aparece al hacer php artisan list
     protected $description = 'Elimina las cartas legacy del seed antiguo de PokéAPI (las que no tienen tcgdex_id) junto con los inventarios y tradeos que las referencian. Dry-run por defecto.';
 
-    public function handle()
+    public function handle(PurgaDeCartas $purga)
     {
         // Criterio de legacy: toda carta del catálogo actual viene de
         // TCGdex y tiene tcgdex_id; las filas sin él son del seed viejo
@@ -31,21 +29,10 @@ class PurgarCartasLegacy extends Command
             return self::SUCCESS;
         }
 
-        // Inventarios que referencian cartas legacy
-        $inventarios = Inventario::whereIn('carta_id', $cartas->pluck('id'))
-            ->with(['usuario', 'carta'])
-            ->get();
-
-        // Tradeos que referencian cartas legacy en cualquiera de los dos
-        // lados (ofrecidas o buscadas): se eliminan enteros, igual que
-        // hace TradeoController::destroy (detach de pivotes + delete)
-        $tradeoIds = DB::table('tradeo_cartas_ofrece')
-            ->whereIn('carta_id', $cartas->pluck('id'))->pluck('tradeo_id')
-            ->merge(DB::table('tradeo_cartas_busca')
-                ->whereIn('carta_id', $cartas->pluck('id'))->pluck('tradeo_id'))
-            ->unique();
-
-        $tradeos = Tradeo::whereIn('id', $tradeoIds)->with('usuario')->get();
+        // Inventarios y tradeos que referencian cartas legacy (lógica
+        // compartida con tcgdex:purgar-excluidos)
+        $inventarios = $purga->inventarios($cartas->pluck('id'));
+        $tradeos     = $purga->tradeos($cartas->pluck('id'));
 
         // ── Informe ────────────────────────────────────
         $this->info('Cartas legacy encontradas: ' . $cartas->count());
@@ -81,17 +68,7 @@ class PurgarCartasLegacy extends Command
         }
 
         // ── Borrado real, todo o nada ──────────────────
-        DB::transaction(function () use ($cartas, $tradeos) {
-            foreach ($tradeos as $tradeo) {
-                $tradeo->cartasOfrece()->detach();
-                $tradeo->cartasBusca()->detach();
-                $tradeo->delete();
-            }
-
-            // El borrado de las cartas cascada sobre el inventario y los
-            // pivotes restantes (FK on delete cascade)
-            Carta::whereIn('id', $cartas->pluck('id'))->delete();
-        });
+        $purga->ejecutar($cartas->pluck('id'), $tradeos);
 
         $this->info(sprintf(
             'Purga completada: %d cartas, %d entradas de inventario y %d tradeos eliminados.',

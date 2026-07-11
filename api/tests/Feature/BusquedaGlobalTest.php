@@ -14,6 +14,15 @@ class BusquedaGlobalTest extends TestCase
     // RefreshDatabase garantiza que cada test empieza con la BD limpia
     use RefreshDatabase;
 
+    // Sin series excluidas por defecto: así los tests no dependen de la
+    // config real ni disparan peticiones extra; el test de exclusión
+    // activa la suya explícitamente
+    protected function setUp(): void
+    {
+        parent::setUp();
+        config(['tcgdex.series_excluidas' => []]);
+    }
+
     // Resumen de carta tal y como lo devuelve /v2/{lang}/cards?...
     private function resumen(string $id, string $nombre, ?string $imagen = null): array
     {
@@ -70,6 +79,33 @@ class BusquedaGlobalTest extends TestCase
         $respuesta->assertStatus(200)
                   ->assertJsonPath('total', 2)
                   ->assertJsonPath('data.1.tcgdex_id', 'base1-4');
+    }
+
+    // --- Test 2b: Las series excluidas se filtran de los resultados ---
+    // TCGdex devuelve cartas de Pocket (set A1, sin prefijo de serie);
+    // la config las excluye y no deben llegar al frontend
+    public function test_busqueda_global_filtra_series_excluidas()
+    {
+        config(['tcgdex.series_excluidas' => ['tcgp']]);
+
+        Http::fake([
+            'api.tcgdex.net/v2/es/cards?*' => Http::response([
+                $this->resumen('sv03.5-006', 'Charizard ex'),
+                ['id' => 'A1-036', 'localId' => '036', 'name' => 'Charizard'], // Pocket
+            ]),
+            'api.tcgdex.net/v2/en/cards?*' => Http::response([]),
+            'api.tcgdex.net/v2/en/series/tcgp' => Http::response([
+                'id' => 'tcgp', 'name' => 'Pocket',
+                'sets' => [['id' => 'A1', 'name' => 'Genetic Apex']],
+            ]),
+        ]);
+
+        $respuesta = $this->getJson('/api/cartas/buscar?q=charizard');
+
+        $respuesta->assertStatus(200)
+                  ->assertJsonPath('total', 1)
+                  ->assertJsonPath('data.0.tcgdex_id', 'sv03.5-006')
+                  ->assertJsonMissing(['tcgdex_id' => 'A1-036']);
     }
 
     // --- Test 3: Sin ningún filtro → 422 ---

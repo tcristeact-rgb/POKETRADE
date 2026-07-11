@@ -72,6 +72,8 @@ The full TCG catalog is ~130k cards, so it is **not** stored upfront. Instead:
 
 The browser never talks to TCGdex directly, and all external responses are cached server-side for 24 h. `cartas:sincronizar-tcgdex` still refreshes prices/data of already-stored cards on demand.
 
+**Excluded catalogs** — `config/tcgdex.php` holds a `series_excluidas` list (currently `tcgp` Pokémon Pocket, `mc` McDonald's, `tk` Trainer Kits: non-physical or asset-less catalogs). Adding a serie id there requires no code changes: the sync skips it, the global search filters its cards out, and `php artisan tcgdex:purgar-excluidos` (dry-run by default, `--force` to apply) removes anything already imported, including inventories and trades that reference those cards.
+
 ### Catalog & expansion endpoints
 
 | Method & path | Description |

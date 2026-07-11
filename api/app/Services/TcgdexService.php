@@ -114,6 +114,27 @@ class TcgdexService
         return $this->get($idioma, 'cards?' . http_build_query($params), self::CACHE_TTL_BUSQUEDA);
     }
 
+    // --- IDs de los sets de las series excluidas por config ---
+    // Para filtrar la búsqueda global. No vale con mirar el prefijo del
+    // id: los sets de Pocket no llevan el de su serie ("A1", "P-A"...),
+    // así que se resuelven desde el detalle de cada serie excluida
+    // (1 petición por serie, cacheada 24 h). El catálogo inglés es el
+    // más completo; el español queda de respaldo.
+    public function setsExcluidos(): array
+    {
+        $ids = [];
+
+        foreach (config('tcgdex.series_excluidas', []) as $serieId) {
+            $detalle = $this->obtenerSerie($serieId, 'en') ?? $this->obtenerSerie($serieId, 'es');
+
+            foreach ($detalle['sets'] ?? [] as $set) {
+                $ids[] = $set['id'];
+            }
+        }
+
+        return $ids;
+    }
+
     // --- Listado de todas las series del TCG en un idioma ---
     // GET /v2/{lang}/series → [{ id, name }]
     // Sin fallback es→en aquí: el catálogo "es" de TCGdex omite series y
