@@ -20,12 +20,13 @@ Route::post('/auth/registro', [AuthController::class, 'registro']);
 Route::post('/auth/login',    [AuthController::class, 'login']);
 
 // Catálogo — lectura pública
-// /cartas/filtros y /cartas/buscar van antes de /cartas/{id} para que
-// no se interpreten como un ID de carta
-Route::get('/cartas',         [CartaController::class, 'index']);
-Route::get('/cartas/filtros', [CartaController::class, 'filtros']);
-Route::get('/cartas/buscar',  [CartaController::class, 'buscar']);
-Route::get('/cartas/{id}',    [CartaController::class, 'show']);
+// /cartas/filtros, /cartas/buscar y /cartas/destacadas van antes de
+// /cartas/{id} para que no se interpreten como un ID de carta
+Route::get('/cartas',            [CartaController::class, 'index']);
+Route::get('/cartas/filtros',    [CartaController::class, 'filtros']);
+Route::get('/cartas/buscar',     [CartaController::class, 'buscar']);
+Route::get('/cartas/destacadas', [CartaController::class, 'destacadas']);
+Route::get('/cartas/{id}',       [CartaController::class, 'show']);
 
 // Expansiones — índice de series y sets del TCG, lectura pública
 // (el índice lo siembra el comando: php artisan tcgdex:sync-sets)

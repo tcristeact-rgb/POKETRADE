@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Carta;
 use App\Services\TcgdexService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator; // Para validar los datos recibidos
 
 class CartaController extends Controller
@@ -92,6 +93,48 @@ class CartaController extends Controller
                             ?? Carta::whereNotNull('rareza')->distinct()->orderBy('rareza')->pluck('rareza'),
             'sets'    => Carta::whereNotNull('set_expansion')->distinct()->orderBy('set_expansion')->pluck('set_expansion'),
         ]);
+    }
+
+    // --- Cartas destacadas para el hero del home ---
+    // Endpoint: GET /api/cartas/destacadas
+    // Acceso: público (sin token)
+    // Las 4 más caras (precio Cardmarket avg) entre las 200 cartas más
+    // recientes de la BD. La ventana va por id descendente y no por
+    // created_at porque el cache-aside inserta sets enteros de golpe y
+    // los timestamps se agrupan en bloques. La mayoría de cartas
+    // recientes aún no está hidratada (sin precio), así que si la
+    // ventana no da 4, se completa con las más caras de toda la BD:
+    // no es un caso raro, es el camino habitual.
+    // Caché de 1 h: congela la selección y ahorra las consultas.
+    public function destacadas()
+    {
+        $cartas = Cache::remember('cartas.destacadas', 3600, function () {
+            $ventana = Carta::orderByDesc('id')->limit(200)->pluck('id');
+
+            // Recientes con precio, de mayor a menor
+            $destacadas = Carta::whereIn('id', $ventana)
+                ->whereNotNull('precio_cardmarket')
+                ->orderByDesc('precio_cardmarket')
+                ->limit(4)
+                ->get();
+
+            // Fallback: completar con las más caras del catálogo entero
+            // (las recientes conservan la primera posición: son la
+            // novedad que el hero quiere enseñar)
+            if ($destacadas->count() < 4) {
+                $destacadas = $destacadas->concat(
+                    Carta::whereNotNull('precio_cardmarket')
+                        ->whereNotIn('id', $destacadas->pluck('id'))
+                        ->orderByDesc('precio_cardmarket')
+                        ->limit(4 - $destacadas->count())
+                        ->get()
+                );
+            }
+
+            return $destacadas->values();
+        });
+
+        return response()->json(['data' => $cartas]);
     }
 
     // --- Búsqueda global en todo el catálogo del TCG ---
