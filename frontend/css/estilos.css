@@ -208,6 +208,10 @@
 html {
   scroll-behavior: smooth;
   overflow-x: hidden;
+  /* Reserva el carril de la barra de scroll siempre. Al abrir un modal se
+     congela el fondo (overflow:hidden) y sin esto la barra desaparece: la
+     página se ensancha unos px y todo el contenido salta de lado. */
+  scrollbar-gutter: stable;
   /* Las anclas y el skip-link no deben aterrizar bajo la píldora */
   scroll-padding-top: calc(var(--nav-h) + var(--hdr-gap) + 12px);
   /* Base tipográfica fluida: 16px hasta ~1440 y hasta 18px en
@@ -2077,6 +2081,13 @@ body.nav-drawer-abierto { overflow: hidden; }
   backdrop-filter: blur(2px);
 }
 
+/* Fondo congelado mientras hay cualquier ventana abierta (modal o
+   lightbox). La clase la pone y la quita la pila de utils.js, no cada
+   modal: con capas, el que cierra arriba no debe desbloquear al de abajo.
+   El hueco de la barra de scroll queda reservado en html (scrollbar-gutter),
+   así que congelar el fondo no desplaza el contenido. */
+body.modal-abierto { overflow: hidden; }
+
 /* ══════════════════════════════════════════════════
    INVENTARIO
 ══════════════════════════════════════════════════ */
@@ -3498,8 +3509,8 @@ body.nav-drawer-abierto { overflow: hidden; }
   outline-offset: 3px;
 }
 
-/* Scroll del body bloqueado mientras el popup está abierto */
-body.lightbox-abierto { overflow: hidden; }
+/* El bloqueo de scroll del fondo lo gobierna la pila de modales
+   (utils.js): ver body.modal-abierto en la sección de VENTANA MODAL */
 
 .lightbox {
   position: fixed;

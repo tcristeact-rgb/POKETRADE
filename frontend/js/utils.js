@@ -171,23 +171,35 @@ export function activarPlaceholderImagenes(idContenedor) {
     }, true);
 }
 
-// ─── Accesibilidad: gestión de foco en ventanas modales ──
-let _focoPrevioModal = null;
-let _trampaFocoModal = null;
+// ─── Accesibilidad: pila de ventanas modales ──
+// Es una PILA, no un singleton: hay capas legítimas (el lightbox se abre
+// ENCIMA del modal de detalle de un tradeo para ver una carta en grande).
+// Con una sola variable de módulo, abrir el segundo nivel sobrescribía la
+// referencia del listener del primero sin quitarlo del document: los dos
+// seguían vivos y Escape ejecutaba los dos cerrarFn, cerrando la pila
+// entera de golpe; además el foco solo volvía al último nivel cerrado.
+//
+// Aquí cada nivel guarda su propio listener y el elemento que tenía el
+// foco al abrirse, y la trampa de teclado SOLO actúa si es la cima. Así
+// Escape y Tab afectan únicamente a la ventana de arriba, y al cerrar, el
+// foco se devuelve nivel a nivel (lightbox → carta del modal → tarjeta).
+const pilaModales = [];
 
 export function abrirModalAccesible(modal, cerrarFn) {
     if (!modal) return;
-    _focoPrevioModal = document.activeElement;
 
     const enfocables = () => Array.from(modal.querySelectorAll(
         'a[href], button:not([disabled]), input:not([disabled]), ' +
         'select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
     )).filter(el => el.getClientRects().length > 0);
 
-    const lista = enfocables();
-    if (lista.length) lista[0].focus();
+    const nivel = { focoPrevio: document.activeElement, trampa: null };
 
-    _trampaFocoModal = function (e) {
+    nivel.trampa = function (e) {
+        // Los niveles de debajo siguen escuchando, pero se inhiben: solo
+        // manda la cima. Sin esto, Escape cerraría también lo que hay bajo.
+        if (pilaModales[pilaModales.length - 1] !== nivel) return;
+
         if (e.key === 'Escape') { e.preventDefault(); cerrarFn(); return; }
         if (e.key !== 'Tab') return;
         const f = enfocables();
@@ -200,18 +212,36 @@ export function abrirModalAccesible(modal, cerrarFn) {
             e.preventDefault(); primero.focus();
         }
     };
-    document.addEventListener('keydown', _trampaFocoModal);
+
+    pilaModales.push(nivel);
+    document.addEventListener('keydown', nivel.trampa);
+
+    const lista = enfocables();
+    if (lista.length) lista[0].focus();
+
+    sincronizarScrollFondo();
 }
 
+// Cierra el nivel superior — que es siempre el que el llamador acaba de
+// cerrar, porque solo se puede interactuar con la cima.
 export function cerrarModalAccesible() {
-    if (_trampaFocoModal) {
-        document.removeEventListener('keydown', _trampaFocoModal);
-        _trampaFocoModal = null;
+    const nivel = pilaModales.pop();
+    if (!nivel) return;
+
+    document.removeEventListener('keydown', nivel.trampa);
+
+    if (nivel.focoPrevio && typeof nivel.focoPrevio.focus === 'function') {
+        nivel.focoPrevio.focus();
     }
-    if (_focoPrevioModal && typeof _focoPrevioModal.focus === 'function') {
-        _focoPrevioModal.focus();
-    }
-    _focoPrevioModal = null;
+
+    sincronizarScrollFondo();
+}
+
+// El fondo no debe scrollarse mientras quede alguna ventana abierta. Lo
+// gobierna la pila (y no cada modal por su cuenta) para que cerrar el
+// lightbox sobre un modal no desbloquee el scroll con el modal aún abierto.
+function sincronizarScrollFondo() {
+    document.body.classList.toggle('modal-abierto', pilaModales.length > 0);
 }
 
 // Miniaturas de cartas para tarjetas de trade

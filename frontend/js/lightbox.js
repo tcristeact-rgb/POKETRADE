@@ -23,8 +23,6 @@ export function abrirLightbox(lista, posicion = 0) {
     crearLightbox();
     mostrarCarta();
 
-    // Bloquear el scroll del body mientras el popup está abierto
-    document.body.classList.add('lightbox-abierto');
     lightbox.hidden = false;
 
     // La clase .visible entra un frame después para que la transición
@@ -101,7 +99,8 @@ function cerrarLightbox() {
 
     lightbox.classList.remove('visible');
     lightbox.hidden = true;
-    document.body.classList.remove('lightbox-abierto');
+    // El scroll del fondo lo libera la pila al vaciarse: si el lightbox se
+    // abrió sobre un modal, ese modal sigue abierto y debe seguir bloqueando
     cerrarModalAccesible();
 }
 
