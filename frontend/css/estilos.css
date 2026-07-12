@@ -82,14 +82,34 @@
   --text-base:       1rem;
   --text-lg:         1.1rem;
   --text-xl:         1.5rem;
-  --text-2xl:        1.75rem;
-  --text-3xl:        3rem;
+  /* Los dos tamaños grandes escalan con el viewport: en pantallas de
+     2560px un titular fijo de 28px se ve diminuto. El resto de la
+     escala no necesita escalar por sí misma (sube con el root). */
+  --text-2xl:        clamp(1.6rem, 1.2rem + 1vw, 2.1rem);
+  --text-3xl:        clamp(2.25rem, 1.5rem + 2.4vw, 4rem);
   --leading-tight:   1.2;
   --leading-normal:  1.6;
 
-  /* Layout */
-  --max-w:           1200px;
-  --max-w-ancho:     1600px;   /* páginas-tablón densas (marketplace) */
+  /* Layout — anchos FLUIDOS con tope. Ningún contenedor se congela en
+     un ancho fijo: crece con el viewport hasta un límite justificado,
+     en vez de dejar franjas vacías enormes en pantallas grandes.
+       grid     → el espacio extra se convierte en MÁS COLUMNAS
+       medio    → detalle/tradeos/publicar: ni prosa ni tablón
+       lectura  → texto corrido, tope por legibilidad (~72ch)
+       form     → formularios, estrechos a propósito
+       cabecera → píldora del header, footer y rail del hero
+     El bloque ya es fluido de por sí (ocupa el 100% disponible), así
+     que el token solo pone el TOPE y el aire lateral lo da un único
+     padding fluido (--gutter). Meter además un 94vw en el tope
+     restaría ancho dos veces y costaría columnas en portátiles. */
+  --ancho-grid:      min(100%, 2000px);
+  --ancho-medio:     min(100%, 1100px);
+  --ancho-lectura:   min(100%, 72ch);
+  --ancho-form:      min(100%, 460px);
+  --ancho-form-md:   min(100%, 640px);
+  --ancho-cabecera:  min(100%, 1400px);
+  /* Aire lateral de las páginas-grid: crece con la pantalla */
+  --gutter:          clamp(1rem, 2.5vw, 3.5rem);
   --nav-h:           64px;
   --hdr-gap:         14px;   /* separación de la píldora respecto a los bordes */
 
@@ -190,6 +210,12 @@ html {
   overflow-x: hidden;
   /* Las anclas y el skip-link no deben aterrizar bajo la píldora */
   scroll-padding-top: calc(var(--nav-h) + var(--hdr-gap) + 12px);
+  /* Base tipográfica fluida: 16px hasta ~1440 y hasta 18px en
+     pantallas muy grandes. Al ser el root, arrastra consigo todo lo
+     que va en rem (texto, paddings, gaps), que es la palanca más
+     efectiva para que la web no se vea diminuta a 2560px. Los anchos
+     van en vw/px a propósito, para no escalar dos veces. */
+  font-size: clamp(16px, 15px + 0.15vw, 18px);
 }
 
 /* ── Accesibilidad: usuarios con movimiento reducido (WCAG 2.3.3) ──
@@ -277,7 +303,7 @@ header {
   align-items: center;
   margin: var(--hdr-gap) auto 0;
   width: 100%;
-  max-width: min(var(--max-w), calc(100% - 2 * var(--hdr-gap)
+  max-width: min(var(--ancho-cabecera), calc(100% - 2 * var(--hdr-gap)
              - env(safe-area-inset-left, 0px) - env(safe-area-inset-right, 0px)));
   border-radius: 999px;
   background: var(--glass-bg);
@@ -343,7 +369,7 @@ nav {
   justify-content: space-between;
   gap: 1rem;
   width: 100%;
-  max-width: var(--max-w);
+  max-width: var(--ancho-cabecera);
   margin: 0 auto;
   padding: 0 2rem;
 }
@@ -648,7 +674,7 @@ footer a:hover { color: white; }
    FORMULARIOS
 ══════════════════════════════════════════════════ */
 .formulario-contenedor {
-  max-width: 440px;
+  max-width: var(--ancho-form);
   margin: 3.5rem auto;
   padding: 2.5rem;
   background: var(--fondo-card);
@@ -790,9 +816,9 @@ footer a:hover { color: white; }
    CATÁLOGO
 ══════════════════════════════════════════════════ */
 .catalogo-contenedor {
-  max-width: var(--max-w);
+  max-width: var(--ancho-grid);
   margin: 2.5rem auto;
-  padding: 0 2rem;
+  padding-inline: var(--gutter);
 }
 .catalogo-contenedor h1 {
   font-family: var(--font-heading);
@@ -1040,7 +1066,7 @@ footer a:hover { color: white; }
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
-  max-width: 860px;
+  max-width: var(--ancho-medio);
   margin: 0 auto;
 }
 .paso {
@@ -1598,8 +1624,8 @@ body.nav-drawer-abierto { overflow: hidden; }
   align-items: center;
   gap: 2.5rem;
   text-align: left;
-  /* Capa el contenido a --max-w sin encoger el fondo del hero */
-  padding-inline: max(2rem, calc((100% - var(--max-w)) / 2));
+  /* Capa el contenido al rail de cabecera sin encoger el fondo del hero */
+  padding-inline: max(2rem, calc((100% - var(--ancho-cabecera)) / 2));
 }
 .hero-showcase .hero-texto,
 .hero-showcase .hero-escaparate {
@@ -1680,7 +1706,10 @@ body.nav-drawer-abierto { overflow: hidden; }
 .carrusel-img,
 .carrusel-marco {
   display: block;
-  width: min(24vw, 360px);
+  /* La carta protagonista crece con la pantalla (deja de ser una
+     postal en medio de un viewport enorme), con tope para no comerse
+     el hero. Los rangos tablet/móvil la reajustan más abajo. */
+  width: clamp(300px, 26vw, 520px);
   aspect-ratio: 245 / 337;   /* proporción de la carta física */
   border-radius: 12px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
@@ -1782,9 +1811,9 @@ body.nav-drawer-abierto { overflow: hidden; }
 }
 
 .novedades-seccion {
-  max-width: 1200px;
+  max-width: var(--ancho-grid);
   margin: 3.5rem auto;
-  padding: 0 2rem;
+  padding-inline: var(--gutter);
   overflow-x: hidden;
 }
 .seccion-header {
@@ -1879,7 +1908,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   display: grid;
   grid-template-columns: 2fr repeat(3, 1fr);
   gap: 2.5rem;
-  max-width: 1200px;
+  max-width: var(--ancho-cabecera);
   margin: 0 auto;
   padding: 3rem 2rem 2rem;
 }
@@ -2015,9 +2044,9 @@ body.nav-drawer-abierto { overflow: hidden; }
    INVENTARIO
 ══════════════════════════════════════════════════ */
 .inventario-contenedor {
-  max-width: 1200px;
+  max-width: var(--ancho-grid);
   margin: 2.5rem auto;
-  padding: 0 2rem;
+  padding-inline: var(--gutter);
 }
 .inventario-header {
   display: flex;
@@ -2203,7 +2232,7 @@ body.nav-drawer-abierto { overflow: hidden; }
    PUBLICAR TRADEO
 ══════════════════════════════════════════════════ */
 .publicar-contenedor {
-  max-width: 800px;
+  max-width: var(--ancho-medio);
   margin: 2.5rem auto;
   padding: 0 2rem;
 }
@@ -2304,7 +2333,7 @@ body.nav-drawer-abierto { overflow: hidden; }
    DETALLE DE CARTA
 ══════════════════════════════════════════════════ */
 .detalle-contenedor {
-  max-width: 820px;
+  max-width: var(--ancho-medio);
   margin: 2.5rem auto;
   padding: 0 2rem;
 }
@@ -2497,7 +2526,7 @@ body.nav-drawer-abierto { overflow: hidden; }
    MIS TRADEOS
 ══════════════════════════════════════════════════ */
 .tradeos-contenedor {
-  max-width: 900px;
+  max-width: var(--ancho-medio);
   margin: 2.5rem auto;
   padding: 0 2rem;
 }
@@ -2605,7 +2634,7 @@ body.nav-drawer-abierto { overflow: hidden; }
    PERFIL
 ══════════════════════════════════════════════════ */
 .perfil-contenedor {
-  max-width: 600px;
+  max-width: var(--ancho-form-md);
   margin: 2.5rem auto;
   padding: 0 2rem;
 }
@@ -2671,9 +2700,9 @@ body.nav-drawer-abierto { overflow: hidden; }
    y sus margin auto laterales anulan el stretch del eje transversal */
 .marketplace-contenedor {
   width: 100%;
-  max-width: var(--max-w-ancho);
+  max-width: var(--ancho-grid);
   margin: 1.5rem auto 2rem;
-  padding-inline: clamp(1rem, 3vw, 2.5rem);
+  padding-inline: var(--gutter);
 }
 /* La barra de búsqueda reutiliza .filtros + .filtros-catalogo
    (sticky bajo la píldora); el contador viaja a su derecha */
@@ -3027,9 +3056,9 @@ body.nav-drawer-abierto { overflow: hidden; }
    NOVEDADES
 ══════════════════════════════════════════════════ */
 .novedades-contenedor {
-  max-width: 1200px;
+  max-width: var(--ancho-grid);
   margin: 2.5rem auto;
-  padding: 0 2rem;
+  padding-inline: var(--gutter);
 }
 .novedades-contenedor h1 {
   font-family: var(--font-heading);
@@ -3043,9 +3072,9 @@ body.nav-drawer-abierto { overflow: hidden; }
    MÁS DEMANDADAS
 ══════════════════════════════════════════════════ */
 .mv-contenedor {
-  max-width: 1200px;
+  max-width: var(--ancho-grid);
   margin: 2.5rem auto;
-  padding: 0 2rem;
+  padding-inline: var(--gutter);
 }
 .mv-contenedor h1 {
   font-family: var(--font-heading);
@@ -3083,8 +3112,9 @@ body.nav-drawer-abierto { overflow: hidden; }
 /* ══════════════════════════════════════════════════
    PÁGINAS LEGALES
 ══════════════════════════════════════════════════ */
+/* Texto corrido: el tope es de legibilidad (~72ch), no de layout */
 .legal-contenedor {
-  max-width: 820px;
+  max-width: var(--ancho-lectura);
   margin: 2.5rem auto;
   padding: 0 2rem 4rem;
 }
@@ -3120,7 +3150,7 @@ body.nav-drawer-abierto { overflow: hidden; }
    SOPORTE / CONTACTO
 ══════════════════════════════════════════════════ */
 .soporte-contenedor {
-  max-width: 620px;
+  max-width: var(--ancho-lectura);
   margin: 2.5rem auto;
   padding: 0 2rem 4rem;
 }
