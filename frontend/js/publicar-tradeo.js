@@ -1,7 +1,7 @@
 // publicar-tradeo.js — Crear y publicar un tradeo (módulo ES6)
 
 import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
-import { buscarCartasCatalogo, debounce, escapeHtml, mostrarAlerta } from './utils.js';
+import { buscarCartasCatalogo, debounce, escapeHtml, mostrarAlerta, dorsoCarta } from './utils.js';
 
 protegerRuta();
 
@@ -92,7 +92,7 @@ function cartaSeleccionableHTML(carta, seleccionada, infoExtra) {
     const imagen = carta.imagen_low || carta.imagen_url;
     const img = imagen
         ? `<img src="${escapeHtml(imagen)}" alt="${nombre}" loading="lazy" />`
-        : `<div class="placeholder-img" aria-hidden="true">?</div>`;
+        : dorsoCarta();
     return `
         <div class="carta-seleccionable${seleccionada ? ' seleccionada' : ''}"
              role="button" tabindex="0" aria-pressed="${seleccionada}"

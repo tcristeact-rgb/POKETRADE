@@ -1,7 +1,7 @@
 // mas-vendido.js — Ranking de cartas más demandadas en tradeos
 
 import { API_URL, paginaUrl } from './auth.js';
-import { escapeHtml } from './utils.js';
+import { escapeHtml, dorsoCarta } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     cargarMasVendido();
@@ -83,7 +83,7 @@ function tarjetaRanking({ carta, veces }, posicion) {
     const imagen = carta.imagen_low || carta.imagen_url;
     const imgHTML = imagen
         ? `<img src="${escapeHtml(imagen)}" alt="${nombre}" loading="lazy" />`
-        : `<div class="carta-sin-imagen" aria-hidden="true"><img class="icono" src="${paginaUrl('img/icons/carta.svg')}" alt="" /></div>`;
+        : dorsoCarta();
     const contadorHTML = veces !== null
         ? `<span class="mv-contador">${veces} ${veces === 1 ? 'tradeo' : 'tradeos'}</span>`
         : `<span class="mv-contador"><img class="icono" src="${paginaUrl('img/icons/estrella.svg')}" alt="" /> Popular</span>`;

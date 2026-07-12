@@ -12,8 +12,8 @@
 // fuera, busca en TODO el catálogo (GET /api/cartas/buscar). La tabla
 // local completa (GET /api/cartas) ya no se usa aquí.
 
-import { API_URL, paginaUrl } from './auth.js';
-import { activarPlaceholderImagenes, escapeHtml, tarjetaCarta } from './utils.js';
+import { API_URL } from './auth.js';
+import { activarPlaceholderImagenes, escapeHtml, tarjetaCarta, placeholderLogo } from './utils.js';
 import { crearPaginacion } from './paginacion.js';
 import { activarLightboxEnGrid } from './lightbox.js';
 import { iniciarFiltros } from './filtros-catalogo.js';
@@ -108,7 +108,7 @@ function tarjetaSerie(serie) {
     return `
         <a class="set-card" href="${urlCatalogo({ serie: serie.tcgdex_id })}"
            aria-label="Ver sets de la serie ${nombre}">
-            ${logoHTML(serie.logo, null)}
+            ${logoHTML(serie.logo, null, serie.nombre)}
             <div class="set-info">
                 <h3>${nombre}</h3>
                 <p class="set-meta">${serie.sets_count} sets${anio ? ` · hasta ${anio}` : ''}</p>
@@ -155,7 +155,7 @@ function tarjetaSet(set) {
     return `
         <a class="set-card" href="${urlCatalogo({ set: set.tcgdex_id })}"
            aria-label="Ver cartas del set ${nombre}">
-            ${logoHTML(set.logo, set.simbolo)}
+            ${logoHTML(set.logo, set.simbolo, set.nombre)}
             <div class="set-info">
                 <h3>${nombre}</h3>
                 <p class="set-meta">${meta}</p>
@@ -296,22 +296,21 @@ function mostrarCartas(cartas, mensajeVacio) {
     grid.innerHTML = cartas.map(c => tarjetaCarta(c)).join('');
 }
 
-// Logo con degradación elegante: logo → símbolo pequeño → icono neutro
-function logoHTML(logo, simbolo) {
+// Logo con degradación elegante: logo real → wordmark propio con el
+// nombre (y el símbolo real incrustado si existe). El data-nombre deja
+// el nombre a mano para la red de seguridad si el logo real muere.
+function logoHTML(logo, simbolo, nombre) {
     if (logo) {
-        return `<div class="set-logo"><img src="${escapeHtml(logo)}" alt="" loading="lazy" /></div>`;
+        return `<div class="set-logo"><img src="${escapeHtml(logo)}" alt=""` +
+               ` data-nombre="${escapeHtml(nombre)}" loading="lazy" /></div>`;
     }
-    if (simbolo) {
-        return `<div class="set-logo"><img class="set-simbolo" src="${escapeHtml(simbolo)}" alt="" loading="lazy" /></div>`;
-    }
-    return `<div class="set-logo set-sin-logo" aria-hidden="true">` +
-           `<img class="icono" src="${paginaUrl('img/icons/carta.svg')}" alt="" /></div>`;
+    return `<div class="set-logo">${placeholderLogo(nombre, simbolo)}</div>`;
 }
 
 function cabecera(titulo, subtitulo, logo = null) {
     const contenedor = document.getElementById('cabecera-catalogo');
     contenedor.innerHTML = `
-        ${logo ? `<div class="set-cabecera-logo"><img src="${escapeHtml(logo)}" alt="" /></div>` : ''}
+        ${logo ? `<div class="set-cabecera-logo"><img src="${escapeHtml(logo)}" alt="" data-nombre="${escapeHtml(titulo)}" /></div>` : ''}
         <div>
             <h1 id="titulo-catalogo">${escapeHtml(titulo)}</h1>
             ${subtitulo ? `<p class="set-meta" id="subtitulo-catalogo">${escapeHtml(subtitulo)}</p>` : ''}

@@ -1,7 +1,7 @@
 // inventario.js — Gestión del inventario del usuario
 
 import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
-import { buscarCartasCatalogo, debounce, escapeHtml, mostrarAlerta, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
+import { buscarCartasCatalogo, debounce, escapeHtml, mostrarAlerta, dorsoCarta, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
 
 protegerRuta();
 
@@ -84,7 +84,7 @@ function renderizarInventario(items) {
             <span class="badge-cantidad">${item.cantidad}</span>
             ${item.carta?.imagen_low || item.carta?.imagen_url
                 ? `<img src="${escapeHtml(item.carta.imagen_low || item.carta.imagen_url)}" alt="${escapeHtml(nombre)}" />`
-                : `<div class="carta-sin-imagen" aria-hidden="true">?</div>`}
+                : dorsoCarta()}
             <h3>${escapeHtml(nombre)}</h3>
             <span class="carta-tipo">${escapeHtml(item.carta?.tipo || '—')}</span>
             <span class="carta-rareza">${escapeHtml(item.carta?.rareza || '')}</span>
@@ -138,7 +138,7 @@ function renderizarModal(cartas) {
              aria-label="Seleccionar ${escapeHtml(carta.nombre)}">
             ${carta.imagen_url
                 ? `<img src="${escapeHtml(carta.imagen_url)}" alt="${escapeHtml(carta.nombre)}" />`
-                : `<div class="placeholder-img" aria-hidden="true">?</div>`}
+                : dorsoCarta()}
             <p>${escapeHtml(carta.nombre)}</p>
         </div>
     `).join('');

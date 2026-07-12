@@ -869,16 +869,11 @@ footer a:hover { color: white; }
   background: linear-gradient(160deg, var(--superficie-img) 0%, var(--superficie-img-2) 100%);
   padding: 0.75rem;
 }
-.carta-sin-imagen {
-  width: 100%;
-  height: 155px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3rem;
-  background: linear-gradient(160deg, var(--superficie-img) 0%, var(--superficie-img-2) 100%);
-  color: var(--placeholder-icono);
-}
+/* Dorso propio para cartas sin ilustración: se emite como <img> en el
+   hueco de la imagen y hereda el tamaño del selector de cada contexto
+   (grid, detalle, miniatura, inventario...). object-fit lo mantiene con
+   su proporción de carta sobre la superficie clara del contexto. */
+.carta-dorso { object-fit: contain; }
 .carta-info {
   padding: 0.85rem;
   display: flex;
@@ -1169,18 +1164,6 @@ footer a:hover { color: white; }
   border-radius: 6px;
   border: 1px solid var(--borde);
   background: var(--fondo);
-}
-.miniatura-sin-img {
-  width: 52px;
-  height: 52px;
-  background: linear-gradient(160deg, var(--superficie-img) 0%, var(--superficie-img-2) 100%);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.2rem;
-  color: var(--placeholder-icono);
-  border: 1px solid var(--borde);
 }
 .miniatura span {
   font-size: 0.65rem;
@@ -2005,20 +1988,10 @@ body.nav-drawer-abierto { overflow: hidden; }
 /* ══════════════════════════════════════════════════
    CARTAS SELECCIONABLES
 ══════════════════════════════════════════════════ */
-.carta-seleccionable img,
-.carta-seleccionable .placeholder-img {
+.carta-seleccionable img {
   width: 100%;
   height: 72px;
   object-fit: contain;
-}
-.carta-seleccionable .placeholder-img {
-  background: var(--fondo);
-  border-radius: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.5rem;
-  color: var(--placeholder-icono);
 }
 
 /* ══════════════════════════════════════════════════
@@ -2397,18 +2370,6 @@ body.nav-drawer-abierto { overflow: hidden; }
   background: linear-gradient(160deg, var(--superficie-img) 0%, var(--superficie-img-2) 100%);
   border-radius: var(--radius-lg);
   padding: 1rem;
-  border: 1px solid var(--borde);
-}
-.sin-imagen-grande {
-  width: 210px;
-  height: 210px;
-  background: linear-gradient(160deg, var(--superficie-img) 0%, var(--superficie-img-2) 100%);
-  border-radius: var(--radius-lg);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 4rem;
-  color: var(--placeholder-icono);
   border: 1px solid var(--borde);
 }
 .detalle-info { flex: 1; min-width: 220px; }
@@ -2805,13 +2766,6 @@ body.nav-drawer-abierto { overflow: hidden; }
   background: var(--superficie-img);
   flex-shrink: 0;
 }
-.tradeo-protagonista-vacia {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 1.6rem;
-  color: var(--placeholder-icono);
-}
 .ofrece-detalle {
   min-width: 0;
   display: flex;
@@ -2850,13 +2804,6 @@ body.nav-drawer-abierto { overflow: hidden; }
   border-radius: 4px;
   border: 1px solid var(--borde);
   background: var(--superficie-img);
-}
-.busca-mini-vacia {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  color: var(--placeholder-icono);
 }
 .busca-mas {
   font-size: var(--text-xs);
@@ -3291,8 +3238,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   .detalle-nav { gap: 0.4rem; }
   .detalle-flecha { width: 36px; height: 36px; font-size: 0.95rem; }
   .detalle-imagen { width: 100%; }
-  .detalle-imagen img,
-  .sin-imagen-grande { width: 160px; height: 160px; }
+  .detalle-imagen img { width: 160px; height: 160px; }
   .detalle-info { min-width: 0; }
   .detalle-info h1 { font-size: 1.5rem; }
   .acciones-carta { width: 100%; }
@@ -3379,13 +3325,50 @@ body.nav-drawer-abierto { overflow: hidden; }
   max-width: 85%;
   object-fit: contain;
 }
-/* Símbolo pequeño como respaldo cuando el set no tiene logo */
-.set-logo img.set-simbolo { max-height: 46px; }
-/* Último recurso: icono neutro (nunca una imagen rota) */
-.set-sin-logo img.icono {
-  width: 42px;
-  height: 42px;
-  opacity: 0.35;
+/* Wordmark propio cuando el set/serie no tiene logo: el nombre en la
+   tipografía display sobre carbón con acento ámbar. Pieza de marca:
+   el carbón se fija en ambos temas. El tamaño del texto se ajusta al
+   ancho del contenedor con container queries. */
+.ph-logo {
+  container-type: inline-size;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.4rem 0.7rem;
+  background: #1A1A1A;
+  border: 1px solid rgba(251, 191, 36, 0.22);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.ph-logo-simbolo {
+  max-height: 20px;
+  width: auto;
+  opacity: 0.9;
+}
+.ph-logo-nombre {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: clamp(0.68rem, 13cqi, 1.05rem);
+  line-height: 1.08;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-align: center;
+  color: #F2F2F2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ph-logo-barra {
+  width: 26px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--primario);
+  flex-shrink: 0;
 }
 .set-info { text-align: center; }
 .set-info h3 {
@@ -3485,6 +3468,13 @@ body.lightbox-abierto { overflow: hidden; }
   transition: transform var(--trans);
 }
 .lightbox.visible .lightbox-img { transform: scale(1); }
+/* Dorso propio mostrado en grande: proporción de carta, altura acotada
+   al viewport (el SVG carga su propio fondo, sin caja de imagen) */
+.lightbox-img.lightbox-dorso {
+  width: auto;
+  height: min(80vh, 460px);
+  box-shadow: none;
+}
 .lightbox-nombre {
   color: #e8edf2;
   font-family: var(--font-heading);

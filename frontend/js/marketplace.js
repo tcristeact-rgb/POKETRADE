@@ -1,7 +1,7 @@
 // marketplace.js — Listado público de tradeos activos
 
 import { API_URL, estaLogueado, obtenerUsuario, headersAuth, parsearRespuesta } from './auth.js';
-import { formatearFecha, formatearPrecio, escapeHtml, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
+import { formatearFecha, formatearPrecio, escapeHtml, dorsoCarta, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
 
 let todosLosTradeos   = [];
 let inventarioUsuario = [];
@@ -27,15 +27,14 @@ document.addEventListener('DOMContentLoaded', () => {
     // la protagonista se convierte en placeholder, las minis se ocultan
     document.getElementById('grid-tradeos')?.addEventListener('error', (e) => {
         const img = e.target;
-        if (!(img instanceof HTMLImageElement)) return;
+        if (!(img instanceof HTMLImageElement) || img.dataset.rota) return;
+        // El dorso propio es un SVG local que no falla: evita el bucle
+        if (img.classList.contains('carta-dorso')) return;
+        img.dataset.rota = '1';
         if (img.classList.contains('tradeo-protagonista')) {
-            const hueco = document.createElement('div');
-            hueco.className = 'tradeo-protagonista tradeo-protagonista-vacia';
-            hueco.setAttribute('aria-hidden', 'true');
-            hueco.textContent = '?';
-            img.replaceWith(hueco);
+            img.outerHTML = dorsoCarta('tradeo-protagonista');
         } else if (img.classList.contains('busca-mini')) {
-            img.style.visibility = 'hidden';
+            img.outerHTML = dorsoCarta('busca-mini');
         }
     }, true);
 
@@ -173,7 +172,7 @@ function bloqueOfrece(cartas = []) {
             ${imagen
                 ? `<img class="tradeo-protagonista" src="${escapeHtml(imagen)}"
                        alt="${escapeHtml(principal.nombre)}" loading="lazy" />`
-                : `<div class="tradeo-protagonista tradeo-protagonista-vacia" aria-hidden="true">?</div>`}
+                : dorsoCarta('tradeo-protagonista')}
             <div class="ofrece-detalle">
                 <span class="ofrece-nombre">${escapeHtml(principal.nombre)}</span>
                 ${resto.length
@@ -199,7 +198,7 @@ function bloqueBusca(cartas = []) {
         const nombre = escapeHtml(c.nombre);
         return imagen
             ? `<img class="busca-mini" src="${escapeHtml(imagen)}" alt="${nombre}" title="${nombre}" loading="lazy" />`
-            : `<div class="busca-mini busca-mini-vacia" title="${nombre}" aria-label="${nombre}">?</div>`;
+            : dorsoCarta('busca-mini');
     }).join('');
 
     return `

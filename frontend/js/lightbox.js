@@ -6,7 +6,7 @@
 // mismo grid sin cerrar. La gestión de foco (trampa + devolución al
 // cerrar) reutiliza abrirModalAccesible/cerrarModalAccesible de utils.
 
-import { abrirModalAccesible, cerrarModalAccesible } from './utils.js';
+import { abrirModalAccesible, cerrarModalAccesible, URL_DORSO } from './utils.js';
 
 let lightbox = null;   // Nodo raíz (se crea una sola vez, al primer uso)
 let cartas   = [];     // Cartas navegables en la sesión de zoom actual
@@ -121,14 +121,23 @@ function mostrarCarta() {
     const low  = carta.imagen_low  || carta.imagen_url || '';
     const high = carta.imagen_high || low;
 
-    // Si la URL está muerta se oculta la imagen (queda el nombre en el
-    // pie); al navegar a otra carta que sí cargue, se restaura
-    img.onload  = () => { img.style.visibility = ''; };
-    img.onerror = () => { img.style.visibility = 'hidden'; };
-
-    img.src = low || high;
     img.alt = `Ilustración de ${carta.nombre || 'la carta'}`;
     lightbox.querySelector('.lightbox-nombre').textContent = carta.nombre || '';
+
+    // Sin ilustración (o si la URL muere): dorso propio en grande, no un
+    // hueco vacío. El dorso es un SVG local que no falla.
+    if (!low && !high) {
+        img.onload = img.onerror = null;
+        img.src = URL_DORSO;
+        img.classList.add('lightbox-dorso');
+        img.style.visibility = '';
+        return;
+    }
+    img.classList.remove('lightbox-dorso');
+    img.onload  = () => { img.style.visibility = ''; };
+    img.onerror = () => { img.onerror = null; img.src = URL_DORSO; img.classList.add('lightbox-dorso'); };
+
+    img.src = low || high;
 
     if (high && high !== low) {
         const posicionPedida = indice;

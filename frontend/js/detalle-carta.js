@@ -4,7 +4,7 @@
 // navegar por el catálogo sin asumir IDs consecutivos).
 
 import { API_URL, estaLogueado, headersAuth, manejarErrorHTTP, parsearRespuesta } from './auth.js';
-import { escapeHtml, mostrarAlerta, formatearPrecio } from './utils.js';
+import { escapeHtml, mostrarAlerta, formatearPrecio, dorsoCarta } from './utils.js';
 import { abrirLightbox } from './lightbox.js';
 
 let cartaActual = null;
@@ -102,7 +102,7 @@ function renderizarDetalle(carta) {
                           aria-label="Ampliar ilustración de ${nombreSeguro}">
                           <img src="${escapeHtml(imagen)}" alt="${nombreSeguro}" />
                        </button>`
-                    : `<div class="sin-imagen-grande" aria-hidden="true">?</div>`}
+                    : dorsoCarta()}
             </div>
             <div class="detalle-info">
                 <h1>${nombreSeguro}</h1>
@@ -134,10 +134,10 @@ function renderizarDetalle(carta) {
     document.getElementById('btn-zoom-carta')
         ?.addEventListener('click', () => abrirLightbox([carta]));
 
-    // URL de imagen muerta → placeholder grande, nunca imagen rota
+    // URL de imagen muerta → dorso propio, nunca imagen rota
     document.querySelector('.detalle-imagen img')?.addEventListener('error', () => {
         const contenedor = document.querySelector('.detalle-imagen');
-        if (contenedor) contenedor.innerHTML = '<div class="sin-imagen-grande" aria-hidden="true">?</div>';
+        if (contenedor) contenedor.innerHTML = dorsoCarta();
     }, { once: true });
 
     // Flechas laterales: navegan a la carta anterior / siguiente del catálogo

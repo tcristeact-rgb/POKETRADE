@@ -3,6 +3,37 @@
 
 import { API_URL, paginaUrl } from './auth.js';
 
+// ─── Placeholders propios de PokeTrade para assets ausentes ──
+// Para los logos/ilustraciones que TCGdex no tiene no existe fuente
+// legítima alternativa, así que se cubren con marca propia (SVG/CSS,
+// cero terceros). Alimentan tanto el dato ausente (imagen null) como
+// la red de seguridad de imágenes rotas (onerror).
+
+// Dorso de carta genérico (diseño propio, NO el dorso oficial). Se
+// emite como <img> en el hueco de la ilustración: hereda el tamaño
+// del selector de cada contexto (grid 155px, detalle 210px, mini
+// 52px...). extraClase sirve para contextos con clase propia
+// (marketplace: tradeo-protagonista / busca-mini).
+export const URL_DORSO = paginaUrl('img/carta-dorso.svg');
+
+export function dorsoCarta(extraClase = '') {
+    return `<img class="carta-dorso ${extraClase}" src="${URL_DORSO}" alt="" aria-hidden="true" />`;
+}
+
+// Placeholder tipográfico para serie/set sin logo: el nombre en la
+// tipografía display sobre carbón con acento ámbar (wordmark). Un
+// solo componente, sin archivo por set; el nombre se auto-ajusta con
+// container queries. Si el set tiene símbolo real se incrusta como
+// pequeña marca (asset legítimo aprovechado).
+export function placeholderLogo(nombre, simbolo = null) {
+    const seguro = escapeHtml(nombre || 'Sin nombre');
+    return `<div class="ph-logo" role="img" aria-label="${seguro}">` +
+        (simbolo ? `<img class="ph-logo-simbolo" src="${escapeHtml(simbolo)}" alt="" loading="lazy" />` : '') +
+        `<span class="ph-logo-nombre">${seguro}</span>` +
+        `<span class="ph-logo-barra" aria-hidden="true"></span>` +
+        `</div>`;
+}
+
 // Retrasa la ejecución de fn hasta que pasen ms sin nuevas llamadas.
 export function debounce(fn, ms) {
     let temporizador;
@@ -78,7 +109,7 @@ export function tarjetaCarta(carta) {
     const imagen  = carta.imagen_low || carta.imagen_url;
     const imgHTML = imagen
         ? `<img src="${escapeHtml(imagen)}" alt="${nombreSeguro}" loading="lazy" />`
-        : `<div class="carta-sin-imagen" aria-hidden="true"><img class="icono" src="${paginaUrl('img/icons/carta.svg')}" alt="" /></div>`;
+        : dorsoCarta();
     const precio = formatearPrecio(carta.precio_cardmarket);
     return `
         <a class="carta-card" href="${url}" aria-label="Ver detalle de ${nombreSeguro}">
@@ -106,23 +137,36 @@ export function activarPlaceholderImagenes(idContenedor) {
         if (!(img instanceof HTMLImageElement) || img.dataset.rota) return;
         img.dataset.rota = '1';
 
-        const iconoCarta =
-            `<img class="icono" src="${paginaUrl('img/icons/carta.svg')}" alt="" />`;
-
-        const logo = img.closest('.set-logo, .set-cabecera-logo');
-        if (logo) {
-            // Logo de serie o set → icono neutro centrado
-            logo.outerHTML = `<div class="set-logo set-sin-logo" aria-hidden="true">${iconoCarta}</div>`;
+        // Símbolo del wordmark tipográfico que muere: solo se oculta
+        // (el nombre ya identifica la serie/set), sin degradar más
+        if (img.classList.contains('ph-logo-simbolo')) {
+            img.style.display = 'none';
             return;
         }
 
-        if (img.matches('.carta-card > img')) {
-            // Ilustración de una tarjeta de carta → placeholder de carta
-            img.outerHTML = `<div class="carta-sin-imagen" aria-hidden="true">${iconoCarta}</div>`;
+        const logoGrid = img.closest('.set-logo');
+        if (logoGrid) {
+            // Logo de la baldosa de serie/set → wordmark propio con el
+            // nombre (guardado en data-nombre para este momento)
+            logoGrid.outerHTML = placeholderLogo(img.dataset.nombre);
             return;
         }
 
-        // Caso genérico (miniaturas, etc.): mejor hueco que imagen rota
+        // Logo de la cabecera de un set: el <h1> contiguo ya muestra el
+        // nombre, así que el bloque de logo se retira sin duplicarlo
+        const logoCabecera = img.closest('.set-cabecera-logo');
+        if (logoCabecera) {
+            logoCabecera.remove();
+            return;
+        }
+
+        // Ilustración de carta (grid o miniatura) → dorso propio
+        if (img.matches('.carta-card > img') || img.matches('.miniatura img')) {
+            img.outerHTML = dorsoCarta();
+            return;
+        }
+
+        // Caso genérico: mejor hueco que imagen rota
         img.style.visibility = 'hidden';
     }, true);
 }
@@ -179,7 +223,7 @@ export function miniaturas(cartas) {
         <div class="miniatura">
             ${imagen
                 ? `<img src="${escapeHtml(imagen)}" alt="${escapeHtml(c.nombre)}" loading="lazy" />`
-                : `<div class="miniatura-sin-img" aria-hidden="true">?</div>`}
+                : dorsoCarta()}
             <span>${escapeHtml(c.nombre)}</span>
         </div>`;
     }).join('');
