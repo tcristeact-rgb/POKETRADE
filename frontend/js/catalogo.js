@@ -135,6 +135,7 @@ function tarjetaSerie(serie) {
 async function vistaSets(serieId) {
     modoFiltro(null);
     sinPaginacion();
+    esqueletoCabecera();
     esqueletos('set-card');
 
     const grid = document.getElementById('grid-catalogo');
@@ -195,7 +196,8 @@ function tarjetaSet(set) {
 // ── Vista 3: cartas de un set (paginadas, filtrables) ──
 
 async function vistaSet(setId, pagina) {
-    esqueletos('carta-card');
+    esqueletos('carta-card', CARTAS_POR_PAGINA);
+    programarAvisoLento();
 
     const grid = document.getElementById('grid-catalogo');
     grid.className = 'grid-cartas';
@@ -204,6 +206,7 @@ async function vistaSet(setId, pagina) {
     // filtrar ya está pintada y basta con refrescar el indicador de modo
     const cabeceraEl = document.getElementById('cabecera-catalogo');
     if (cabeceraEl.dataset.set !== setId) {
+        esqueletoCabecera();
         cargarCabeceraSet(setId);
     } else {
         modoFiltro(filtros.hayFiltros() ? `Filtrando en ${cabeceraEl.dataset.nombre}` : null);
@@ -217,6 +220,7 @@ async function vistaSet(setId, pagina) {
         if (rareza) params.set('rareza', rareza);
 
         const res = await fetch(`${API_URL}/sets/${encodeURIComponent(setId)}/cartas?${params}`);
+        cancelarAvisoLento();
 
         if (res.status === 404) { mostrarError('Este set no existe.'); return; }
         if (res.status === 503) {
@@ -235,6 +239,7 @@ async function vistaSet(setId, pagina) {
             document.querySelector('.catalogo-contenedor')?.scrollIntoView({ behavior: 'smooth' });
         }
     } catch (e) {
+        cancelarAvisoLento();
         mostrarErrorConReintento(`Error al cargar las cartas: ${e.message}`, pagina);
     }
 }
@@ -283,7 +288,7 @@ async function vistaBusquedaGlobal() {
     breadcrumb([['Inicio', '../index.html'], ['Catálogo', urlCatalogo({})], 'Búsqueda']);
     modoFiltro('Buscando en todo el catálogo');
     sinPaginacion();
-    esqueletos('carta-card');
+    esqueletos('carta-card', CARTAS_POR_PAGINA);
 
     const grid = document.getElementById('grid-catalogo');
     grid.className = 'grid-cartas';
@@ -382,9 +387,39 @@ function sinPaginacion() {
     if (info) info.textContent = '';
 }
 
-function esqueletos(clase) {
+// Los esqueletos deben ser TANTOS como el contenido que va a llegar:
+// pintar 8 y recibir 20 cartas hace crecer la página de golpe (salto
+// de layout). Por eso el grid de cartas pide CARTAS_POR_PAGINA.
+function esqueletos(clase, cantidad = 12) {
     document.getElementById('grid-catalogo').innerHTML =
-        Array(8).fill(`<div class="${clase} skeleton" aria-hidden="true"></div>`).join('');
+        Array(cantidad).fill(`<div class="${clase} skeleton" aria-hidden="true"></div>`).join('');
+}
+
+// La cabecera del set también tarda (es otra petición): sin esqueleto,
+// el título aparece de golpe y empuja el grid hacia abajo
+function esqueletoCabecera() {
+    document.getElementById('cabecera-catalogo').innerHTML =
+        '<div class="skeleton skeleton-cabecera-set" aria-hidden="true"></div>';
+}
+
+// Aviso de espera larga. La primera visita a un set no cacheado tiene
+// que ir a TCGdex y guardar sus cartas (cache-aside), así que puede
+// tardar segundos: en vez de dejar los esqueletos mudos, se explica.
+let temporizadorAviso = null;
+
+function programarAvisoLento() {
+    cancelarAvisoLento();
+    temporizadorAviso = setTimeout(() => {
+        const aviso = document.getElementById('aviso-carga');
+        if (aviso) aviso.hidden = false;
+    }, 2500);
+}
+
+function cancelarAvisoLento() {
+    clearTimeout(temporizadorAviso);
+    temporizadorAviso = null;
+    const aviso = document.getElementById('aviso-carga');
+    if (aviso) aviso.hidden = true;
 }
 
 // Refleja la página actual en la URL (?page=N) sin ensuciar el

@@ -58,6 +58,17 @@ function mostrarCtaPublicar() {
 
 async function cargarTradeos() {
     ocultarError();
+    // Esqueletos también al reintentar tras un error, no solo en la
+    // primera carga (los del HTML ya se habrán reemplazado)
+    document.getElementById('grid-tradeos').innerHTML = Array(8).fill(
+        '<div class="skeleton-card" aria-hidden="true">' +
+        '<div class="skeleton-block skeleton-block-header"></div>' +
+        '<div class="skeleton-card-cuerpo">' +
+        '<div class="skeleton-block skeleton-block-grande"></div>' +
+        '<div class="skeleton-block skeleton-block-linea"></div>' +
+        '</div>' +
+        '<div class="skeleton-block skeleton-block-footer"></div>' +
+        '</div>').join('');
     try {
         const res = await fetch(`${API_URL}/tradeos`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);

@@ -28,7 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function cargarMisTradeos() {
     const lista = document.getElementById('lista-tradeos');
-    lista.innerHTML = '<p>Cargando tradeos...</p>';
+    lista.innerHTML = Array(3)
+        .fill('<div class="mistradeo-card skeleton" aria-hidden="true"></div>').join('');
     try {
         const res = await fetch(`${API_URL}/mis-tradeos`, { headers: headersAuth() });
         if (!res.ok) throw new Error(manejarErrorHTTP(res.status));

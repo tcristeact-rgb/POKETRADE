@@ -55,6 +55,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function cargarInventario() {
     const grid = document.getElementById('grid-inventario');
+    grid.innerHTML = Array(10)
+        .fill('<div class="carta-inventario skeleton" aria-hidden="true"></div>').join('');
     try {
         const res = await fetch(`${API_URL}/inventario`, { headers: headersAuth() });
         if (!res.ok) throw new Error(manejarErrorHTTP(res.status));

@@ -52,6 +52,13 @@
             <!-- Info de paginación -->
             <p class="paginacion-info" id="paginacion-info"></p>
 
+            <!-- Aviso de espera larga: la primera visita a un set no
+                 cacheado tiene que traerlo de TCGdex (cache-aside).
+                 catalogo.js lo muestra a los 2,5 s de espera. -->
+            <p class="aviso-carga" id="aviso-carga" role="status" hidden>
+                Cargando el set por primera vez… puede tardar unos segundos.
+            </p>
+
             <!-- Grid de series, sets o cartas según la vista -->
             <div id="grid-catalogo" class="grid-sets">
                 <div class="set-card skeleton" aria-hidden="true"></div>

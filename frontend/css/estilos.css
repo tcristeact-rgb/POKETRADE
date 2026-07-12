@@ -290,6 +290,15 @@ main:focus { outline: none; }
 /* ══════════════════════════════════════════════════
    HEADER / NAV
 ══════════════════════════════════════════════════ */
+/* El header lo inyecta header.js al cargar la página. Su hueco reserva
+   de antemano el sitio exacto que ocupará (píldora + separación), para
+   que al aparecer no empuje hacia abajo todo el contenido: era la
+   mayor fuente de salto de layout del sitio. */
+#app-header {
+  display: block;
+  min-height: calc(var(--nav-h) + var(--hdr-gap));
+}
+
 /* Píldora flotante con efecto cristal: tinte translúcido + blur con
    saturación + canto luminoso + brillo interior + sombra de flotado.
    OJO: nada de overflow:hidden aquí — el dropdown del menú-usuario
@@ -964,6 +973,21 @@ footer a:hover { color: white; }
   animation: shimmer 1.5s ease-in-out infinite;
   min-height: 260px;
   border-radius: var(--radius-lg);
+}
+/* Cada esqueleto ocupa exactamente lo que ocupará su contenido real
+   (alturas medidas en el grid): así, al llegar los datos, nada se
+   desplaza. Sin esto la tarjeta de carta crecía 61px por fila. */
+.carta-card.skeleton      { min-height: 321px; }
+.carta-inventario.skeleton { min-height: 251px; }
+.mistradeo-card.skeleton  { min-height: 307px; }
+
+/* Aviso de espera larga: la primera visita a un set no cacheado tiene
+   que traerlo de TCGdex, y una espera explicada se hace más corta */
+.aviso-carga {
+  text-align: center;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  margin-bottom: 1rem;
 }
 
 /* ══════════════════════════════════════════════════
