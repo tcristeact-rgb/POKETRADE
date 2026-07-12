@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
-    <title>Soporte - PokeTrade</title>
-    <meta name="description" content="Contacta con el equipo de PokeTrade para resolver dudas, reportar errores o enviar sugerencias.">
+    <script>try{var d=document.documentElement,s=localStorage;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var i=s.getItem('idioma')||(navigator.language||'es').slice(0,2);d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}}catch(e){}</script>
+    <title data-i18n="meta.soporte.title">Soporte - PokeTrade</title>
+    <meta name="description" data-i18n-attr="content:meta.soporte.desc" content="Contacta con el equipo de PokeTrade para resolver dudas, reportar errores o enviar sugerencias.">
     <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
 </head>
@@ -14,44 +14,47 @@
 
     <main>
         <div class="soporte-contenedor">
-            <h1>Soporte</h1>
-            <p class="subtitulo">¿Tienes algún problema o sugerencia? Escríbenos y te responderemos lo antes posible.</p>
+            <h1 data-i18n="sop.titulo">Soporte</h1>
+            <p class="subtitulo" data-i18n="sop.subtitulo">¿Tienes algún problema o sugerencia? Escríbenos y te responderemos lo antes posible.</p>
 
             <div class="soporte-card">
                 <div id="alerta" class="alerta" role="alert"></div>
 
                 <form id="form-soporte" novalidate>
                     <div class="formulario-grupo">
-                        <label for="nombre">Nombre</label>
-                        <input type="text" id="nombre" name="nombre" placeholder="Tu nombre" required
+                        <label for="nombre" data-i18n="auth.nombre">Nombre</label>
+                        <input type="text" id="nombre" name="nombre"
+                            data-i18n-attr="placeholder:auth.nombrePlaceholder" placeholder="Tu nombre" required
                             autocomplete="name" />
                     </div>
                     <div class="formulario-grupo">
-                        <label for="email">Correo electrónico</label>
-                        <input type="email" id="email" name="email" placeholder="tu@correo.com" required
+                        <label for="email" data-i18n="sop.correo">Correo electrónico</label>
+                        <input type="email" id="email" name="email"
+                            data-i18n-attr="placeholder:sop.correoPlaceholder" placeholder="tu@correo.com" required
                             autocomplete="email" />
                     </div>
                     <div class="formulario-grupo">
-                        <label for="asunto">Asunto</label>
+                        <label for="asunto" data-i18n="sop.asunto">Asunto</label>
                         <select id="asunto" name="asunto" required>
-                            <option value="">Selecciona un asunto...</option>
-                            <option value="error">Reportar un error</option>
-                            <option value="sugerencia">Sugerencia de mejora</option>
-                            <option value="cuenta">Problema con mi cuenta</option>
-                            <option value="otro">Otro</option>
+                            <option value=""           data-i18n="sop.seleccionaAsunto">Selecciona un asunto...</option>
+                            <option value="error"      data-i18n="sop.reportarError">Reportar un error</option>
+                            <option value="sugerencia" data-i18n="sop.sugerencia">Sugerencia de mejora</option>
+                            <option value="cuenta"     data-i18n="sop.problemaCuenta">Problema con mi cuenta</option>
+                            <option value="otro"       data-i18n="sop.otro">Otro</option>
                         </select>
                     </div>
                     <div class="formulario-grupo">
-                        <label for="mensaje">Mensaje</label>
-                        <textarea id="mensaje" name="mensaje" rows="5" placeholder="Describe tu consulta..." required></textarea>
+                        <label for="mensaje" data-i18n="sop.mensaje">Mensaje</label>
+                        <textarea id="mensaje" name="mensaje" rows="5"
+                            data-i18n-attr="placeholder:sop.mensajePlaceholder" placeholder="Describe tu consulta..." required></textarea>
                     </div>
-                    <button type="submit" class="btn-enviar">Enviar mensaje</button>
+                    <button type="submit" class="btn-enviar" data-i18n="sop.enviar">Enviar mensaje</button>
                 </form>
 
                 <div class="soporte-info">
-                    <p>También puedes escribirnos directamente a
+                    <p data-i18n-html="sop.tambienEscribir">También puedes escribirnos directamente a
                         <a href="mailto:poketrade@iesellago.es">poketrade@iesellago.es</a>.</p>
-                    <p class="soporte-sede">IES El Lago · Madrid · Daniel Leal &amp; Teo Cristea</p>
+                    <p class="soporte-sede" data-i18n="sop.sede">IES El Lago · Madrid · Daniel Leal &amp; Teo Cristea</p>
                 </div>
             </div>
         </div>

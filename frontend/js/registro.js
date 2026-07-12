@@ -3,8 +3,10 @@
 // ===================================================
 
 import { registro } from './auth.js';
+import { t } from './i18n.js';
+import { alCargarDOM } from './utils.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+alCargarDOM(() => {
   const form = document.getElementById('form-registro');
   if (form) form.addEventListener('submit', registrarse);
 
@@ -39,19 +41,17 @@ function validarCampo(id) {
   switch (id) {
     case 'nombre':
     case 'apellido':
-      return marcarCampo(id, valor.length < 2 ? 'Introduce al menos 2 caracteres.' : '');
+      return marcarCampo(id, valor.length < 2 ? t('auth.min2') : '');
     case 'email':
       return marcarCampo(
         id,
-        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor)
-          ? 'Introduce un correo válido (ejemplo: nombre@correo.com).'
-          : ''
+        !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor) ? t('auth.emailInvalido') : ''
       );
     case 'password':
-      return marcarCampo(id, valor.length < 6 ? 'La contraseña debe tener al menos 6 caracteres.' : '');
+      return marcarCampo(id, valor.length < 6 ? t('auth.min6') : '');
     case 'confirmar': {
       const pass = (document.getElementById('password')?.value || '').trim();
-      return marcarCampo(id, valor !== pass ? 'Las contraseñas no coinciden.' : '');
+      return marcarCampo(id, valor !== pass ? t('auth.noCoinciden') : '');
     }
     default:
       return true;
@@ -72,7 +72,7 @@ async function registrarse(e) {
   });
 
   if (primerError) {
-    errorMensaje.textContent = 'Revisa los campos marcados en rojo antes de continuar.';
+    errorMensaje.textContent = t('auth.revisaCampos');
     document.getElementById(primerError).focus();
     return;
   }
@@ -90,7 +90,7 @@ async function registrarse(e) {
   const boton = document.querySelector('#form-registro button[type="submit"]');
   const textoOriginal = boton.textContent;
   boton.disabled = true;
-  boton.textContent = 'Creando cuenta…';
+  boton.textContent = t('auth.creandoCuenta');
 
   try {
     // Reutilizamos registro() de auth.js (una única definición de la petición)
@@ -98,7 +98,7 @@ async function registrarse(e) {
     // Éxito: avisamos en el login mediante el parámetro ?registro=ok
     window.location.href = 'login.html?registro=ok';
   } catch (error) {
-    errorMensaje.textContent = error.message || 'No se pudo completar el registro. Revisa tus datos.';
+    errorMensaje.textContent = error.message || t('auth.errorRegistro');
     boton.disabled = false;
     boton.textContent = textoOriginal;
   }

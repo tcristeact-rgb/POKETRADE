@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
-    <title>Registro - PokeTrade</title>
-    <meta name="description" content="Crea tu cuenta en PokeTrade y empieza a intercambiar cartas Pokémon con otros coleccionistas." />
+    <script>try{var d=document.documentElement,s=localStorage;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var i=s.getItem('idioma')||(navigator.language||'es').slice(0,2);d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}}catch(e){}</script>
+    <title data-i18n="meta.registro.title">Registro - PokeTrade</title>
+    <meta name="description" data-i18n-attr="content:meta.registro.desc" content="Crea tu cuenta en PokeTrade y empieza a intercambiar cartas Pokémon con otros coleccionistas." />
     <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
 </head>
@@ -14,68 +14,75 @@
 
     <main>
         <div class="formulario-contenedor">
-            <h1>Crear cuenta</h1>
-            <p class="formulario-intro">
+            <h1 data-i18n="auth.crearCuenta">Crear cuenta</h1>
+            <p class="formulario-intro" data-i18n-html="auth.camposObligatorios">
                 Los campos marcados con <span class="obligatorio">*</span> son obligatorios.
             </p>
             <p id="error-mensaje" class="error-texto" role="alert" aria-live="assertive"></p>
 
             <form id="form-registro" novalidate>
                 <div class="formulario-grupo">
-                    <label for="nombre">Nombre <span class="obligatorio">*</span></label>
-                    <input type="text" id="nombre" name="nombre" placeholder="Tu nombre"
+                    <label for="nombre"><span data-i18n="auth.nombre">Nombre</span> <span class="obligatorio">*</span></label>
+                    <input type="text" id="nombre" name="nombre"
+                           data-i18n-attr="placeholder:auth.nombrePlaceholder" placeholder="Tu nombre"
                            required minlength="2" autocomplete="given-name"
                            aria-describedby="error-nombre" />
                     <span id="error-nombre" class="campo-error" aria-live="polite"></span>
                 </div>
 
                 <div class="formulario-grupo">
-                    <label for="apellido">Apellido <span class="obligatorio">*</span></label>
-                    <input type="text" id="apellido" name="apellido" placeholder="Tu apellido"
+                    <label for="apellido"><span data-i18n="auth.apellido">Apellido</span> <span class="obligatorio">*</span></label>
+                    <input type="text" id="apellido" name="apellido"
+                           data-i18n-attr="placeholder:auth.apellidoPlaceholder" placeholder="Tu apellido"
                            required minlength="2" autocomplete="family-name"
                            aria-describedby="error-apellido" />
                     <span id="error-apellido" class="campo-error" aria-live="polite"></span>
                 </div>
 
                 <div class="formulario-grupo">
-                    <label for="email">Email <span class="obligatorio">*</span></label>
-                    <input type="email" id="email" name="email" placeholder="tu@email.com"
+                    <label for="email"><span data-i18n="auth.email">Email</span> <span class="obligatorio">*</span></label>
+                    <input type="email" id="email" name="email"
+                           data-i18n-attr="placeholder:auth.emailPlaceholder" placeholder="tu@email.com"
                            required autocomplete="email" aria-describedby="error-email" />
                     <span id="error-email" class="campo-error" aria-live="polite"></span>
                 </div>
 
                 <div class="formulario-grupo">
-                    <label for="fecha_nacimiento">Fecha de nacimiento <small>(opcional)</small></label>
+                    <label for="fecha_nacimiento"><span data-i18n="auth.fechaNacimiento">Fecha de nacimiento</span> <small data-i18n="auth.opcional">(opcional)</small></label>
                     <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" />
                 </div>
 
                 <div class="formulario-grupo">
-                    <label for="nacionalidad">Nacionalidad <small>(opcional)</small></label>
-                    <input type="text" id="nacionalidad" name="nacionalidad" placeholder="Española"
+                    <label for="nacionalidad"><span data-i18n="auth.nacionalidad">Nacionalidad</span> <small data-i18n="auth.opcional">(opcional)</small></label>
+                    <input type="text" id="nacionalidad" name="nacionalidad"
+                           data-i18n-attr="placeholder:auth.nacionalidadPlaceholder" placeholder="Española"
                            autocomplete="country-name" />
                 </div>
 
                 <div class="formulario-grupo">
-                    <label for="password">Contraseña <span class="obligatorio">*</span></label>
-                    <input type="password" id="password" name="password" placeholder="Crea una contraseña"
+                    <label for="password"><span data-i18n="auth.password">Contraseña</span> <span class="obligatorio">*</span></label>
+                    <input type="password" id="password" name="password"
+                           data-i18n-attr="placeholder:auth.crearPasswordPlaceholder" placeholder="Crea una contraseña"
                            required minlength="6" autocomplete="new-password"
                            aria-describedby="ayuda-password error-password" />
-                    <small id="ayuda-password" class="campo-ayuda">Debe tener al menos 6 caracteres.</small>
+                    <small id="ayuda-password" class="campo-ayuda" data-i18n="auth.ayudaPassword">Debe tener al menos 6 caracteres.</small>
                     <span id="error-password" class="campo-error" aria-live="polite"></span>
                 </div>
 
                 <div class="formulario-grupo">
-                    <label for="confirmar">Confirmar contraseña <span class="obligatorio">*</span></label>
-                    <input type="password" id="confirmar" name="confirmar" placeholder="Repite la contraseña"
+                    <label for="confirmar"><span data-i18n="auth.confirmarPassword">Confirmar contraseña</span> <span class="obligatorio">*</span></label>
+                    <input type="password" id="confirmar" name="confirmar"
+                           data-i18n-attr="placeholder:auth.repitePassword" placeholder="Repite la contraseña"
                            required autocomplete="new-password" aria-describedby="error-confirmar" />
                     <span id="error-confirmar" class="campo-error" aria-live="polite"></span>
                 </div>
 
-                <button type="submit" class="btn-formulario">Crear cuenta</button>
+                <button type="submit" class="btn-formulario" data-i18n="auth.crearCuenta">Crear cuenta</button>
             </form>
 
             <p class="formulario-pie">
-                ¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a>
+                <span data-i18n="auth.yaTienesCuenta">¿Ya tienes cuenta?</span>
+                <a href="login.html" data-i18n="auth.iniciarSesion">Inicia sesión</a>
             </p>
         </div>
     </main>

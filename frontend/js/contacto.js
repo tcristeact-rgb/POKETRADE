@@ -2,7 +2,10 @@
 // Al enviar abre el cliente de correo del usuario con los datos
 // rellenos. Como alternativa muestra el email directo para copiar.
 
-document.addEventListener('DOMContentLoaded', () => {
+import { t } from './i18n.js';
+import { alCargarDOM } from './utils.js';
+
+alCargarDOM(() => {
   document.getElementById('form-soporte')?.addEventListener('submit', enviarFormulario);
 });
 
@@ -18,26 +21,27 @@ function enviarFormulario(e) {
   // Validación básica de campos obligatorios
   if (!nombre || !email || !asunto || !mensaje) {
     alerta.className = 'alerta error';
-    alerta.textContent = 'Por favor, rellena todos los campos.';
+    alerta.textContent = t('sop.rellenaCampos');
     return;
   }
 
   // Validación básica de formato de email
   if (!email.includes('@') || !email.includes('.')) {
     alerta.className = 'alerta error';
-    alerta.textContent = 'Por favor, introduce un correo electrónico válido.';
+    alerta.textContent = t('sop.correoInvalido');
     return;
   }
 
-  // Construimos el asunto y cuerpo del correo
-  const asuntoTexto = {
-    error: 'Reporte de error',
-    sugerencia: 'Sugerencia de mejora',
-    cuenta: 'Problema con mi cuenta',
-    otro: 'Consulta general',
-  }[asunto] || asunto;
+  // El correo se redacta en el idioma que el usuario está usando
+  const CLAVES_ASUNTO = {
+    error:      'sop.asuntoError',
+    sugerencia: 'sop.asuntoSugerencia',
+    cuenta:     'sop.asuntoCuenta',
+    otro:       'sop.asuntoOtro',
+  };
+  const asuntoTexto = CLAVES_ASUNTO[asunto] ? t(CLAVES_ASUNTO[asunto]) : asunto;
 
-  const cuerpo = `Nombre: ${nombre}\nEmail: ${email}\n\n${mensaje}`;
+  const cuerpo = t('sop.cuerpoCorreo', { nombre, email, mensaje });
 
   const mailtoUrl = `mailto:poketrade@iesellago.es`
     + `?subject=${encodeURIComponent(`[PokeTrade] ${asuntoTexto}`)}`
@@ -46,7 +50,7 @@ function enviarFormulario(e) {
   window.location.href = mailtoUrl;
 
   alerta.className = 'alerta exito';
-  alerta.textContent = '¡Abriendo tu cliente de correo! Si no se abre automáticamente, escríbenos a poketrade@iesellago.es';
+  alerta.textContent = t('sop.abriendoCliente');
   document.getElementById('form-soporte').reset();
 
   setTimeout(() => { alerta.className = 'alerta'; alerta.textContent = ''; }, 6000);

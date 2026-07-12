@@ -4,16 +4,17 @@
 // navegar por el catálogo sin asumir IDs consecutivos).
 
 import { API_URL, estaLogueado, headersAuth, irALogin, manejarErrorHTTP, parsearRespuesta } from './auth.js';
-import { escapeHtml, mostrarAlerta, formatearPrecio, dorsoCarta } from './utils.js';
+import { t } from './i18n.js';
+import { alCargarDOM, escapeHtml, mostrarAlerta, formatearPrecio, dorsoCarta } from './utils.js';
 import { abrirLightbox } from './lightbox.js';
 
 let cartaActual = null;
 
-document.addEventListener('DOMContentLoaded', () => {
+alCargarDOM(() => {
     const id = new URLSearchParams(window.location.search).get('id');
 
     if (!id) {
-        mostrarError('No se especificó ninguna carta.');
+        mostrarError(t('carta.noEspecificada'));
         return;
     }
 
@@ -35,14 +36,14 @@ async function cargarDetalle(id) {
     try {
         const res = await fetch(`${API_URL}/cartas/${id}`);
 
-        if (res.status === 404) { mostrarError('Esta carta no existe.'); return; }
-        if (!res.ok) throw new Error('Error al conectar con la API');
+        if (res.status === 404) { mostrarError(t('carta.noExiste')); return; }
+        if (!res.ok) throw new Error(t('comun.errorApi'));
 
         cartaActual = await res.json();
         renderizarDetalle(cartaActual);
 
     } catch (e) {
-        mostrarError(`Error al cargar la carta: ${e.message}`);
+        mostrarError(t('carta.errorCargar', { mensaje: e.message }));
     }
 }
 
@@ -58,15 +59,15 @@ function filaAtributo(label, valorHTML) {
 }
 
 function renderizarDetalle(carta) {
-    document.title = `${carta.nombre} - PokeTrade`;
+    document.title = t('meta.tituloPagina', { titulo: carta.nombre });
 
     // Breadcrumb: Inicio › Catálogo › {Set} › {Carta}. El set enlaza a
     // su vista dentro del catálogo unificado (?set=...)
     const miga = document.getElementById('breadcrumb');
     if (miga) {
         miga.innerHTML =
-            `<a href="../index.html">Inicio</a> › ` +
-            `<a href="catalogo.html">Catálogo</a> › ` +
+            `<a href="../index.html">${escapeHtml(t('comun.inicio'))}</a> › ` +
+            `<a href="catalogo.html">${escapeHtml(t('catalogo.titulo'))}</a> › ` +
             (carta.set_id && carta.set_expansion
                 ? `<a href="catalogo.html?set=${encodeURIComponent(carta.set_id)}">${escapeHtml(carta.set_expansion)}</a> › `
                 : '') +
@@ -78,8 +79,8 @@ function renderizarDetalle(carta) {
     // Sin sesión, el botón lleva al login recordando esta carta: al
     // volver, el usuario aterriza aquí mismo con el botón ya activo
     const botonInventario = estaLogueado()
-        ? `<button class="btn-inventario" id="btn-add-inventario" type="button">+ Añadir a mi inventario</button>`
-        : `<button class="btn-primario" id="btn-login-inventario" type="button">Inicia sesión para añadir</button>`;
+        ? `<button class="btn-inventario" id="btn-add-inventario" type="button">${escapeHtml(t('carta.anadirInventario'))}</button>`
+        : `<button class="btn-primario" id="btn-login-inventario" type="button">${escapeHtml(t('carta.iniciaSesionAnadir'))}</button>`;
 
     // En el detalle usamos la ilustración en alta calidad (high.webp);
     // imagen_url queda como respaldo para filas antiguas
@@ -90,17 +91,17 @@ function renderizarDetalle(carta) {
 
     // Set + número de coleccionista dentro del set (ej: "151 · Nº 006")
     const setHTML = carta.set_expansion
-        ? `<span>${escapeHtml(carta.set_expansion)}${carta.numero ? ` · Nº ${escapeHtml(carta.numero)}` : ''}</span>`
+        ? `<span>${escapeHtml(carta.set_expansion)}${carta.numero ? ` · ${escapeHtml(t('carta.numero', { numero: carta.numero }))}` : ''}</span>`
         : '';
 
     document.getElementById('contenido-detalle').innerHTML = `
         <div class="detalle-nav">
-        <button class="detalle-flecha" id="detalle-flecha-prev" type="button" aria-label="Ver carta anterior" ${carta.anterior_id ? '' : 'disabled'}>❮</button>
+        <button class="detalle-flecha" id="detalle-flecha-prev" type="button" aria-label="${escapeHtml(t('carta.verAnterior'))}" ${carta.anterior_id ? '' : 'disabled'}>❮</button>
         <div class="detalle-card">
             <div class="detalle-imagen">
                 ${imagen
                     ? `<button class="detalle-imagen-zoom" id="btn-zoom-carta" type="button"
-                          aria-label="Ampliar ilustración de ${nombreSeguro}">
+                          aria-label="${escapeHtml(t('carta.ampliar', { nombre: carta.nombre }))}">
                           <img src="${escapeHtml(imagen)}" alt="${nombreSeguro}" />
                        </button>`
                     : dorsoCarta()}
@@ -108,13 +109,13 @@ function renderizarDetalle(carta) {
             <div class="detalle-info">
                 <h1>${nombreSeguro}</h1>
                 <div class="atributos">
-                    ${filaAtributo('Tipo',        carta.tipo   ? `<span class="badge-tipo">${escapeHtml(carta.tipo)}</span>`       : '')}
-                    ${filaAtributo('Rareza',      carta.rareza ? `<span class="badge-rareza">${escapeHtml(carta.rareza)}</span>`   : '')}
-                    ${filaAtributo('Set',         setHTML)}
-                    ${filaAtributo('PS',          carta.hp ? `<span>${carta.hp} PS</span>` : '')}
-                    ${filaAtributo('Ilustración', carta.ilustrador ? `<span>${escapeHtml(carta.ilustrador)}</span>` : '')}
-                    ${filaAtributo('Precio medio', precio
-                        ? `<span class="precio-cardmarket">${precio}</span> <span class="precio-fuente">(Cardmarket)</span>`
+                    ${filaAtributo(t('carta.tipo'),   carta.tipo   ? `<span class="badge-tipo">${escapeHtml(carta.tipo)}</span>`     : '')}
+                    ${filaAtributo(t('carta.rareza'), carta.rareza ? `<span class="badge-rareza">${escapeHtml(carta.rareza)}</span>` : '')}
+                    ${filaAtributo(t('carta.set'),    setHTML)}
+                    ${filaAtributo(t('carta.ps'),     carta.hp ? `<span>${escapeHtml(t('carta.psValor', { n: carta.hp }))}</span>` : '')}
+                    ${filaAtributo(t('carta.ilustracion'), carta.ilustrador ? `<span>${escapeHtml(carta.ilustrador)}</span>` : '')}
+                    ${filaAtributo(t('carta.precioMedio'), precio
+                        ? `<span class="precio-cardmarket">${precio}</span> <span class="precio-fuente">${escapeHtml(t('carta.fuentePrecio'))}</span>`
                         : '')}
                 </div>
                 ${carta.descripcion ? `<p class="descripcion-carta">${escapeHtml(carta.descripcion)}</p>` : ''}
@@ -123,7 +124,7 @@ function renderizarDetalle(carta) {
                 </div>
             </div>
         </div>
-        <button class="detalle-flecha" id="detalle-flecha-next" type="button" aria-label="Ver carta siguiente" ${carta.siguiente_id ? '' : 'disabled'}>❯</button>
+        <button class="detalle-flecha" id="detalle-flecha-next" type="button" aria-label="${escapeHtml(t('carta.verSiguiente'))}" ${carta.siguiente_id ? '' : 'disabled'}>❯</button>
         </div>
     `;
 
@@ -166,7 +167,7 @@ function irACarta(id) {
 async function anadirAInventario(carta) {
     const btn = document.getElementById('btn-add-inventario');
     btn.disabled = true;
-    btn.textContent = 'Añadiendo...';
+    btn.textContent = t('carta.anadiendo');
 
     try {
         const res = await fetch(`${API_URL}/inventario`, {
@@ -176,12 +177,12 @@ async function anadirAInventario(carta) {
         });
         const datos = await parsearRespuesta(res);
         if (!res.ok) throw new Error(datos.error || manejarErrorHTTP(res.status));
-        mostrarAlerta('Carta añadida al inventario.', 'exito');
-        btn.textContent = '✓ En inventario';
+        mostrarAlerta(t('carta.anadida'), 'exito');
+        btn.textContent = t('carta.enInventario');
     } catch (e) {
-        mostrarAlerta(`Error: ${e.message}`, 'error');
+        mostrarAlerta(t('comun.error', { mensaje: e.message }), 'error');
         btn.disabled = false;
-        btn.textContent = '+ Añadir a mi inventario';
+        btn.textContent = t('carta.anadirInventario');
     }
 }
 

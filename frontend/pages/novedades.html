@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
-    <title>Novedades - PokeTrade</title>
-    <meta name="description" content="Descubre las últimas cartas Pokémon disponibles en PokeTrade.">
+    <script>try{var d=document.documentElement,s=localStorage;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var i=s.getItem('idioma')||(navigator.language||'es').slice(0,2);d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}}catch(e){}</script>
+    <title data-i18n="meta.novedades.title">Novedades - PokeTrade</title>
+    <meta name="description" data-i18n-attr="content:meta.novedades.desc" content="Descubre las últimas cartas Pokémon disponibles en PokeTrade.">
     <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
 </head>
@@ -14,12 +14,12 @@
 
     <main>
         <div class="novedades-contenedor">
-            <h1>Últimas novedades</h1>
-            <p class="subtitulo">Todas las cartas disponibles en el catálogo, ordenadas por incorporación.</p>
+            <h1 data-i18n="home.novedadesTitulo">Últimas novedades</h1>
+            <p class="subtitulo" data-i18n="nov.subtitulo">Todas las cartas disponibles en el catálogo, ordenadas por incorporación.</p>
 
             <div id="error-novedades" class="alerta-error" hidden role="alert">
-                <span id="error-novedades-msg">No se pudieron cargar las novedades.</span>
-                <button id="btn-reintentar-novedades" type="button">Reintentar</button>
+                <span id="error-novedades-msg" data-i18n="home.errorNovedades">No se pudieron cargar las novedades.</span>
+                <button id="btn-reintentar-novedades" type="button" data-i18n="comun.reintentar">Reintentar</button>
             </div>
 
             <div id="grid-novedades" class="grid-cartas" aria-live="polite">

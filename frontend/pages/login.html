@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
-    <title>Iniciar sesión - PokeTrade</title>
-    <meta name="description" content="Accede a tu cuenta de PokeTrade para gestionar tu colección, consultar cartas y continuar con tus tradeos." />
+    <script>try{var d=document.documentElement,s=localStorage;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var i=s.getItem('idioma')||(navigator.language||'es').slice(0,2);d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}}catch(e){}</script>
+    <title data-i18n="meta.login.title">Iniciar sesión - PokeTrade</title>
+    <meta name="description" data-i18n-attr="content:meta.login.desc" content="Accede a tu cuenta de PokeTrade para gestionar tu colección, consultar cartas y continuar con tus tradeos." />
     <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
 </head>
@@ -14,8 +14,8 @@
 
     <main>
         <div class="formulario-contenedor">
-            <h1>Iniciar sesión</h1>
-            <p id="aviso-registro" class="alerta exito" role="status" hidden>
+            <h1 data-i18n="auth.iniciarSesion">Iniciar sesión</h1>
+            <p id="aviso-registro" class="alerta exito" role="status" hidden data-i18n="auth.cuentaCreada">
                 Cuenta creada correctamente. Ya puedes iniciar sesión.
             </p>
             <!-- Por qué se pide la sesión (lo rellena login.js según la
@@ -25,22 +25,25 @@
 
             <form id="form-login" novalidate>
                 <div class="formulario-grupo">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" name="email" placeholder="tu@email.com"
+                    <label for="email" data-i18n="auth.email">Email</label>
+                    <input type="email" id="email" name="email"
+                           data-i18n-attr="placeholder:auth.emailPlaceholder" placeholder="tu@email.com"
                            required autocomplete="email" />
                 </div>
 
                 <div class="formulario-grupo">
-                    <label for="password">Contraseña</label>
-                    <input type="password" id="password" name="password" placeholder="Tu contraseña"
+                    <label for="password" data-i18n="auth.password">Contraseña</label>
+                    <input type="password" id="password" name="password"
+                           data-i18n-attr="placeholder:auth.passwordPlaceholder" placeholder="Tu contraseña"
                            required autocomplete="current-password" />
                 </div>
 
-                <button type="submit" class="btn-formulario">Entrar</button>
+                <button type="submit" class="btn-formulario" data-i18n="auth.entrar">Entrar</button>
             </form>
 
             <p class="formulario-pie">
-                ¿No tienes cuenta? <a href="registro.html">Regístrate</a>
+                <span data-i18n="auth.noTienesCuenta">¿No tienes cuenta?</span>
+                <a href="registro.html" data-i18n="auth.registrate">Regístrate</a>
             </p>
         </div>
     </main>

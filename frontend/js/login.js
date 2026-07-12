@@ -3,21 +3,16 @@
 // ===================================================
 
 import { login, motivoLogin } from './auth.js';
+import { t } from './i18n.js';
+import { alCargarDOM } from './utils.js';
 
 // Por qué se le ha pedido la sesión al usuario. El aviso lo da el
 // propio login (no una página previa que sería un callejón), y tras
-// autenticarse vuelve solo a donde estaba.
-const MOTIVOS = {
-  aceptar:    'Inicia sesión para aceptar este tradeo.',
-  anadir:     'Inicia sesión para añadir la carta a tu inventario.',
-  publicar:   'Inicia sesión para publicar un tradeo.',
-  inventario: 'Inicia sesión para ver tu inventario.',
-  tradeos:    'Inicia sesión para ver tus tradeos.',
-  perfil:     'Inicia sesión para ver tu perfil.',
-  expirada:   'Tu sesión ha caducado. Vuelve a iniciar sesión para continuar.',
-};
+// autenticarse vuelve solo a donde estaba. Los motivos son claves del
+// diccionario ('motivo.aceptar'...), no textos.
+const MOTIVOS = ['aceptar', 'anadir', 'publicar', 'inventario', 'tradeos', 'perfil', 'expirada'];
 
-document.addEventListener('DOMContentLoaded', () => {
+alCargarDOM(() => {
   const form = document.getElementById('form-login');
   if (form) form.addEventListener('submit', iniciarSesion);
 
@@ -27,11 +22,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (aviso) aviso.hidden = false;
   }
 
-  const texto = MOTIVOS[motivoLogin()];
-  if (texto) {
+  const motivo = motivoLogin();
+  if (MOTIVOS.includes(motivo)) {
     const aviso = document.getElementById('aviso-motivo');
     if (aviso) {
-      aviso.textContent = texto;
+      aviso.textContent = t(`motivo.${motivo}`);
       aviso.hidden = false;
     }
   }
@@ -47,7 +42,7 @@ async function iniciarSesion(e) {
 
   // Validación mínima con foco en el primer campo vacío
   if (!email || !password) {
-    errorMensaje.textContent = 'Introduce tu correo y tu contraseña.';
+    errorMensaje.textContent = t('auth.introduceCredenciales');
     document.getElementById(!email ? 'email' : 'password').focus();
     return;
   }
@@ -56,13 +51,13 @@ async function iniciarSesion(e) {
   const boton = document.querySelector('#form-login button[type="submit"]');
   const textoOriginal = boton.textContent;
   boton.disabled = true;
-  boton.textContent = 'Entrando…';
+  boton.textContent = t('auth.entrando');
 
   try {
     // login() guarda la sesión y redirige automáticamente
     await login(email, password);
   } catch (error) {
-    errorMensaje.textContent = error.message || 'Correo o contraseña incorrectos.';
+    errorMensaje.textContent = error.message || t('auth.credencialesIncorrectas');
     boton.disabled = false;
     boton.textContent = textoOriginal;
   }

@@ -1,7 +1,8 @@
 // marketplace.js — Listado público de tradeos activos
 
 import { API_URL, estaLogueado, obtenerUsuario, headersAuth, irALogin, accionPendiente, parsearRespuesta } from './auth.js';
-import { formatearFecha, formatearPrecio, escapeHtml, dorsoCarta, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
+import { t } from './i18n.js';
+import { alCargarDOM, formatearFecha, formatearPrecio, escapeHtml, dorsoCarta, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
 import { abrirLightbox, cerrarLightbox } from './lightbox.js';
 
 let todosLosTradeos   = [];
@@ -10,7 +11,7 @@ let tradeoEnCurso     = null;
 let tradeoDetalle     = null;   // Tradeo que muestra el modal de detalle
 let urlEmpujada       = false;  // ¿El modal abierto metió una entrada en el historial?
 
-document.addEventListener('DOMContentLoaded', () => {
+alCargarDOM(() => {
     mostrarCtaPublicar();
 
     // Filtros y reintento
@@ -86,7 +87,7 @@ async function cargarTradeos() {
         retomarAccionPendiente();
         abrirDesdeUrl();
     } catch (e) {
-        mostrarError('No se pudieron cargar los tradeos. ¿Está el servidor activo?');
+        mostrarError(t('mkt.errorServidor'));
     }
 }
 
@@ -99,7 +100,7 @@ async function abrirDesdeUrl() {
     const id = Number(new URLSearchParams(window.location.search).get('tradeo'));
     if (!id) return;
 
-    const activo = todosLosTradeos.find(t => t.id === id);
+    const activo = todosLosTradeos.find(tr => tr.id === id);
     if (activo) {
         mostrarModalDetalle(activo, { empujarUrl: false });
         return;
@@ -126,7 +127,7 @@ function retomarAccionPendiente() {
     const accion = accionPendiente();
     if (accion?.tipo !== 'aceptar' || !estaLogueado()) return;
 
-    const tradeo = todosLosTradeos.find(t => t.id === accion.tradeoId);
+    const tradeo = todosLosTradeos.find(tr => tr.id === accion.tradeoId);
     const usuario = obtenerUsuario();
     // Ya no existe, o resulta ser suyo: mejor no abrir nada
     if (!tradeo || tradeo.usuario?.id === usuario?.id) return;
@@ -140,8 +141,8 @@ function filtrar() {
     const texto = document.getElementById('buscar-carta').value.toLowerCase().trim();
     const tipo  = document.getElementById('filtro-tipo').value;
 
-    const filtrados = todosLosTradeos.filter(t => {
-        const cartas        = [...(t.cartas_ofrece || []), ...(t.cartas_busca || [])];
+    const filtrados = todosLosTradeos.filter(tradeo => {
+        const cartas        = [...(tradeo.cartas_ofrece || []), ...(tradeo.cartas_busca || [])];
         const coincideTexto = !texto || cartas.some(c => c.nombre.toLowerCase().includes(texto));
         const coincideTipo  = !tipo  || cartas.some(c => c.tipo === tipo);
         return coincideTexto && coincideTipo;
@@ -156,40 +157,45 @@ function renderizarTradeos(tradeos) {
     const grid     = document.getElementById('grid-tradeos');
     const contador = document.getElementById('contador');
 
-    contador.textContent = tradeos.length === 1
-        ? '1 tradeo activo'
-        : `${tradeos.length} tradeos activos`;
+    contador.textContent = t('mkt.tradeosActivos', { n: tradeos.length });
 
     if (!tradeos.length) {
-        grid.innerHTML = `
-            <div class="vacio-msg">
-                <p>No hay tradeos que coincidan con tu búsqueda.</p>
-                <button class="btn-secundario" type="button" data-accion="limpiar">Limpiar filtros</button>
-            </div>`;
+        grid.innerHTML = mensajeVacioHTML();
         return;
     }
 
-    grid.innerHTML = tradeos.map(t => tarjetaTradeo(t)).join('');
+    grid.innerHTML = tradeos.map(tradeo => tarjetaTradeo(tradeo)).join('');
 }
 
-function tarjetaTradeo(t) {
-    const fecha         = formatearFecha(t.created_at);
-    const inicial       = (t.usuario?.nombre?.[0] || '?').toUpperCase();
-    const nombreUser    = t.usuario ? `${t.usuario.nombre} ${t.usuario.apellido}` : 'Usuario';
-    const usuarioActual = obtenerUsuario();
-    const esPropioTradeo = usuarioActual && t.usuario?.id === usuarioActual.id;
+// El grid se queda vacío por dos caminos (un filtro sin resultados y el
+// último tradeo aceptado), y ambos pintan lo mismo
+function mensajeVacioHTML() {
+    return `
+        <div class="vacio-msg">
+            <p>${escapeHtml(t('mkt.sinCoincidencias'))}</p>
+            <button class="btn-secundario" type="button" data-accion="limpiar">${escapeHtml(t('comun.limpiarFiltros'))}</button>
+        </div>`;
+}
 
-    const descripcion = t.descripcion
-        ? `<p class="tradeo-descripcion">"${escapeHtml(t.descripcion)}"</p>` : '';
+function tarjetaTradeo(tradeo) {
+    const fecha         = formatearFecha(tradeo.created_at);
+    const inicial       = (tradeo.usuario?.nombre?.[0] || '?').toUpperCase();
+    const nombreUser    = tradeo.usuario
+        ? `${tradeo.usuario.nombre} ${tradeo.usuario.apellido}` : t('comun.usuario');
+    const usuarioActual = obtenerUsuario();
+    const esPropioTradeo = usuarioActual && tradeo.usuario?.id === usuarioActual.id;
+
+    const descripcion = tradeo.descripcion
+        ? `<p class="tradeo-descripcion">"${escapeHtml(tradeo.descripcion)}"</p>` : '';
 
     let botonAccion;
     if (!estaLogueado()) {
         // Al login recordando este tradeo: al volver se reabre su modal
-        botonAccion = `<button class="btn-contactar" type="button" data-accion="login" data-tradeo-id="${t.id}">Inicia sesión para aceptar</button>`;
+        botonAccion = `<button class="btn-contactar" type="button" data-accion="login" data-tradeo-id="${tradeo.id}">${escapeHtml(t('mkt.iniciaSesionAceptar'))}</button>`;
     } else if (esPropioTradeo) {
-        botonAccion = `<button class="btn-contactar btn-propio" type="button" disabled>Tu propio tradeo</button>`;
+        botonAccion = `<button class="btn-contactar btn-propio" type="button" disabled>${escapeHtml(t('mkt.tuPropioTradeo'))}</button>`;
     } else {
-        botonAccion = `<button class="btn-contactar" type="button" data-accion="aceptar" data-tradeo-id="${t.id}">Aceptar tradeo</button>`;
+        botonAccion = `<button class="btn-contactar" type="button" data-accion="aceptar" data-tradeo-id="${tradeo.id}">${escapeHtml(t('mkt.aceptarTradeo'))}</button>`;
     }
 
     // Cabecera + cuerpo son UN botón que abre el detalle; el de aceptar
@@ -197,9 +203,9 @@ function tarjetaTradeo(t) {
     // de otro es HTML inválido y un lío para los lectores de pantalla): la
     // tarjeta es un solo tab-stop y el CTA otro, sin ARIA de mentira.
     return `
-    <article class="tradeo-card" id="tradeo-card-${t.id}">
-        <button class="tradeo-card-abrir" type="button" data-accion="detalle" data-tradeo-id="${t.id}"
-                aria-label="Ver detalle del tradeo de ${escapeHtml(nombreUser)}">
+    <article class="tradeo-card" id="tradeo-card-${tradeo.id}">
+        <button class="tradeo-card-abrir" type="button" data-accion="detalle" data-tradeo-id="${tradeo.id}"
+                aria-label="${escapeHtml(t('mkt.verDetalleDe', { usuario: nombreUser }))}">
             <div class="tradeo-card-header">
                 <div class="usuario-info">
                     <div class="usuario-avatar" aria-hidden="true">${escapeHtml(inicial)}</div>
@@ -209,12 +215,12 @@ function tarjetaTradeo(t) {
             </div>
             <div class="tradeo-card-body">
                 <div class="tradeo-ofrece">
-                    <span class="intercambio-label label-ofrece">Ofrece</span>
-                    ${bloqueOfrece(t.cartas_ofrece)}
+                    <span class="intercambio-label label-ofrece">${escapeHtml(t('mkt.ofrece'))}</span>
+                    ${bloqueOfrece(tradeo.cartas_ofrece)}
                 </div>
                 <div class="tradeo-busca">
-                    <span class="intercambio-label label-busca">Busca ⇄</span>
-                    ${bloqueBusca(t.cartas_busca)}
+                    <span class="intercambio-label label-busca">${escapeHtml(t('mkt.busca'))}</span>
+                    ${bloqueBusca(tradeo.cartas_busca)}
                 </div>
                 ${descripcion}
             </div>
@@ -250,7 +256,7 @@ function bloqueOfrece(cartas = []) {
             <div class="ofrece-detalle">
                 <span class="ofrece-nombre">${escapeHtml(principal.nombre)}</span>
                 ${resto.length
-                    ? `<span class="ofrece-extra">+${resto.length} ${resto.length === 1 ? 'carta más' : 'cartas más'}</span>`
+                    ? `<span class="ofrece-extra">${escapeHtml(t('mkt.cartasMas', { n: resto.length }))}</span>`
                     : ''}
                 ${valor ? `<span class="ofrece-valor">~ ${valor}</span>` : ''}
             </div>
@@ -332,7 +338,7 @@ function montarModalDetalle() {
 }
 
 function abrirModalDetalle(tradeoId, opciones = {}) {
-    const tradeo = todosLosTradeos.find(t => t.id === tradeoId);
+    const tradeo = todosLosTradeos.find(tr => tr.id === tradeoId);
     if (tradeo) mostrarModalDetalle(tradeo, opciones);
 }
 
@@ -395,28 +401,32 @@ function sincronizarConUrl() {
     }
 }
 
-function renderizarModalDetalle(t) {
-    const nombreUser = t.usuario ? `${t.usuario.nombre} ${t.usuario.apellido}` : 'Usuario';
-    const inicial    = (t.usuario?.nombre?.[0] || '?').toUpperCase();
+function renderizarModalDetalle(tradeo) {
+    const nombreUser = tradeo.usuario
+        ? `${tradeo.usuario.nombre} ${tradeo.usuario.apellido}` : t('comun.usuario');
+    const inicial    = (tradeo.usuario?.nombre?.[0] || '?').toUpperCase();
 
-    document.getElementById('detalle-avatar').textContent  = inicial;
-    document.getElementById('detalle-titulo').textContent   = `Tradeo de ${nombreUser}`;
+    // El estado se pinta traducido, pero la clase CSS sigue el valor
+    // crudo del backend ('activo'/'cerrado'/'cancelado'): es el que
+    // manda los colores del badge y no puede depender del idioma
+    document.getElementById('detalle-avatar').textContent = inicial;
+    document.getElementById('detalle-titulo').textContent = t('mkt.tradeoDe', { usuario: nombreUser });
     document.getElementById('detalle-meta').innerHTML =
-        `<span class="detalle-estado estado-${escapeHtml(t.estado)}">${escapeHtml(t.estado)}</span>` +
-        `<span class="detalle-fecha">Publicado el ${formatearFecha(t.created_at)}</span>`;
+        `<span class="detalle-estado estado-${escapeHtml(tradeo.estado)}">${escapeHtml(t(`estado.${tradeo.estado}`))}</span>` +
+        `<span class="detalle-fecha">${escapeHtml(t('mkt.publicadoEl', { fecha: formatearFecha(tradeo.created_at) }))}</span>`;
 
-    const ofrece = t.cartas_ofrece || [];
-    const busca  = t.cartas_busca  || [];
+    const ofrece = tradeo.cartas_ofrece || [];
+    const busca  = tradeo.cartas_busca  || [];
 
     document.getElementById('detalle-cuerpo').innerHTML = `
-        ${t.descripcion ? `<p class="detalle-descripcion">“${escapeHtml(t.descripcion)}”</p>` : ''}
+        ${tradeo.descripcion ? `<p class="detalle-descripcion">“${escapeHtml(tradeo.descripcion)}”</p>` : ''}
         <div class="detalle-intercambio">
-            ${ladoDetalle('ofrece', 'Ofrece', ofrece, 0)}
+            ${ladoDetalle('ofrece', t('mkt.ofrece'), ofrece, 0)}
             <div class="detalle-cambio" aria-hidden="true">⇄</div>
-            ${ladoDetalle('busca', 'Busca a cambio', busca, ofrece.length)}
+            ${ladoDetalle('busca', t('mkt.buscaACambio'), busca, ofrece.length)}
         </div>`;
 
-    document.getElementById('detalle-footer').innerHTML = pieModalDetalle(t);
+    document.getElementById('detalle-footer').innerHTML = pieModalDetalle(tradeo);
 }
 
 // Un lado del intercambio. `offset` desplaza el índice de cada carta dentro
@@ -425,12 +435,12 @@ function renderizarModalDetalle(t) {
 function ladoDetalle(clase, etiqueta, cartas, offset) {
     const contenido = cartas.length
         ? cartas.map((c, i) => cartaDetalle(c, offset + i)).join('')
-        : '<p class="modal-vacio">Sin cartas</p>';
+        : `<p class="modal-vacio">${escapeHtml(t('comun.sinCartas'))}</p>`;
 
     return `
         <section class="detalle-lado detalle-lado-${clase}">
             <h4 class="intercambio-label label-${clase}">
-                ${etiqueta} <span class="detalle-cuenta">${cartas.length}</span>
+                ${escapeHtml(etiqueta)} <span class="detalle-cuenta">${cartas.length}</span>
             </h4>
             <div class="detalle-cartas">${contenido}</div>
             ${valorLado(cartas)}
@@ -445,7 +455,7 @@ function cartaDetalle(c, indiceGlobal) {
 
     return `
         <button class="detalle-carta" type="button" data-zoom="${indiceGlobal}"
-                aria-label="Ampliar la ilustración de ${nombre}">
+                aria-label="${escapeHtml(t('mkt.ampliarIlustracion', { nombre: c.nombre }))}">
             ${imagen
                 ? `<img src="${escapeHtml(imagen)}" alt="${nombre}" loading="lazy" />`
                 : dorsoCarta()}
@@ -462,7 +472,7 @@ function valorLado(cartas) {
     const conPrecio = cartas.filter(c => c.precio_cardmarket != null);
     if (!conPrecio.length) {
         return cartas.length
-            ? '<p class="detalle-valor detalle-valor-vacio">Sin precio de referencia</p>'
+            ? `<p class="detalle-valor detalle-valor-vacio">${escapeHtml(t('mkt.sinPrecioRef'))}</p>`
             : '';
     }
 
@@ -470,30 +480,32 @@ function valorLado(cartas) {
     const sinPrecio = cartas.length - conPrecio.length;
 
     return `<p class="detalle-valor">~ ${total}` +
-        (sinPrecio ? ` <span class="detalle-valor-nota">· ${sinPrecio} sin precio</span>` : '') +
+        (sinPrecio
+            ? ` <span class="detalle-valor-nota">· ${escapeHtml(t('mkt.sinPrecioN', { n: sinPrecio }))}</span>`
+            : '') +
         `</p>`;
 }
 
-function pieModalDetalle(t) {
-    const cerrar = '<button class="btn-cancelar-modal" type="button" data-accion="cerrar-detalle">Cerrar</button>';
+function pieModalDetalle(tradeo) {
+    const cerrar = `<button class="btn-cancelar-modal" type="button" data-accion="cerrar-detalle">${escapeHtml(t('comun.cerrar'))}</button>`;
 
     // Enlace compartido de un tradeo ya cerrado o cancelado
-    if (t.estado !== 'activo') {
-        return `<p class="detalle-no-disponible">Este tradeo ya no está disponible.</p>${cerrar}`;
+    if (tradeo.estado !== 'activo') {
+        return `<p class="detalle-no-disponible">${escapeHtml(t('mkt.noDisponible'))}</p>${cerrar}`;
     }
 
     if (!estaLogueado()) {
         return cerrar +
-            `<button class="btn-confirmar-modal" type="button" data-accion="login" data-tradeo-id="${t.id}">Inicia sesión para aceptar</button>`;
+            `<button class="btn-confirmar-modal" type="button" data-accion="login" data-tradeo-id="${tradeo.id}">${escapeHtml(t('mkt.iniciaSesionAceptar'))}</button>`;
     }
 
     const usuarioActual = obtenerUsuario();
-    if (usuarioActual && t.usuario?.id === usuarioActual.id) {
-        return cerrar + '<button class="btn-confirmar-modal" type="button" disabled>Tu propio tradeo</button>';
+    if (usuarioActual && tradeo.usuario?.id === usuarioActual.id) {
+        return cerrar + `<button class="btn-confirmar-modal" type="button" disabled>${escapeHtml(t('mkt.tuPropioTradeo'))}</button>`;
     }
 
     return cerrar +
-        `<button class="btn-confirmar-modal" type="button" data-accion="aceptar-desde-detalle" data-tradeo-id="${t.id}">Aceptar tradeo</button>`;
+        `<button class="btn-confirmar-modal" type="button" data-accion="aceptar-desde-detalle" data-tradeo-id="${tradeo.id}">${escapeHtml(t('mkt.aceptarTradeo'))}</button>`;
 }
 
 // Zoom desde el modal: el lightbox recibe TODAS las cartas del tradeo, no
@@ -511,12 +523,12 @@ function abrirZoom(indice) {
 // ─── Modal: aceptar tradeo ─────────────────────────────
 
 async function abrirModalAceptar(tradeoId) {
-    tradeoEnCurso = todosLosTradeos.find(t => t.id === tradeoId);
+    tradeoEnCurso = todosLosTradeos.find(tr => tr.id === tradeoId);
     if (!tradeoEnCurso) return;
 
     document.getElementById('modal-aceptar').hidden = false;
     document.getElementById('modal-cuerpo').innerHTML =
-        `<p class="modal-cargando">Comprobando tu inventario...</p>`;
+        `<p class="modal-cargando">${escapeHtml(t('mkt.comprobandoInventario'))}</p>`;
     document.getElementById('btn-confirmar').disabled = true;
     document.getElementById('modal-estado').textContent = '';
 
@@ -536,9 +548,10 @@ async function abrirModalAceptar(tradeoId) {
 
 function renderizarModalAceptar(tradeo) {
     const nombreUser = tradeo.usuario
-        ? `${tradeo.usuario.nombre} ${tradeo.usuario.apellido}` : 'Usuario';
+        ? `${tradeo.usuario.nombre} ${tradeo.usuario.apellido}` : t('comun.usuario');
 
-    document.getElementById('modal-titulo').textContent = `Aceptar tradeo de ${nombreUser}`;
+    document.getElementById('modal-titulo').textContent =
+        t('mkt.aceptarTradeoDe', { usuario: nombreUser });
 
     const cartasNecesarias = (tradeo.cartas_busca || []).map(carta => {
         const itemInventario = inventarioUsuario.find(i => i.carta_id === carta.id || i.carta?.id === carta.id);
@@ -556,7 +569,7 @@ function renderizarModalAceptar(tradeo) {
                 <strong>${escapeHtml(c.nombre)}</strong>
                 <span>${escapeHtml(c.tipo || '')} ${c.rareza ? '· ' + escapeHtml(c.rareza) : ''}</span>
             </div>
-            <span class="modal-check exito">+ Recibirás</span>
+            <span class="modal-check exito">${escapeHtml(t('mkt.masRecibiras'))}</span>
         </div>`).join('');
 
     const filasDaras = cartasNecesarias.map(({ carta, tienes }) => `
@@ -566,29 +579,29 @@ function renderizarModalAceptar(tradeo) {
                 <strong>${escapeHtml(carta.nombre)}</strong>
                 <span>${escapeHtml(carta.tipo || '')} ${carta.rareza ? '· ' + escapeHtml(carta.rareza) : ''}</span>
             </div>
-            <span class="modal-check ${tienes ? 'exito' : 'error'}">${tienes ? '✓ Tienes' : '✗ No tienes'}</span>
+            <span class="modal-check ${tienes ? 'exito' : 'error'}">${escapeHtml(t(tienes ? 'mkt.tienes' : 'mkt.noTienes'))}</span>
         </div>`).join('');
 
     document.getElementById('modal-cuerpo').innerHTML = `
         <div class="modal-seccion">
-            <h4 class="modal-seccion-titulo recibiras">Recibirás</h4>
-            ${filaRecibiras || '<p class="modal-vacio">Sin cartas</p>'}
+            <h4 class="modal-seccion-titulo recibiras">${escapeHtml(t('mkt.recibiras'))}</h4>
+            ${filaRecibiras || `<p class="modal-vacio">${escapeHtml(t('comun.sinCartas'))}</p>`}
         </div>
         <div class="modal-seccion">
-            <h4 class="modal-seccion-titulo daras">Darás a cambio</h4>
-            ${filasDaras || '<p class="modal-vacio">Sin cartas requeridas</p>'}
+            <h4 class="modal-seccion-titulo daras">${escapeHtml(t('mkt.darasACambio'))}</h4>
+            ${filasDaras || `<p class="modal-vacio">${escapeHtml(t('mkt.sinCartasRequeridas'))}</p>`}
         </div>`;
 
     const estadoEl     = document.getElementById('modal-estado');
     const btnConfirmar = document.getElementById('btn-confirmar');
 
     if (todasDisponibles) {
-        estadoEl.textContent = 'Tienes todas las cartas necesarias para aceptar este tradeo.';
+        estadoEl.textContent = t('mkt.tienesTodas');
         estadoEl.className = 'modal-estado exito';
         btnConfirmar.disabled = false;
     } else {
         const nombres = faltantes.map(c => c.carta.nombre).join(', ');
-        estadoEl.textContent = `Te faltan: ${nombres}`;
+        estadoEl.textContent = t('mkt.teFaltan', { nombres });
         estadoEl.className = 'modal-estado error';
         btnConfirmar.disabled = true;
     }
@@ -599,7 +612,7 @@ async function confirmarAceptar() {
 
     const btnConfirmar = document.getElementById('btn-confirmar');
     btnConfirmar.disabled = true;
-    btnConfirmar.textContent = 'Procesando...';
+    btnConfirmar.textContent = t('mkt.procesando');
 
     try {
         const res = await fetch(`${API_URL}/tradeos/${tradeoEnCurso.id}/aceptar`, {
@@ -607,7 +620,7 @@ async function confirmarAceptar() {
             headers: headersAuth()
         });
         const datos = await parsearRespuesta(res);
-        if (!res.ok) throw new Error(datos.error || `Error ${res.status}`);
+        if (!res.ok) throw new Error(datos.error || t('error.inesperado', { status: String(res.status) }));
 
         cerrarModal();
         mostrarToastExito(tradeoEnCurso);
@@ -615,10 +628,10 @@ async function confirmarAceptar() {
 
     } catch (e) {
         const estadoEl = document.getElementById('modal-estado');
-        estadoEl.textContent = `Error durante el intercambio: ${e.message}`;
+        estadoEl.textContent = t('mkt.errorIntercambio', { mensaje: e.message });
         estadoEl.className = 'modal-estado error';
         btnConfirmar.disabled = false;
-        btnConfirmar.textContent = 'Confirmar intercambio';
+        btnConfirmar.textContent = t('mkt.confirmarIntercambio');
     }
 }
 
@@ -638,19 +651,15 @@ function marcarTradeoAceptado(tradeoId) {
 
     setTimeout(() => {
         card.remove();
-        todosLosTradeos = todosLosTradeos.filter(t => t.id !== tradeoId);
+        todosLosTradeos = todosLosTradeos.filter(tradeo => tradeo.id !== tradeoId);
 
         const grid     = document.getElementById('grid-tradeos');
         const activos  = grid.querySelectorAll('.tradeo-card').length;
         const contador = document.getElementById('contador');
-        contador.textContent = activos === 1 ? '1 tradeo activo' : `${activos} tradeos activos`;
+        contador.textContent = t('mkt.tradeosActivos', { n: activos });
 
         if (activos === 0) {
-            grid.innerHTML = `
-                <div class="vacio-msg">
-                    <p>No hay tradeos que coincidan con tu búsqueda.</p>
-                    <button class="btn-secundario" type="button" data-accion="limpiar">Limpiar filtros</button>
-                </div>`;
+            grid.innerHTML = mensajeVacioHTML();
         }
     }, 400);
 }
@@ -658,7 +667,7 @@ function marcarTradeoAceptado(tradeoId) {
 function mostrarToastExito(tradeo) {
     const nombres = (tradeo.cartas_ofrece || []).map(c => c.nombre).join(', ');
     const toast = document.getElementById('toast-mkt');
-    toast.textContent = `¡Intercambio completado! Has recibido: ${nombres}`;
+    toast.textContent = t('mkt.intercambioCompletado', { nombres });
     toast.hidden = false;
     setTimeout(() => { toast.hidden = true; }, 4500);
 }

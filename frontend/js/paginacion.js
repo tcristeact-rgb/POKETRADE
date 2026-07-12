@@ -4,7 +4,13 @@
 // last_page, total, from, to) y delega la carga de cada página en el
 // callback alCambiar(pagina) que le pasa la página que la usa.
 
-export function crearPaginacion({ contenedorId, infoId, alCambiar, sustantivo = 'cartas' }) {
+import { t } from './i18n.js';
+
+// claveInfo apunta a la clave del diccionario que arma el texto
+// "Mostrando X–Y de Z cartas". No se pasa el sustantivo suelto: en otros
+// idiomas el plural no se forma añadiendo una "s" al final, así que la
+// frase entera tiene que vivir en el diccionario, con sus formas.
+export function crearPaginacion({ contenedorId, infoId, alCambiar, claveInfo = 'pag.mostrandoCartas' }) {
     const contenedor = document.getElementById(contenedorId);
     const info       = infoId ? document.getElementById(infoId) : null;
 
@@ -43,10 +49,12 @@ export function crearPaginacion({ contenedorId, infoId, alCambiar, sustantivo = 
     }
 
     // Devuelve el HTML de un botón de paginación accesible
+    // El número de página va como string a propósito: t() agrupa los
+    // números por locale (2265 → "2.265") y una página no se agrupa.
     function botonPagina(pagina, etiqueta, { activa = false, deshabilitado = false } = {}) {
         const aria = activa
-            ? ` aria-label="Página ${pagina}, página actual" aria-current="page"`
-            : ` aria-label="Ir a página ${pagina}"`;
+            ? ` aria-label="${t('pag.paginaActual', { n: String(pagina) })}" aria-current="page"`
+            : ` aria-label="${t('pag.irAPagina', { n: String(pagina) })}"`;
         return `<button class="btn-pagina${activa ? ' activa' : ''}" type="button"` +
                ` data-pagina="${pagina}"${aria}${deshabilitado ? ' disabled' : ''}>${etiqueta}</button>`;
     }
@@ -64,7 +72,7 @@ export function crearPaginacion({ contenedorId, infoId, alCambiar, sustantivo = 
 
         let html = '';
 
-        html += `<button class="btn-pagina" type="button" data-pagina="${paginaActual - 1}" aria-label="Página anterior" ${paginaActual === 1 ? 'disabled' : ''}>← Ant</button>`;
+        html += `<button class="btn-pagina" type="button" data-pagina="${paginaActual - 1}" aria-label="${t('pag.paginaAnterior')}" ${paginaActual === 1 ? 'disabled' : ''}>${t('pag.anterior')}</button>`;
 
         if (inicio > 1) {
             html += botonPagina(1, '1');
@@ -80,15 +88,15 @@ export function crearPaginacion({ contenedorId, infoId, alCambiar, sustantivo = 
             html += botonPagina(totalPaginas, String(totalPaginas));
         }
 
-        html += `<button class="btn-pagina" type="button" data-pagina="${paginaActual + 1}" aria-label="Página siguiente" ${paginaActual === totalPaginas ? 'disabled' : ''}>Sig →</button>`;
+        html += `<button class="btn-pagina" type="button" data-pagina="${paginaActual + 1}" aria-label="${t('pag.paginaSiguiente')}" ${paginaActual === totalPaginas ? 'disabled' : ''}>${t('pag.siguiente')}</button>`;
 
         // Salto directo: campo para escribir el número de página al que ir
         html += `<span class="paginacion-ir">` +
-                `<label for="input-ir-pagina">Ir a página</label>` +
+                `<label for="input-ir-pagina">${t('pag.irALabel')}</label>` +
                 `<input type="number" id="input-ir-pagina" class="input-ir-pagina"` +
                 ` min="1" max="${totalPaginas}" inputmode="numeric" placeholder="${paginaActual}" />` +
                 `<button class="btn-pagina" type="button" data-accion="ir"` +
-                ` aria-label="Ir a la página escrita">Ir</button>` +
+                ` aria-label="${t('pag.irEscrita')}">${t('pag.ir')}</button>` +
                 `</span>`;
 
         contenedor.innerHTML = html;
@@ -102,9 +110,14 @@ export function crearPaginacion({ contenedorId, infoId, alCambiar, sustantivo = 
 
         render(datos.total === 0);
 
+        // n gobierna la forma plural; total se pinta agrupado por locale
         if (info) {
-            info.textContent =
-                `Mostrando ${datos.from ?? 0}–${datos.to ?? 0} de ${datos.total.toLocaleString('es-ES')} ${sustantivo}`;
+            info.textContent = t(claveInfo, {
+                desde: String(datos.from ?? 0),
+                hasta: String(datos.to ?? 0),
+                total: datos.total,
+                n:     datos.total,
+            });
         }
     }
 

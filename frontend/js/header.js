@@ -4,6 +4,7 @@
 // =================================================== 
 
 import { paginaUrl, estaLogueado, obtenerUsuario, cerrarSesion, renderizarMenu } from './auth.js';
+import { t, idioma, IDIOMAS, cambiarIdioma, aplicarTraducciones } from './i18n.js';
 
 // Rutas calculadas una sola vez (válidas desde la raíz y desde pages/)
 const rIndex       = paginaUrl('index.html');
@@ -27,6 +28,11 @@ function activa(href) {
   return paginaActual === href.split('/').pop() ? ' aria-current="page"' : '';
 }
 
+// header.js se carga en TODAS las páginas, así que es el punto natural
+// para traducir el HTML estático (los data-i18n del markup). Va antes de
+// inyectar nada: el header y el footer ya se construyen traducidos.
+aplicarTraducciones(document);
+
 inyectarHeader();
 inyectarFooter();
 
@@ -38,46 +44,47 @@ function inyectarHeader() {
   if (!mount) return;
 
   mount.outerHTML =
-    '<a href="#contenido-principal" class="skip-link">Saltar al contenido principal</a>' +
+    '<a href="#contenido-principal" class="skip-link">' + t('header.saltar') + '</a>' +
     '<header>' +
-    '<nav aria-label="Navegación principal">' +
-    '<a href="' + rIndex + '" class="logo" aria-label="PokeTrade – Inicio">' +
+    '<nav aria-label="' + t('header.navPrincipal') + '">' +
+    '<a href="' + rIndex + '" class="logo" aria-label="' + t('header.logoInicio') + '">' +
     '<img src="' + paginaUrl('img/favicon.svg') + '" alt="" class="logo-icon" aria-hidden="true" /> PokeTrade</a>' +
     '<ul class="nav-links">' +
-    '<li><a href="' + rNovedades + '"' + activa(rNovedades) + '>Novedades</a></li>' +
-    '<li><a href="' + rMasVendido + '"' + activa(rMasVendido) + '>Más Vendido</a></li>' +
-    '<li><a href="' + rCatalogo + '"' + activa(rCatalogo) + '>Catálogo</a></li>' +
-    '<li><a href="' + rMarketplace + '"' + activa(rMarketplace) + '>Marketplace</a></li>' +
+    '<li><a href="' + rNovedades + '"' + activa(rNovedades) + '>' + t('nav.novedades') + '</a></li>' +
+    '<li><a href="' + rMasVendido + '"' + activa(rMasVendido) + '>' + t('nav.masVendido') + '</a></li>' +
+    '<li><a href="' + rCatalogo + '"' + activa(rCatalogo) + '>' + t('nav.catalogo') + '</a></li>' +
+    '<li><a href="' + rMarketplace + '"' + activa(rMarketplace) + '>' + t('nav.marketplace') + '</a></li>' +
     '</ul>' +
     '<div class="buscador-contenedor" role="search">' +
-    '<input type="search" id="buscador" placeholder="Buscar carta..." autocomplete="off" aria-label="Buscar carta" />' +
-    '<button id="btn-buscar" aria-label="Buscar"><img class="icono" src="' + paginaUrl('img/icons/buscar.svg') + '" alt="" /></button>' +
+    '<input type="search" id="buscador" placeholder="' + t('header.buscarPlaceholder') + '" autocomplete="off" aria-label="' + t('header.buscarCarta') + '" />' +
+    '<button id="btn-buscar" aria-label="' + t('header.buscar') + '"><img class="icono" src="' + paginaUrl('img/icons/buscar.svg') + '" alt="" /></button>' +
     '</div>' +
     '<div id="menu-usuario"></div>' +
-    '<button id="btn-tema" class="btn-tema" type="button" aria-label="Activar modo oscuro"></button>' +
+    selectorIdiomaHTML() +
+    '<button id="btn-tema" class="btn-tema" type="button" aria-label="' + t('header.modoOscuro') + '"></button>' +
     '<button id="btn-hamburguesa" class="btn-hamburguesa"' +
-    ' aria-label="Abrir menú de navegación" aria-expanded="false" aria-controls="nav-drawer">' +
+    ' aria-label="' + t('header.abrirMenu') + '" aria-expanded="false" aria-controls="nav-drawer">' +
     '<span></span><span></span><span></span>' +
     '</button>' +
     '</nav>' +
     '</header>' +
     '<div id="drawer-backdrop" class="drawer-backdrop" aria-hidden="true"></div>' +
-    '<aside id="nav-drawer" class="nav-drawer" aria-hidden="true" aria-label="Menú de navegación" role="dialog" aria-modal="true">' +
+    '<aside id="nav-drawer" class="nav-drawer" aria-hidden="true" aria-label="' + t('header.menuNav') + '" role="dialog" aria-modal="true">' +
     '<div class="drawer-cabecera">' +
-    '<a href="' + rIndex + '" class="logo" aria-label="PokeTrade – Inicio">' +
+    '<a href="' + rIndex + '" class="logo" aria-label="' + t('header.logoInicio') + '">' +
     '<img src="' + paginaUrl('img/favicon.svg') + '" alt="" class="logo-icon" aria-hidden="true" /> PokeTrade</a>' +
-    '<button id="btn-drawer-cerrar" class="drawer-btn-cerrar" aria-label="Cerrar menú">✕</button>' +
+    '<button id="btn-drawer-cerrar" class="drawer-btn-cerrar" aria-label="' + t('header.cerrarMenu') + '">✕</button>' +
     '</div>' +
     '<div class="buscador-contenedor drawer-buscador" role="search">' +
-    '<input type="search" id="buscador-drawer" placeholder="Buscar carta..." autocomplete="off" aria-label="Buscar carta" />' +
-    '<button id="btn-buscar-drawer" aria-label="Buscar"><img class="icono" src="' + paginaUrl('img/icons/buscar.svg') + '" alt="" /></button>' +
+    '<input type="search" id="buscador-drawer" placeholder="' + t('header.buscarPlaceholder') + '" autocomplete="off" aria-label="' + t('header.buscarCarta') + '" />' +
+    '<button id="btn-buscar-drawer" aria-label="' + t('header.buscar') + '"><img class="icono" src="' + paginaUrl('img/icons/buscar.svg') + '" alt="" /></button>' +
     '</div>' +
-    '<nav class="drawer-nav" aria-label="Secciones">' +
+    '<nav class="drawer-nav" aria-label="' + t('header.secciones') + '">' +
     '<ul>' +
-    '<li><a href="' + rNovedades + '">Novedades</a></li>' +
-    '<li><a href="' + rMasVendido + '">Más Vendido</a></li>' +
-    '<li><a href="' + rCatalogo + '">Catálogo</a></li>' +
-    '<li><a href="' + rMarketplace + '">Marketplace</a></li>' +
+    '<li><a href="' + rNovedades + '">' + t('nav.novedades') + '</a></li>' +
+    '<li><a href="' + rMasVendido + '">' + t('nav.masVendido') + '</a></li>' +
+    '<li><a href="' + rCatalogo + '">' + t('nav.catalogo') + '</a></li>' +
+    '<li><a href="' + rMarketplace + '">' + t('nav.marketplace') + '</a></li>' +
     '</ul>' +
     '</nav>' +
     '<hr class="drawer-hr" />' +
@@ -101,25 +108,47 @@ function inyectarHeader() {
       const u = obtenerUsuario();
       drawerAuth.innerHTML =
         '<div class="drawer-usuario"><img class="icono" src="' + paginaUrl('img/icons/usuario.svg') + '" alt="" /> <span class="drawer-usuario-nombre"></span></div>' +
-        '<a href="' + rInventario + '" class="drawer-enlace"><img class="icono" src="' + paginaUrl('img/icons/inventario.svg') + '" alt="" /> Inventario</a>' +
-        '<a href="' + rTradeos + '" class="drawer-enlace"><img class="icono" src="' + paginaUrl('img/icons/tradeos.svg') + '" alt="" /> Mis Tradeos</a>' +
-        '<a href="' + rPerfil + '" class="drawer-enlace"><img class="icono" src="' + paginaUrl('img/icons/perfil.svg') + '" alt="" /> Perfil</a>' +
-        '<button type="button" class="drawer-btn-logout"><img class="icono" src="' + paginaUrl('img/icons/logout.svg') + '" alt="" /> Cerrar sesión</button>';
-      
+        '<a href="' + rInventario + '" class="drawer-enlace"><img class="icono" src="' + paginaUrl('img/icons/inventario.svg') + '" alt="" /> ' + t('menu.inventario') + '</a>' +
+        '<a href="' + rTradeos + '" class="drawer-enlace"><img class="icono" src="' + paginaUrl('img/icons/tradeos.svg') + '" alt="" /> ' + t('menu.misTradeos') + '</a>' +
+        '<a href="' + rPerfil + '" class="drawer-enlace"><img class="icono" src="' + paginaUrl('img/icons/perfil.svg') + '" alt="" /> ' + t('menu.perfil') + '</a>' +
+        '<button type="button" class="drawer-btn-logout"><img class="icono" src="' + paginaUrl('img/icons/logout.svg') + '" alt="" /> ' + t('menu.cerrarSesion') + '</button>';
+
       drawerAuth.querySelector('.drawer-usuario-nombre').textContent =
-        (u && u.nombre) ? u.nombre : 'Usuario';
+        (u && u.nombre) ? u.nombre : t('comun.usuario');
       drawerAuth.querySelector('.drawer-btn-logout').addEventListener('click', cerrarSesion);
     } else {
       drawerAuth.innerHTML =
-        '<a href="' + rLogin + '" class="drawer-enlace">Iniciar sesión</a>' +
-        '<a href="' + rRegistro + '" class="btn-primario drawer-btn-registro">Registrarse</a>';
+        '<a href="' + rLogin + '" class="drawer-enlace">' + t('menu.iniciarSesion') + '</a>' +
+        '<a href="' + rRegistro + '" class="btn-primario drawer-btn-registro">' + t('menu.registrarse') + '</a>';
     }
   }
 
   configurarDrawer();
   configurarBuscadores();
   configurarTema();
+  configurarIdioma();
   configurarScrollCristal();
+}
+
+// ── Selector de idioma ─────────────────────────────
+// Un <select> nativo: se recorre con teclado, lo anuncian los lectores
+// de pantalla y en móvil abre el selector del sistema, todo sin una
+// línea de JS. Las opciones salen del registro de i18n.js, así que un
+// idioma nuevo aparece aquí sin tocar el header.
+function selectorIdiomaHTML() {
+  const opciones = Object.entries(IDIOMAS)
+    .map(([codigo, nombre]) =>
+      '<option value="' + codigo + '"' + (codigo === idioma ? ' selected' : '') + '>' +
+      codigo.toUpperCase() + ' · ' + nombre + '</option>')
+    .join('');
+
+  return '<select id="selector-idioma" class="selector-idioma" aria-label="' + t('header.idioma') + '">' +
+         opciones + '</select>';
+}
+
+function configurarIdioma() {
+  document.getElementById('selector-idioma')
+    ?.addEventListener('change', (e) => cambiarIdioma(e.target.value));
 }
 
 // ── Cristal al hacer scroll ────────────────────────
@@ -222,7 +251,7 @@ function configurarTema() {
     const oscuro = tema === 'oscuro';
     document.documentElement.setAttribute('data-tema', oscuro ? 'oscuro' : 'claro');
     btn.innerHTML = oscuro ? ICONO_SOL : ICONO_LUNA;
-    btn.setAttribute('aria-label', oscuro ? 'Activar modo claro' : 'Activar modo oscuro');
+    btn.setAttribute('aria-label', t(oscuro ? 'header.modoClaro' : 'header.modoOscuro'));
     btn.setAttribute('aria-pressed', oscuro ? 'true' : 'false');
   }
 
@@ -250,34 +279,34 @@ function inyectarFooter() {
     '<div class="footer-grid">' +
     '<div class="footer-col">' +
     '<h3><img src="' + paginaUrl('img/favicon.svg') + '" alt="" class="logo-icon" aria-hidden="true" /> PokeTrade</h3>' +
-    '<p>Plataforma de intercambio de cartas Pokémon para coleccionistas de toda España.</p>' +
-    '<p class="footer-sede">IES El Lago · Madrid</p>' +
+    '<p>' + t('footer.descripcion') + '</p>' +
+    '<p class="footer-sede">' + t('footer.sede') + '</p>' +
     '</div>' +
     '<div class="footer-col">' +
-    '<h3>Navegación</h3>' +
+    '<h3>' + t('footer.navegacion') + '</h3>' +
     '<ul>' +
-    '<li><a href="' + rNovedades + '">Novedades</a></li>' +
-    '<li><a href="' + rCatalogo + '">Catálogo</a></li>' +
-    '<li><a href="' + rMasVendido + '">Más Vendido</a></li>' +
-    '<li><a href="' + rPublicar + '">Publicar Tradeo</a></li>' +
+    '<li><a href="' + rNovedades + '">' + t('nav.novedades') + '</a></li>' +
+    '<li><a href="' + rCatalogo + '">' + t('nav.catalogo') + '</a></li>' +
+    '<li><a href="' + rMasVendido + '">' + t('nav.masVendido') + '</a></li>' +
+    '<li><a href="' + rPublicar + '">' + t('footer.publicarTradeo') + '</a></li>' +
     '</ul>' +
     '</div>' +
     '<div class="footer-col">' +
-    '<h3>Legal</h3>' +
+    '<h3>' + t('footer.legal') + '</h3>' +
     '<ul>' +
-    '<li><a href="' + rAvisoLegal + '">Aviso Legal</a></li>' +
-    '<li><a href="' + rPrivacidad + '">Privacidad</a></li>' +
-    '<li><a href="' + rContacto + '">Soporte</a></li>' +
+    '<li><a href="' + rAvisoLegal + '">' + t('footer.avisoLegal') + '</a></li>' +
+    '<li><a href="' + rPrivacidad + '">' + t('footer.privacidad') + '</a></li>' +
+    '<li><a href="' + rContacto + '">' + t('footer.soporte') + '</a></li>' +
     '</ul>' +
     '</div>' +
     '<div class="footer-col">' +
-    '<h3>Soporte</h3>' +
+    '<h3>' + t('footer.soporte') + '</h3>' +
     '<p>poketrade@iesellago.es</p>' +
     '<p class="footer-autores">Daniel Leal &amp; Teo Cristea</p>' +
     '</div>' +
     '</div>' +
     '<div class="footer-bottom">' +
-    '<p>&copy; 2026 PokeTrade – Daniel Leal &amp; Teo Cristea. Todos los derechos reservados.</p>' +
+    '<p>' + t('footer.copyright') + '</p>' +
     '</div>' +
     '</footer>';
 }

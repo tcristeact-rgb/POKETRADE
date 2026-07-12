@@ -1,9 +1,10 @@
 // inicio.js — Lógica de la página principal (módulo ES6)
 
 import { API_URL, estaLogueado } from './auth.js';
-import { tarjetaCarta, escapeHtml, formatearPrecio } from './utils.js';
+import { t } from './i18n.js';
+import { alCargarDOM, tarjetaCarta, escapeHtml, formatearPrecio } from './utils.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+alCargarDOM(() => {
     const ctaSeccion = document.getElementById('cta-seccion');
     if (ctaSeccion && estaLogueado()) {
         ctaSeccion.hidden = true;
@@ -31,11 +32,11 @@ async function cargarNovedades() {
     try {
         // Últimas cartas añadidas al catálogo, desde nuestra API
         const res = await fetch(`${API_URL}/cartas?orden=recientes&por_pagina=8`);
-        if (!res.ok) throw new Error('Error al conectar con la API');
+        if (!res.ok) throw new Error(t('comun.errorApi'));
         const datos = await res.json();
 
         if (!datos.data.length) {
-            grid.innerHTML = '<p class="grid-mensaje">Aún no hay cartas en el catálogo.</p>';
+            grid.innerHTML = `<p class="grid-mensaje">${escapeHtml(t('home.sinCartas'))}</p>`;
             return;
         }
 
@@ -44,7 +45,7 @@ async function cargarNovedades() {
     } catch (error) {
         grid.innerHTML = '';
         errorBox.hidden = false;
-        errorMsg.textContent = 'No se pudieron cargar las novedades. Inténtalo más tarde.';
+        errorMsg.textContent = t('home.errorNovedadesTarde');
     }
 }
 
@@ -100,7 +101,7 @@ function mostrarCarta(nueva, direccion = 0) {
     const pintar = () => {
         const img = new Image();
         img.className = 'carrusel-img';
-        img.alt = `Carta ${carta.nombre}`;
+        img.alt = t('home.altCarta', { nombre: carta.nombre });
         img.src = carta.imagen_high || carta.imagen_low;
         // Imagen muerta: probar la versión ligera; si tampoco, fuera
         // de la rotación (nunca un marco roto en el hero)
@@ -146,7 +147,7 @@ function actualizarInfo(carta) {
 
     const escena = document.getElementById('carrusel-escena');
     escena.href = enlace;
-    escena.setAttribute('aria-label', `Ver el detalle de ${carta.nombre}`);
+    escena.setAttribute('aria-label', t('comun.verDetalleDe', { nombre: carta.nombre }));
 }
 
 function actualizarPuntos() {
@@ -223,7 +224,7 @@ function montarPuntos() {
     const puntos = document.getElementById('carrusel-puntos');
     puntos.innerHTML = destacadas.map((c, i) =>
         `<button type="button" class="carrusel-punto"
-                 aria-label="Ver carta ${i + 1}: ${escapeHtml(c.nombre)}"></button>`).join('');
+                 aria-label="${escapeHtml(t('home.verCartaN', { n: String(i + 1), nombre: c.nombre }))}"></button>`).join('');
     puntos.querySelectorAll('button').forEach((boton, i) =>
         boton.addEventListener('click', () => {
             navegar(Math.sign(i - indiceActivo) || 1, i);

@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
-    <title>Mis Tradeos - PokeTrade</title>
-    <meta name="description" content="Gestiona tus tradeos de cartas Pokémon en PokeTrade.">
+    <script>try{var d=document.documentElement,s=localStorage;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var i=s.getItem('idioma')||(navigator.language||'es').slice(0,2);d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}}catch(e){}</script>
+    <title data-i18n="meta.tradeos.title">Mis Tradeos - PokeTrade</title>
+    <meta name="description" data-i18n-attr="content:meta.tradeos.desc" content="Gestiona tus tradeos de cartas Pokémon en PokeTrade.">
     <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
 </head>
@@ -15,21 +15,22 @@
     <main>
         <div class="tradeos-contenedor">
             <div class="tradeos-header">
-                <h1><img class="icono" src="../img/icons/tradeos.svg" alt="" /> Mis Tradeos</h1>
-                <a href="publicar-tradeo.html" class="btn-primario">+ Nuevo tradeo</a>
+                <h1><img class="icono" src="../img/icons/tradeos.svg" alt="" /> <span data-i18n="tradeos.titulo">Mis Tradeos</span></h1>
+                <a href="publicar-tradeo.html" class="btn-primario" data-i18n="tradeos.nuevo">+ Nuevo tradeo</a>
             </div>
 
             <div id="alerta" class="alerta"></div>
 
-            <div class="filtro-estado" role="group" aria-label="Filtrar tradeos por estado">
-                <button class="btn-filtro activo" type="button" data-estado="todos">Todos</button>
-                <button class="btn-filtro" type="button" data-estado="activo">Activos</button>
-                <button class="btn-filtro" type="button" data-estado="cerrado">Cerrados</button>
-                <button class="btn-filtro" type="button" data-estado="cancelado">Cancelados</button>
+            <div class="filtro-estado" role="group"
+                 data-i18n-attr="aria-label:tradeos.filtrarAria" aria-label="Filtrar tradeos por estado">
+                <button class="btn-filtro activo" type="button" data-estado="todos"     data-i18n="tradeos.todos">Todos</button>
+                <button class="btn-filtro" type="button" data-estado="activo"    data-i18n="tradeos.activos">Activos</button>
+                <button class="btn-filtro" type="button" data-estado="cerrado"   data-i18n="tradeos.cerrados">Cerrados</button>
+                <button class="btn-filtro" type="button" data-estado="cancelado" data-i18n="tradeos.cancelados">Cancelados</button>
             </div>
 
             <div id="lista-tradeos">
-                <p>Cargando tradeos...</p>
+                <p data-i18n="tradeos.cargando">Cargando tradeos...</p>
             </div>
         </div>
     </main>

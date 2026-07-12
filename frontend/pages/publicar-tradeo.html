@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
-    <title>Publicar Tradeo - PokeTrade</title>
-    <meta name="description" content="Publica un nuevo tradeo de cartas Pokémon en PokeTrade.">
+    <script>try{var d=document.documentElement,s=localStorage;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var i=s.getItem('idioma')||(navigator.language||'es').slice(0,2);d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}}catch(e){}</script>
+    <title data-i18n="meta.publicar.title">Publicar Tradeo - PokeTrade</title>
+    <meta name="description" data-i18n-attr="content:meta.publicar.desc" content="Publica un nuevo tradeo de cartas Pokémon en PokeTrade.">
     <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
 </head>
@@ -14,59 +14,62 @@
 
     <main>
         <div class="publicar-contenedor">
-            <h1><img class="icono" src="../img/icons/publicar.svg" alt="" /> Publicar Tradeo</h1>
+            <h1><img class="icono" src="../img/icons/publicar.svg" alt="" /> <span data-i18n="pub.titulo">Publicar Tradeo</span></h1>
 
             <div id="alerta" class="alerta"></div>
 
             <!-- Paso 1: Cartas que ofreces (de tu inventario) -->
             <div class="seccion-card">
-                <h2>1. ¿Qué cartas ofreces?</h2>
-                <p class="descripcion-seccion">Selecciona las cartas de tu inventario que quieres intercambiar.</p>
+                <h2 data-i18n="pub.paso1">1. ¿Qué cartas ofreces?</h2>
+                <p class="descripcion-seccion" data-i18n="pub.paso1Desc">Selecciona las cartas de tu inventario que quieres intercambiar.</p>
 
                 <div id="grid-ofrece" class="grid-seleccion">
-                    <p class="vacio-seccion">Cargando inventario...</p>
+                    <p class="vacio-seccion" data-i18n="pub.cargandoInventario">Cargando inventario...</p>
                 </div>
 
                 <div class="seleccionadas-preview" id="preview-ofrece">
-                    <span class="preview-vacio">Ninguna seleccionada</span>
+                    <span class="preview-vacio" data-i18n="pub.ningunaSeleccionada">Ninguna seleccionada</span>
                 </div>
             </div>
 
             <!-- Paso 2: Cartas que buscas (del catálogo) -->
             <div class="seccion-card">
-                <h2>2. ¿Qué cartas buscas?</h2>
-                <p class="descripcion-seccion">Selecciona las cartas del catálogo que te gustaría recibir.</p>
+                <h2 data-i18n="pub.paso2">2. ¿Qué cartas buscas?</h2>
+                <p class="descripcion-seccion" data-i18n="pub.paso2Desc">Selecciona las cartas del catálogo que te gustaría recibir.</p>
 
-                <input type="text" class="buscar-modal-input" id="buscar-busca" placeholder="Filtrar por nombre..."
+                <input type="text" class="buscar-modal-input" id="buscar-busca"
+                       data-i18n-attr="placeholder:pub.filtrarPlaceholder;aria-label:pub.filtrarAria"
+                       placeholder="Filtrar por nombre..."
                        aria-label="Filtrar cartas del catálogo por nombre" />
 
                 <div id="grid-busca" class="grid-seleccion">
-                    <p class="vacio-seccion">Cargando catálogo...</p>
+                    <p class="vacio-seccion" data-i18n="pub.cargandoCatalogo">Cargando catálogo...</p>
                 </div>
 
                 <div class="seleccionadas-preview" id="preview-busca">
-                    <span class="preview-vacio">Ninguna seleccionada</span>
+                    <span class="preview-vacio" data-i18n="pub.ningunaSeleccionada">Ninguna seleccionada</span>
                 </div>
             </div>
 
             <!-- Paso 3: Descripción opcional -->
             <div class="seccion-card">
-                <h2>3. Descripción (opcional)</h2>
+                <h2 data-i18n="pub.paso3">3. Descripción (opcional)</h2>
                 <div class="formulario-grupo">
-                    <label for="descripcion" class="sr-only">Descripción del tradeo</label>
+                    <label for="descripcion" class="sr-only" data-i18n="pub.descripcionLabel">Descripción del tradeo</label>
                     <textarea id="descripcion" rows="3" maxlength="500"
+                        data-i18n-attr="placeholder:pub.descripcionPlaceholder"
                         placeholder="Añade detalles sobre el estado de las cartas, condiciones del intercambio..."></textarea>
                 </div>
                 <p class="contador"><span id="contador-chars">0</span>/500</p>
             </div>
 
             <!-- Botón publicar -->
-            <button class="btn-primario btn-publicar" id="btn-publicar" type="button">
+            <button class="btn-primario btn-publicar" id="btn-publicar" type="button" data-i18n="pub.publicar">
                 Publicar tradeo
             </button>
 
             <p class="publicar-volver">
-                <a href="tradeos.html">← Volver a mis tradeos</a>
+                <a href="tradeos.html" data-i18n="pub.volver">← Volver a mis tradeos</a>
             </p>
         </div>
     </main>

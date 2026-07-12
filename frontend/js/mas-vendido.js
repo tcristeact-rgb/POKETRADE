@@ -1,9 +1,10 @@
 // mas-vendido.js — Ranking de cartas más demandadas en tradeos
 
 import { API_URL, paginaUrl } from './auth.js';
-import { escapeHtml, dorsoCarta } from './utils.js';
+import { t } from './i18n.js';
+import { alCargarDOM, escapeHtml, dorsoCarta } from './utils.js';
 
-document.addEventListener('DOMContentLoaded', () => {
+alCargarDOM(() => {
     cargarMasVendido();
     document.getElementById('btn-reintentar-mv')?.addEventListener('click', cargarMasVendido);
 });
@@ -54,7 +55,7 @@ async function cargarMasVendido() {
         } catch (_) {
             grid.innerHTML = '';
             errorBox.hidden = false;
-            errorMsg.textContent = 'Sin conexión. ¿Está activo el backend?';
+            errorMsg.textContent = t('mv.sinConexion');
         }
     }
 }
@@ -63,7 +64,7 @@ async function cargarMasVendido() {
 // cuando todavía no hay tradeos publicados
 async function cargarDestacadas(grid) {
     const res = await fetch(`${API_URL}/cartas?orden=precio&por_pagina=8`);
-    if (!res.ok) throw new Error('API');
+    if (!res.ok) throw new Error(t('comun.errorApi'));
     const datos = await res.json();
 
     grid.innerHTML = datos.data.map((carta, i) =>
@@ -85,11 +86,11 @@ function tarjetaRanking({ carta, veces }, posicion) {
         ? `<img src="${escapeHtml(imagen)}" alt="${nombre}" loading="lazy" />`
         : dorsoCarta();
     const contadorHTML = veces !== null
-        ? `<span class="mv-contador">${veces} ${veces === 1 ? 'tradeo' : 'tradeos'}</span>`
-        : `<span class="mv-contador"><img class="icono" src="${paginaUrl('img/icons/estrella.svg')}" alt="" /> Popular</span>`;
+        ? `<span class="mv-contador">${escapeHtml(t('mv.nTradeos', { n: veces }))}</span>`
+        : `<span class="mv-contador"><img class="icono" src="${paginaUrl('img/icons/estrella.svg')}" alt="" /> ${escapeHtml(t('mv.popular'))}</span>`;
 
     return `
-    <a class="carta-card mv-card" href="${url}" aria-label="Ver detalle de ${nombre}">
+    <a class="carta-card mv-card" href="${url}" aria-label="${escapeHtml(t('comun.verDetalleDe', { nombre: carta.nombre }))}">
         <div class="mv-posicion" aria-hidden="true">${medalla}</div>
         ${imgHTML}
         <div class="carta-info">

@@ -13,7 +13,8 @@
 // local completa (GET /api/cartas) ya no se usa aquí.
 
 import { API_URL } from './auth.js';
-import { activarPlaceholderImagenes, escapeHtml, tarjetaCarta, placeholderLogo } from './utils.js';
+import { t } from './i18n.js';
+import { alCargarDOM, activarPlaceholderImagenes, escapeHtml, tarjetaCarta, placeholderLogo } from './utils.js';
 import { crearPaginacion } from './paginacion.js';
 import { activarLightboxEnGrid } from './lightbox.js';
 import { iniciarFiltros } from './filtros-catalogo.js';
@@ -38,7 +39,7 @@ const paginacion = crearPaginacion({
     alCambiar:    (pagina) => renderizar(pagina),
 });
 
-document.addEventListener('DOMContentLoaded', () => {
+alCargarDOM(() => {
     filtros = iniciarFiltros({ alCambiar: () => renderizar(1) });
 
     const paginaInicial = Math.max(1, parseInt(param('page'), 10) || 1);
@@ -76,8 +77,8 @@ function urlCatalogo(paramsBase) {
 // ── Vista 1: todas las series ──────────────────────
 
 async function vistaSeries() {
-    cabecera('Catálogo', 'Todas las series y sets del TCG de Pokémon, de los más recientes a los clásicos.');
-    breadcrumb([['Inicio', '../index.html'], 'Catálogo']);
+    cabecera(t('catalogo.titulo'), t('catalogo.subtituloSeries'));
+    breadcrumb([[t('comun.inicio'), '../index.html'], t('catalogo.titulo')]);
     modoFiltro(null);
     sinPaginacion();
     esqueletos('set-card');
@@ -87,17 +88,17 @@ async function vistaSeries() {
 
     try {
         const res = await fetch(`${API_URL}/series`);
-        if (!res.ok) throw new Error('Error al conectar con la API');
+        if (!res.ok) throw new Error(t('comun.errorApi'));
         const series = await res.json();
 
         if (!series.length) {
-            grid.innerHTML = '<p class="grid-mensaje">Todavía no hay expansiones en el catálogo.</p>';
+            grid.innerHTML = `<p class="grid-mensaje">${escapeHtml(t('catalogo.sinSeries'))}</p>`;
             return;
         }
 
         grid.innerHTML = series.map(s => tarjetaSerie(s)).join('');
     } catch (e) {
-        mostrarError(`Error al cargar el catálogo: ${e.message}`);
+        mostrarError(t('catalogo.errorCatalogo', { mensaje: e.message }));
     }
 }
 
@@ -113,19 +114,23 @@ function tarjetaSerie(serie) {
         : urlCatalogo({ serie: serie.tcgdex_id });
 
     const etiqueta = serie.set_unico
-        ? `Ver cartas de ${nombre}`
-        : `Ver sets de la serie ${nombre}`;
+        ? t('catalogo.verCartasDe', { nombre: serie.nombre })
+        : t('catalogo.verSetsDe',  { nombre: serie.nombre });
 
-    const meta = serie.sets_count === 1
-        ? `1 set${anio ? ` · ${anio}` : ''}`
-        : `${serie.sets_count} sets${anio ? ` · hasta ${anio}` : ''}`;
+    // Una serie de un solo set muestra el año a secas; las de varios,
+    // el año del último ("hasta 2024")
+    const unSoloSet = serie.sets_count === 1;
+    const meta = [
+        t('catalogo.nSets', { n: serie.sets_count }),
+        anio ? (unSoloSet ? anio : t('catalogo.hasta', { anio })) : null,
+    ].filter(Boolean).join(' · ');
 
     return `
-        <a class="set-card" href="${destino}" aria-label="${etiqueta}">
+        <a class="set-card" href="${destino}" aria-label="${escapeHtml(etiqueta)}">
             ${logoHTML(serie.logo, null, serie.nombre)}
             <div class="set-info">
                 <h3>${nombre}</h3>
-                <p class="set-meta">${meta}</p>
+                <p class="set-meta">${escapeHtml(meta)}</p>
             </div>
         </a>`;
 }
@@ -143,8 +148,8 @@ async function vistaSets(serieId) {
 
     try {
         const res = await fetch(`${API_URL}/series/${encodeURIComponent(serieId)}`);
-        if (res.status === 404) { mostrarError('Esta serie no existe.'); return; }
-        if (!res.ok) throw new Error('Error al conectar con la API');
+        if (res.status === 404) { mostrarError(t('catalogo.serieNoExiste')); return; }
+        if (!res.ok) throw new Error(t('comun.errorApi'));
         const serie = await res.json();
 
         // Serie de un solo set: no hay nada que elegir. Sustituimos la
@@ -162,33 +167,33 @@ async function vistaSets(serieId) {
             return;
         }
 
-        document.title = `${serie.nombre} - PokeTrade`;
-        cabecera(serie.nombre, `${serie.sets.length} sets de expansión, del más reciente al más antiguo.`);
-        breadcrumb([['Inicio', '../index.html'], ['Catálogo', urlCatalogo({})], serie.nombre]);
+        document.title = t('meta.tituloPagina', { titulo: serie.nombre });
+        cabecera(serie.nombre, t('catalogo.subtituloSets', { n: serie.sets.length }));
+        breadcrumb([[t('comun.inicio'), '../index.html'], [t('catalogo.titulo'), urlCatalogo({})], serie.nombre]);
 
         if (!serie.sets.length) {
-            grid.innerHTML = '<p class="grid-mensaje">Esta serie no tiene sets todavía.</p>';
+            grid.innerHTML = `<p class="grid-mensaje">${escapeHtml(t('catalogo.sinSets'))}</p>`;
             return;
         }
 
         grid.innerHTML = serie.sets.map(s => tarjetaSet(s)).join('');
     } catch (e) {
-        mostrarError(`Error al cargar la serie: ${e.message}`);
+        mostrarError(t('catalogo.errorSerie', { mensaje: e.message }));
     }
 }
 
 function tarjetaSet(set) {
     const nombre = escapeHtml(set.nombre);
     const anio   = set.fecha_lanzamiento ? set.fecha_lanzamiento.slice(0, 4) : null;
-    const meta   = [anio, `${set.numero_cartas} cartas`].filter(Boolean).join(' · ');
+    const meta   = [anio, t('catalogo.nCartas', { n: set.numero_cartas })].filter(Boolean).join(' · ');
 
     return `
         <a class="set-card" href="${urlCatalogo({ set: set.tcgdex_id })}"
-           aria-label="Ver cartas del set ${nombre}">
+           aria-label="${escapeHtml(t('catalogo.verCartasSet', { nombre: set.nombre }))}">
             ${logoHTML(set.logo, set.simbolo, set.nombre)}
             <div class="set-info">
                 <h3>${nombre}</h3>
-                <p class="set-meta">${meta}</p>
+                <p class="set-meta">${escapeHtml(meta)}</p>
             </div>
         </a>`;
 }
@@ -209,7 +214,9 @@ async function vistaSet(setId, pagina) {
         esqueletoCabecera();
         cargarCabeceraSet(setId);
     } else {
-        modoFiltro(filtros.hayFiltros() ? `Filtrando en ${cabeceraEl.dataset.nombre}` : null);
+        modoFiltro(filtros.hayFiltros()
+            ? t('catalogo.filtrandoEn', { set: cabeceraEl.dataset.nombre })
+            : null);
     }
 
     try {
@@ -222,17 +229,17 @@ async function vistaSet(setId, pagina) {
         const res = await fetch(`${API_URL}/sets/${encodeURIComponent(setId)}/cartas?${params}`);
         cancelarAvisoLento();
 
-        if (res.status === 404) { mostrarError('Este set no existe.'); return; }
+        if (res.status === 404) { mostrarError(t('catalogo.setNoExiste')); return; }
         if (res.status === 503) {
             const datos = await res.json().catch(() => ({}));
-            mostrarErrorConReintento(datos.error || 'El catálogo externo no responde. Inténtalo de nuevo en unos minutos.', pagina);
+            mostrarErrorConReintento(datos.error || t('catalogo.tcgdexCaido'), pagina);
             return;
         }
-        if (!res.ok) throw new Error('Error al conectar con la API');
+        if (!res.ok) throw new Error(t('comun.errorApi'));
         const datos = await res.json();
 
         actualizarUrlPagina(datos.current_page);
-        mostrarCartas(datos.data, 'No hay cartas que coincidan con los filtros en este set.');
+        mostrarCartas(datos.data, t('catalogo.sinCoincidenciasSet'));
         paginacion.actualizar(datos);
 
         if (pagina > 1) {
@@ -240,7 +247,7 @@ async function vistaSet(setId, pagina) {
         }
     } catch (e) {
         cancelarAvisoLento();
-        mostrarErrorConReintento(`Error al cargar las cartas: ${e.message}`, pagina);
+        mostrarErrorConReintento(t('catalogo.errorCartas', { mensaje: e.message }), pagina);
     }
 }
 
@@ -252,22 +259,26 @@ async function cargarCabeceraSet(setId) {
         if (!res.ok) return;
         const set = await res.json();
 
-        document.title = `${set.nombre} - PokeTrade`;
+        document.title = t('meta.tituloPagina', { titulo: set.nombre });
 
         const anio = set.fecha_lanzamiento ? set.fecha_lanzamiento.slice(0, 4) : null;
-        cabecera(set.nombre, [anio, `${set.numero_cartas} cartas`].filter(Boolean).join(' · '), set.logo);
+        cabecera(
+            set.nombre,
+            [anio, t('catalogo.nCartas', { n: set.numero_cartas })].filter(Boolean).join(' · '),
+            set.logo,
+        );
 
         const cabeceraEl = document.getElementById('cabecera-catalogo');
         cabeceraEl.dataset.set    = setId;
         cabeceraEl.dataset.nombre = set.nombre;
-        modoFiltro(filtros.hayFiltros() ? `Filtrando en ${set.nombre}` : null);
+        modoFiltro(filtros.hayFiltros() ? t('catalogo.filtrandoEn', { set: set.nombre }) : null);
 
         // Breadcrumb: en una serie de varios sets el nivel de serie es
         // un enlace normal. Si la serie tiene un único set, ese enlace
         // volvería a este mismo sitio, así que se degrada a texto plano
         // (mantiene el contexto sin click muerto) y se omite del todo
         // cuando serie y set se llaman igual, para no repetir el nombre.
-        const miga = [['Inicio', '../index.html'], ['Catálogo', urlCatalogo({})]];
+        const miga = [[t('comun.inicio'), '../index.html'], [t('catalogo.titulo'), urlCatalogo({})]];
         if (set.serie) {
             const serieDeUnSet = set.serie.sets_count === 1;
             if (!serieDeUnSet) {
@@ -284,9 +295,13 @@ async function cargarCabeceraSet(setId) {
 // ── Vista 4: búsqueda global en todo el catálogo ───
 
 async function vistaBusquedaGlobal() {
-    cabecera('Catálogo', 'Resultados en todo el catálogo del TCG.');
-    breadcrumb([['Inicio', '../index.html'], ['Catálogo', urlCatalogo({})], 'Búsqueda']);
-    modoFiltro('Buscando en todo el catálogo');
+    cabecera(t('catalogo.titulo'), t('catalogo.subtituloBusqueda'));
+    breadcrumb([
+        [t('comun.inicio'), '../index.html'],
+        [t('catalogo.titulo'), urlCatalogo({})],
+        t('catalogo.busqueda'),
+    ]);
+    modoFiltro(t('catalogo.buscando'));
     sinPaginacion();
     esqueletos('carta-card', CARTAS_POR_PAGINA);
 
@@ -304,22 +319,22 @@ async function vistaBusquedaGlobal() {
 
         if (res.status === 503) {
             const datos = await res.json().catch(() => ({}));
-            mostrarErrorConReintento(datos.error || 'El catálogo externo no responde. Inténtalo de nuevo en unos minutos.');
+            mostrarErrorConReintento(datos.error || t('catalogo.tcgdexCaido'));
             return;
         }
-        if (!res.ok) throw new Error('Error al conectar con la API');
+        if (!res.ok) throw new Error(t('comun.errorApi'));
         const datos = await res.json();
 
-        mostrarCartas(datos.data, 'No hay cartas que coincidan con los filtros.');
+        mostrarCartas(datos.data, t('catalogo.sinCoincidencias'));
 
         const info = document.getElementById('paginacion-info');
         if (info) {
             info.textContent = datos.total === MAX_BUSQUEDA_GLOBAL
-                ? `Mostrando los primeros ${datos.total} resultados — afina la búsqueda para ver menos`
-                : `${datos.total} resultado${datos.total === 1 ? '' : 's'}`;
+                ? t('catalogo.primerosResultados', { n: datos.total })
+                : t('catalogo.resultados', { n: datos.total });
         }
     } catch (e) {
-        mostrarErrorConReintento(`Error en la búsqueda: ${e.message}`);
+        mostrarErrorConReintento(t('catalogo.errorBusqueda', { mensaje: e.message }));
     }
 }
 
@@ -333,7 +348,7 @@ function mostrarCartas(cartas, mensajeVacio) {
         grid.innerHTML =
             `<div class="grid-mensaje">` +
             `<p>${escapeHtml(mensajeVacio)}</p>` +
-            `<button class="btn-primario btn-limpiar-vacio" type="button">✕ Limpiar filtros</button>` +
+            `<button class="btn-primario btn-limpiar-vacio" type="button">${escapeHtml(t('catalogo.limpiarFiltros'))}</button>` +
             `</div>`;
         grid.querySelector('.btn-limpiar-vacio')?.addEventListener('click', () => filtros.limpiar());
         return;
@@ -446,7 +461,7 @@ function mostrarErrorConReintento(msg, pagina = 1) {
     grid.innerHTML =
         `<div class="grid-mensaje">` +
         `<p class="error-texto">${escapeHtml(msg)}</p>` +
-        `<button class="btn-primario btn-reintentar" type="button">Reintentar</button>` +
+        `<button class="btn-primario btn-reintentar" type="button">${escapeHtml(t('comun.reintentar'))}</button>` +
         `</div>`;
     grid.querySelector('.btn-reintentar')?.addEventListener('click', () => renderizar(pagina));
 }

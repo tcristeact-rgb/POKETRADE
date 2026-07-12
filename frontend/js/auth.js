@@ -4,6 +4,7 @@
 // ===================================================
 
 import { API_URL } from './config.js';
+import { t } from './i18n.js';
 
 export { API_URL };
 
@@ -131,7 +132,7 @@ export function manejarErrorHTTP(status, elementoId = null) {
 
   switch (status) {
     case 401:
-      mensaje = 'Sesión expirada. Por favor, inicia sesión de nuevo.';
+      mensaje = t('error.401');
       // Solo la primera respuesta 401 cierra sesión y redirige
       if (!_redireccion401EnCurso) {
         _redireccion401EnCurso = true;
@@ -144,20 +145,20 @@ export function manejarErrorHTTP(status, elementoId = null) {
       }
       break;
     case 403:
-      mensaje = 'No tienes permisos para realizar esta acción.';
+      mensaje = t('error.403');
       break;
     case 404:
-      mensaje = 'El recurso solicitado no existe.';
+      mensaje = t('error.404');
       break;
     case 422:
-      mensaje = 'Datos no válidos. Revisa el formulario.';
+      mensaje = t('error.422');
       break;
     case 500:
     case 503:
-      mensaje = 'Error interno del servidor. Inténtalo más tarde.';
+      mensaje = t('error.500');
       break;
     default:
-      mensaje = `Error inesperado (código ${status}).`;
+      mensaje = t('error.inesperado', { status: String(status) });
   }
 
   // Actualizar el DOM si se proporciona un elemento destino
@@ -198,7 +199,7 @@ export async function login(email, password) {
       body: JSON.stringify({ email, password })
     });
   } catch (_) {
-    throw new Error('Sin conexión con el servidor. ¿Está activo el backend?');
+    throw new Error(t('error.sinConexion'));
   }
 
   // Parsear JSON de forma segura antes de comprobar el status
@@ -241,7 +242,7 @@ export async function registro(campos) {
       body: JSON.stringify(campos)
     });
   } catch (_) {
-    throw new Error('Sin conexión con el servidor. ¿Está activo el backend?');
+    throw new Error(t('error.sinConexion'));
   }
 
   const datos = await parsearRespuesta(respuesta);
@@ -303,17 +304,17 @@ export function renderizarMenu() {
           <img class="icono" src="${paginaUrl('img/icons/usuario.svg')}" alt="" /> <span class="btn-dropdown-nombre"></span> ▾
         </button>
         <ul class="dropdown-menu">
-          <li><a href="${paginaUrl('pages/inventario.html')}"><img class="icono" src="${paginaUrl('img/icons/inventario.svg')}" alt="" /> Inventario</a></li>
-          <li><a href="${paginaUrl('pages/tradeos.html')}"><img class="icono" src="${paginaUrl('img/icons/tradeos.svg')}" alt="" /> Mis Tradeos</a></li>
-          <li><a href="${paginaUrl('pages/perfil.html')}"><img class="icono" src="${paginaUrl('img/icons/perfil.svg')}" alt="" /> Perfil</a></li>
+          <li><a href="${paginaUrl('pages/inventario.html')}"><img class="icono" src="${paginaUrl('img/icons/inventario.svg')}" alt="" /> ${t('menu.inventario')}</a></li>
+          <li><a href="${paginaUrl('pages/tradeos.html')}"><img class="icono" src="${paginaUrl('img/icons/tradeos.svg')}" alt="" /> ${t('menu.misTradeos')}</a></li>
+          <li><a href="${paginaUrl('pages/perfil.html')}"><img class="icono" src="${paginaUrl('img/icons/perfil.svg')}" alt="" /> ${t('menu.perfil')}</a></li>
           <li><hr/></li>
-          <li><button type="button" class="btn-logout"><img class="icono" src="${paginaUrl('img/icons/logout.svg')}" alt="" /> Cerrar sesión</button></li>
+          <li><button type="button" class="btn-logout"><img class="icono" src="${paginaUrl('img/icons/logout.svg')}" alt="" /> ${t('menu.cerrarSesion')}</button></li>
         </ul>
       </div>
     `;
 
     // El nombre se asigna con textContent para evitar inyección de HTML (XSS)
-    menu.querySelector('.btn-dropdown-nombre').textContent = usuario?.nombre || 'Usuario';
+    menu.querySelector('.btn-dropdown-nombre').textContent = usuario?.nombre || t('comun.usuario');
 
     const dropdown = menu.querySelector('.dropdown');
     const btnDropdown = menu.querySelector('.btn-dropdown');
@@ -332,8 +333,8 @@ export function renderizarMenu() {
 
   } else {
     menu.innerHTML = `
-      <a href="${paginaUrl('pages/login.html')}">Iniciar sesión</a>
-      <a href="${paginaUrl('pages/registro.html')}" class="btn-primario btn-nav">Registrarse</a>
+      <a href="${paginaUrl('pages/login.html')}">${t('menu.iniciarSesion')}</a>
+      <a href="${paginaUrl('pages/registro.html')}" class="btn-primario btn-nav">${t('menu.registrarse')}</a>
     `;
   }
 }

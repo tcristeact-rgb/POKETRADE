@@ -543,6 +543,42 @@ header .logo { color: var(--hdr-texto); }
 }
 .btn-tema:hover { background: var(--hdr-control-bg-hover); }
 
+/* ── Selector de idioma ──
+   <select> nativo con la misma piel que el botón de tema, que es su
+   vecino en el header. Nativo a propósito: teclado, lectores de
+   pantalla y el selector del sistema en móvil salen gratis. */
+.selector-idioma {
+  flex-shrink: 0;
+  height: 38px;
+  padding: 0 0.55rem;
+  background: var(--hdr-control-bg);
+  border: 1px solid var(--hdr-control-borde);
+  border-radius: var(--radius-sm);
+  color: var(--hdr-texto);
+  font-family: inherit;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--trans), color var(--trans);
+}
+.selector-idioma:hover { background: var(--hdr-control-bg-hover); }
+
+/* Las <option> las pinta el sistema operativo, no el header: sin esto
+   heredarían el color claro del header y en modo claro saldrían
+   blancas sobre blanco en varios navegadores */
+.selector-idioma option {
+  background: var(--fondo-card);
+  color: var(--texto);
+}
+
+/* ── Anti-parpadeo del idioma ──
+   El HTML viene escrito en español. A quien navega en otro idioma se le
+   oculta el cuerpo hasta que i18n.js traduce (aplicarTraducciones quita
+   la clase, y el script de arranque tiene una red de seguridad por si el
+   diccionario nunca llega). Quien navega en español no la ve nunca: cero
+   coste para el caso mayoritario. */
+html.i18n-pendiente body { visibility: hidden; }
+
 /* ── Dropdown autenticado ── */
 #menu-no-auth {
   display: flex;

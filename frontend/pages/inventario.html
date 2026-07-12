@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
-    <title>Mi Inventario - PokeTrade</title>
-    <meta name="description" content="Gestiona tu colección de cartas Pokémon en PokeTrade.">
+    <script>try{var d=document.documentElement,s=localStorage;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var i=s.getItem('idioma')||(navigator.language||'es').slice(0,2);d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}}catch(e){}</script>
+    <title data-i18n="meta.inventario.title">Mi Inventario - PokeTrade</title>
+    <meta name="description" data-i18n-attr="content:meta.inventario.desc" content="Gestiona tu colección de cartas Pokémon en PokeTrade.">
     <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
 </head>
@@ -15,14 +15,14 @@
     <main>
         <div class="inventario-contenedor">
             <div class="inventario-header">
-                <h1><img class="icono" src="../img/icons/inventario.svg" alt="" /> Mi Inventario</h1>
-                <button class="btn-primario" id="btn-abrir-modal" type="button">+ Añadir carta</button>
+                <h1><img class="icono" src="../img/icons/inventario.svg" alt="" /> <span data-i18n="inv.titulo">Mi Inventario</span></h1>
+                <button class="btn-primario" id="btn-abrir-modal" type="button" data-i18n="inv.anadirCarta">+ Añadir carta</button>
             </div>
 
             <div id="alerta" class="alerta"></div>
 
             <div id="grid-inventario" class="grid-inventario">
-                <p>Cargando inventario...</p>
+                <p data-i18n="inv.cargando">Cargando inventario...</p>
             </div>
         </div>
     </main>
@@ -31,27 +31,32 @@
     <div class="modal-overlay" id="modal-overlay" hidden>
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-inv-titulo">
             <div class="inv-modal-header">
-                <h2 id="modal-inv-titulo">Añadir carta al inventario</h2>
-                <button class="btn-cerrar-modal" id="btn-cerrar-modal-inv" type="button" aria-label="Cerrar ventana">✕</button>
+                <h2 id="modal-inv-titulo" data-i18n="inv.modalTitulo">Añadir carta al inventario</h2>
+                <button class="btn-cerrar-modal" id="btn-cerrar-modal-inv" type="button"
+                        data-i18n-attr="aria-label:inv.cerrarVentana" aria-label="Cerrar ventana">✕</button>
             </div>
 
             <div class="modal-filtros">
-                <input type="text" id="modal-buscar" placeholder="Buscar carta..."
+                <input type="text" id="modal-buscar"
+                       data-i18n-attr="placeholder:header.buscarPlaceholder;aria-label:inv.buscarAria"
+                       placeholder="Buscar carta..."
                        aria-label="Buscar carta en el catálogo" />
             </div>
 
             <div id="lista-cartas-modal" class="lista-cartas-modal">
-                <p>Cargando cartas...</p>
+                <p data-i18n="inv.cargandoCartas">Cargando cartas...</p>
             </div>
 
             <div id="seleccion-panel" class="seleccion-panel" hidden>
                 <p><strong id="nombre-seleccionada"></strong></p>
                 <div class="cantidad-control">
-                    <button id="btn-cantidad-menos" type="button" aria-label="Disminuir cantidad">−</button>
+                    <button id="btn-cantidad-menos" type="button"
+                            data-i18n-attr="aria-label:inv.disminuir" aria-label="Disminuir cantidad">−</button>
                     <span id="cantidad-valor" aria-live="polite">1</span>
-                    <button id="btn-cantidad-mas" type="button" aria-label="Aumentar cantidad">+</button>
+                    <button id="btn-cantidad-mas" type="button"
+                            data-i18n-attr="aria-label:inv.aumentar" aria-label="Aumentar cantidad">+</button>
                 </div>
-                <button class="btn-formulario" id="btn-confirmar-anadir" type="button">Añadir al inventario</button>
+                <button class="btn-formulario" id="btn-confirmar-anadir" type="button" data-i18n="inv.anadirAlInventario">Añadir al inventario</button>
             </div>
         </div>
     </div>

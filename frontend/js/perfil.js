@@ -1,11 +1,12 @@
 // perfil.js — Edición de perfil y cambio de contraseña
 
 import { API_URL, headersAuth, protegerRuta, obtenerUsuario, manejarErrorHTTP, parsearRespuesta, renderizarMenu, paginaUrl } from './auth.js';
-import { mostrarAlerta } from './utils.js';
+import { t } from './i18n.js';
+import { alCargarDOM, mostrarAlerta } from './utils.js';
 
 protegerRuta('perfil');
 
-document.addEventListener('DOMContentLoaded', () => {
+alCargarDOM(() => {
     cargarPerfil();
 
     document.getElementById('avatar_url')?.addEventListener('input', previsualizarAvatar);
@@ -20,7 +21,7 @@ async function cargarPerfil() {
         const datos = await res.json();
         rellenarFormulario(datos);
     } catch (e) {
-        mostrarAlerta(`Error al cargar el perfil: ${e.message}`, 'error', 'alerta-perfil');
+        mostrarAlerta(t('perfil.errorCargar', { mensaje: e.message }), 'error', 'alerta-perfil');
     }
 }
 
@@ -45,7 +46,7 @@ function actualizarAvatar(url) {
     if (url) {
         const img = document.createElement('img');
         img.src = url;
-        img.alt = 'Avatar del usuario';
+        img.alt = t('perfil.avatarAlt');
         img.className = 'avatar-preview';
         img.addEventListener('error', () => {
             contenedor.innerHTML = '<div class="avatar-placeholder" aria-hidden="true"><img class="icono" src="' + paginaUrl('img/icons/usuario.svg') + '" alt="" /></div>';
@@ -66,7 +67,7 @@ async function guardarPerfil() {
     };
 
     if (!campos.nombre || !campos.apellido) {
-        mostrarAlerta('El nombre y apellido son obligatorios.', 'error', 'alerta-perfil');
+        mostrarAlerta(t('perfil.nombreApellidoObligatorios'), 'error', 'alerta-perfil');
         return;
     }
 
@@ -86,9 +87,9 @@ async function guardarPerfil() {
             renderizarMenu();
         }
 
-        mostrarAlerta('Perfil actualizado correctamente.', 'exito', 'alerta-perfil');
+        mostrarAlerta(t('perfil.actualizado'), 'exito', 'alerta-perfil');
     } catch (e) {
-        mostrarAlerta(`Error: ${e.message}`, 'error', 'alerta-perfil');
+        mostrarAlerta(t('comun.error', { mensaje: e.message }), 'error', 'alerta-perfil');
     }
 }
 
@@ -98,15 +99,15 @@ async function cambiarPassword() {
     const confirmar = document.getElementById('password_confirmar').value;
 
     if (!actual || !nueva || !confirmar) {
-        mostrarAlerta('Rellena todos los campos de contraseña.', 'error', 'alerta-password');
+        mostrarAlerta(t('perfil.rellenaPassword'), 'error', 'alerta-password');
         return;
     }
     if (nueva.length < 6) {
-        mostrarAlerta('La nueva contraseña debe tener al menos 6 caracteres.', 'error', 'alerta-password');
+        mostrarAlerta(t('perfil.passwordMin6'), 'error', 'alerta-password');
         return;
     }
     if (nueva !== confirmar) {
-        mostrarAlerta('Las contraseñas no coinciden.', 'error', 'alerta-password');
+        mostrarAlerta(t('auth.noCoinciden'), 'error', 'alerta-password');
         return;
     }
 
@@ -122,8 +123,8 @@ async function cambiarPassword() {
         document.getElementById('password_actual').value    = '';
         document.getElementById('password_nueva').value     = '';
         document.getElementById('password_confirmar').value = '';
-        mostrarAlerta('Contraseña cambiada correctamente.', 'exito', 'alerta-password');
+        mostrarAlerta(t('perfil.passwordCambiada'), 'exito', 'alerta-password');
     } catch (e) {
-        mostrarAlerta(`Error: ${e.message}`, 'error', 'alerta-password');
+        mostrarAlerta(t('comun.error', { mensaje: e.message }), 'error', 'alerta-password');
     }
 }

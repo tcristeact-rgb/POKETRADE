@@ -7,6 +7,7 @@
 // cerrar) reutiliza abrirModalAccesible/cerrarModalAccesible de utils.
 
 import { paginaUrl } from './auth.js';
+import { t } from './i18n.js';
 import { abrirModalAccesible, cerrarModalAccesible, URL_DORSO } from './utils.js';
 
 let lightbox = null;   // Nodo raíz (se crea una sola vez, al primer uso)
@@ -71,20 +72,20 @@ function crearLightbox() {
     lightbox.className = 'lightbox';
     lightbox.setAttribute('role', 'dialog');
     lightbox.setAttribute('aria-modal', 'true');
-    lightbox.setAttribute('aria-label', 'Ilustración ampliada de la carta');
+    lightbox.setAttribute('aria-label', t('lb.ilustracionAmpliada'));
     lightbox.hidden = true;
 
     lightbox.innerHTML = `
-        <button class="lightbox-cerrar" type="button" aria-label="Cerrar">✕</button>
-        <button class="lightbox-flecha lightbox-anterior" type="button" aria-label="Carta anterior">❮</button>
+        <button class="lightbox-cerrar" type="button" aria-label="${t('comun.cerrar')}">✕</button>
+        <button class="lightbox-flecha lightbox-anterior" type="button" aria-label="${t('comun.cartaAnterior')}">❮</button>
         <figure class="lightbox-cuerpo">
             <img class="lightbox-img" src="" alt="" />
             <figcaption class="lightbox-pie">
                 <span class="lightbox-nombre"></span>
-                <a class="lightbox-ficha" href="#" hidden>Ver ficha completa →</a>
+                <a class="lightbox-ficha" href="#" hidden>${t('lb.verFicha')}</a>
             </figcaption>
         </figure>
-        <button class="lightbox-flecha lightbox-siguiente" type="button" aria-label="Carta siguiente">❯</button>`;
+        <button class="lightbox-flecha lightbox-siguiente" type="button" aria-label="${t('comun.cartaSiguiente')}">❯</button>`;
 
     document.body.appendChild(lightbox);
 
@@ -135,7 +136,9 @@ function mostrarCarta() {
     const low  = carta.imagen_low  || carta.imagen_url || '';
     const high = carta.imagen_high || low;
 
-    img.alt = `Ilustración de ${carta.nombre || 'la carta'}`;
+    const nombre = carta.nombre || t('lb.laCarta');
+
+    img.alt = t('lb.ilustracionDe', { nombre });
     lightbox.querySelector('.lightbox-nombre').textContent = carta.nombre || '';
 
     // Salida a la ficha completa (precio, PS, ilustrador, set...). Solo si
@@ -145,7 +148,7 @@ function mostrarCarta() {
     ficha.hidden = !(conFicha && idCarta);
     if (!ficha.hidden) {
         ficha.href = paginaUrl(`pages/detalle-carta.html?id=${encodeURIComponent(idCarta)}`);
-        ficha.setAttribute('aria-label', `Ver ficha completa de ${carta.nombre || 'la carta'}`);
+        ficha.setAttribute('aria-label', t('lb.verFichaDe', { nombre }));
     }
 
     // Sin ilustración (o si la URL muere): dorso propio en grande, no un

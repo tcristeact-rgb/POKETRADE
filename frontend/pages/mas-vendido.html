@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
-    <title>Más demandadas - PokeTrade</title>
-    <meta name="description" content="Las cartas Pokémon más buscadas y ofrecidas en tradeos activos de PokeTrade.">
+    <script>try{var d=document.documentElement,s=localStorage;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var i=s.getItem('idioma')||(navigator.language||'es').slice(0,2);d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}}catch(e){}</script>
+    <title data-i18n="meta.masvendido.title">Más demandadas - PokeTrade</title>
+    <meta name="description" data-i18n-attr="content:meta.masvendido.desc" content="Las cartas Pokémon más buscadas y ofrecidas en tradeos activos de PokeTrade.">
     <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
 </head>
@@ -14,12 +14,12 @@
 
     <main>
         <div class="mv-contenedor">
-            <h1>Cartas más demandadas</h1>
-            <p class="subtitulo">Ranking en tiempo real según las apariciones en tradeos activos.</p>
+            <h1 data-i18n="mv.titulo">Cartas más demandadas</h1>
+            <p class="subtitulo" data-i18n="mv.subtitulo">Ranking en tiempo real según las apariciones en tradeos activos.</p>
 
             <div id="error-box" class="alerta-error" hidden role="alert">
-                <span id="error-msg">No se pudieron cargar los datos.</span>
-                <button id="btn-reintentar-mv" type="button">Reintentar</button>
+                <span id="error-msg" data-i18n="mv.errorDatos">No se pudieron cargar los datos.</span>
+                <button id="btn-reintentar-mv" type="button" data-i18n="comun.reintentar">Reintentar</button>
             </div>
 
             <div id="grid-mas-vendido" class="grid-cartas" aria-live="polite">

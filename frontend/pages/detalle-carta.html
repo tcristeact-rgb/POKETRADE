@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
-    <title>Detalle de carta - PokeTrade</title>
-    <meta name="description" content="Detalle completo de una carta Pokémon en PokeTrade.">
+    <script>try{var d=document.documentElement,s=localStorage;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var i=s.getItem('idioma')||(navigator.language||'es').slice(0,2);d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}}catch(e){}</script>
+    <title data-i18n="meta.detalle.title">Detalle de carta - PokeTrade</title>
+    <meta name="description" data-i18n-attr="content:meta.detalle.desc" content="Detalle completo de una carta Pokémon en PokeTrade.">
     <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
 </head>
@@ -16,10 +16,11 @@
         <div class="detalle-contenedor">
             <!-- detalle-carta.js añade el set entre Catálogo y la carta
                  cuando la carta pertenece a uno -->
-            <nav class="breadcrumb" id="breadcrumb" aria-label="Ruta de navegación">
-                <a href="../index.html">Inicio</a> ›
-                <a href="catalogo.html">Catálogo</a> ›
-                <span id="breadcrumb-nombre">Carta</span>
+            <nav class="breadcrumb" id="breadcrumb"
+                 data-i18n-attr="aria-label:catalogo.rutaNavegacion" aria-label="Ruta de navegación">
+                <a href="../index.html" data-i18n="comun.inicio">Inicio</a> ›
+                <a href="catalogo.html" data-i18n="catalogo.titulo">Catálogo</a> ›
+                <span id="breadcrumb-nombre" data-i18n="carta.breadcrumb">Carta</span>
             </nav>
 
             <div id="alerta" class="alerta"></div>

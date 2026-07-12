@@ -1,13 +1,14 @@
 // tradeos.js — Gestión de los tradeos del usuario
 
 import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
-import { formatearFecha, miniaturas, mostrarAlerta, escapeHtml } from './utils.js';
+import { t } from './i18n.js';
+import { alCargarDOM, formatearFecha, miniaturas, mostrarAlerta, escapeHtml } from './utils.js';
 
 protegerRuta('tradeos');
 
 let todosMisTradeos = [];
 
-document.addEventListener('DOMContentLoaded', () => {
+alCargarDOM(() => {
     cargarMisTradeos();
 
     // Filtros de estado
@@ -39,10 +40,10 @@ async function cargarMisTradeos() {
         const activo = document.querySelector('.btn-filtro.activo')?.dataset.estado || 'todos';
         const filtrados = activo === 'todos'
             ? todosMisTradeos
-            : todosMisTradeos.filter(t => t.estado === activo);
+            : todosMisTradeos.filter(tr => tr.estado === activo);
         renderizarTradeos(filtrados);
     } catch (e) {
-        lista.innerHTML = `<p class="error-texto">Error al cargar tus tradeos: ${e.message}</p>`;
+        lista.innerHTML = `<p class="error-texto">${escapeHtml(t('tradeos.errorCargar', { mensaje: e.message }))}</p>`;
     }
 }
 
@@ -52,53 +53,53 @@ function renderizarTradeos(tradeos) {
     if (!tradeos.length) {
         lista.innerHTML = `
             <div class="vacio-msg">
-                <p>No tienes tradeos en esta categoría.</p>
-                <a href="publicar-tradeo.html" class="btn-primario">Publicar primer tradeo</a>
+                <p>${escapeHtml(t('tradeos.sinCategoria'))}</p>
+                <a href="publicar-tradeo.html" class="btn-primario">${escapeHtml(t('tradeos.publicarPrimero'))}</a>
             </div>`;
         return;
     }
 
-    lista.innerHTML = tradeos.map(t => {
-        const fecha = formatearFecha(t.created_at);
-        const badge = badgeEstado(t.estado);
+    lista.innerHTML = tradeos.map(tradeo => {
+        const fecha = formatearFecha(tradeo.created_at);
+        const badge = badgeEstado(tradeo.estado);
 
-        const ofreceMinis = miniaturas(t.cartas_ofrece);
-        const buscaMinis  = miniaturas(t.cartas_busca);
+        const ofreceMinis = miniaturas(tradeo.cartas_ofrece);
+        const buscaMinis  = miniaturas(tradeo.cartas_busca);
 
-        const botonesAccion = t.estado === 'activo' ? `
-            <button class="btn-accion btn-cerrar" type="button" data-accion="estado" data-tradeo-id="${t.id}" data-estado="cerrado">Marcar cerrado</button>
-            <button class="btn-accion btn-cancelar" type="button" data-accion="estado" data-tradeo-id="${t.id}" data-estado="cancelado">Cancelar</button>
-            <button class="btn-accion btn-eliminar-tradeo" type="button" data-accion="eliminar" data-tradeo-id="${t.id}">Eliminar</button>
+        const botonesAccion = tradeo.estado === 'activo' ? `
+            <button class="btn-accion btn-cerrar" type="button" data-accion="estado" data-tradeo-id="${tradeo.id}" data-estado="cerrado">${escapeHtml(t('tradeos.marcarCerrado'))}</button>
+            <button class="btn-accion btn-cancelar" type="button" data-accion="estado" data-tradeo-id="${tradeo.id}" data-estado="cancelado">${escapeHtml(t('comun.cancelar'))}</button>
+            <button class="btn-accion btn-eliminar-tradeo" type="button" data-accion="eliminar" data-tradeo-id="${tradeo.id}">${escapeHtml(t('comun.eliminar'))}</button>
         ` : `
-            <button class="btn-accion btn-eliminar-tradeo" type="button" data-accion="eliminar" data-tradeo-id="${t.id}">Eliminar</button>
+            <button class="btn-accion btn-eliminar-tradeo" type="button" data-accion="eliminar" data-tradeo-id="${tradeo.id}">${escapeHtml(t('comun.eliminar'))}</button>
         `;
 
         return `
-        <div class="mistradeo-card" id="tradeo-${t.id}">
+        <div class="mistradeo-card" id="tradeo-${tradeo.id}">
             <div class="mistradeo-card-header">
                 <span class="mistradeo-fecha">${fecha}</span>
                 ${badge}
             </div>
             <div class="tradeo-cartas">
                 <div class="tradeo-grupo">
-                    <h4>Ofrezco</h4>
+                    <h4>${escapeHtml(t('tradeos.ofrezco'))}</h4>
                     <div class="cartas-miniaturas">${ofreceMinis}</div>
                 </div>
                 <div class="tradeo-grupo">
-                    <h4>Busco</h4>
+                    <h4>${escapeHtml(t('tradeos.busco'))}</h4>
                     <div class="cartas-miniaturas">${buscaMinis}</div>
                 </div>
             </div>
-            ${t.descripcion ? `<p class="mistradeo-descripcion">"${escapeHtml(t.descripcion)}"</p>` : ''}
+            ${tradeo.descripcion ? `<p class="mistradeo-descripcion">"${escapeHtml(tradeo.descripcion)}"</p>` : ''}
             <div class="tradeo-acciones">${botonesAccion}</div>
         </div>`;
     }).join('');
 }
 
 function badgeEstado(estado) {
-    const clases    = { activo: 'badge-activo', cerrado: 'badge-cerrado', cancelado: 'badge-cancelado' };
-    const etiquetas = { activo: 'Activo', cerrado: 'Cerrado', cancelado: 'Cancelado' };
-    return `<span class="badge-estado ${clases[estado] || ''}">${etiquetas[estado] || estado}</span>`;
+    const clases = { activo: 'badge-activo', cerrado: 'badge-cerrado', cancelado: 'badge-cancelado' };
+    const etiqueta = clases[estado] ? t(`estado.${estado}`) : estado;
+    return `<span class="badge-estado ${clases[estado] || ''}">${escapeHtml(etiqueta)}</span>`;
 }
 
 function filtrarPorEstado(estado, boton) {
@@ -107,14 +108,21 @@ function filtrarPorEstado(estado, boton) {
 
     const filtrados = estado === 'todos'
         ? todosMisTradeos
-        : todosMisTradeos.filter(t => t.estado === estado);
+        : todosMisTradeos.filter(tr => tr.estado === estado);
 
     renderizarTradeos(filtrados);
 }
 
 async function cambiarEstado(id, nuevoEstado) {
-    const labels = { cerrado: 'cerrar', cancelado: 'cancelar' };
-    if (!confirm(`¿Quieres ${labels[nuevoEstado]} este tradeo?`)) return;
+    // Cada confirmación es una frase entera en el diccionario. Antes se
+    // montaba insertando el verbo suelto ("cerrar"/"cancelar") en una
+    // plantilla: eso solo funciona en español, y ni siquiera siempre.
+    const CONFIRMACIONES = {
+        cerrado:   'tradeos.confirmarCerrar',
+        cancelado: 'tradeos.confirmarCancelar',
+    };
+    const clave = CONFIRMACIONES[nuevoEstado];
+    if (!clave || !confirm(t(clave))) return;
 
     try {
         const res = await fetch(`${API_URL}/tradeos/${id}`, {
@@ -124,15 +132,15 @@ async function cambiarEstado(id, nuevoEstado) {
         });
         const datos = await parsearRespuesta(res);
         if (!res.ok) throw new Error(datos.error || manejarErrorHTTP(res.status));
-        mostrarAlerta('Estado actualizado.', 'exito');
+        mostrarAlerta(t('tradeos.estadoActualizado'), 'exito');
         cargarMisTradeos();
     } catch (e) {
-        mostrarAlerta(`Error: ${e.message}`, 'error');
+        mostrarAlerta(t('comun.error', { mensaje: e.message }), 'error');
     }
 }
 
 async function eliminarTradeo(id) {
-    if (!confirm('¿Eliminar este tradeo permanentemente?')) return;
+    if (!confirm(t('tradeos.confirmarEliminar'))) return;
 
     try {
         const res = await fetch(`${API_URL}/tradeos/${id}`, {
@@ -140,9 +148,9 @@ async function eliminarTradeo(id) {
             headers: headersAuth()
         });
         if (!res.ok) throw new Error(manejarErrorHTTP(res.status));
-        mostrarAlerta('Tradeo eliminado.', 'exito');
+        mostrarAlerta(t('tradeos.eliminado'), 'exito');
         cargarMisTradeos();
     } catch (e) {
-        mostrarAlerta(`Error: ${e.message}`, 'error');
+        mostrarAlerta(t('comun.error', { mensaje: e.message }), 'error');
     }
 }

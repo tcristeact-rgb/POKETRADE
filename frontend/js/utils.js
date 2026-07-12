@@ -2,6 +2,7 @@
 // Módulo ES6: importa paginaUrl de auth.js y exporta utilidades.
 
 import { API_URL, paginaUrl } from './auth.js';
+import { t, fecha, precio } from './i18n.js';
 
 // ─── Placeholders propios de PokeTrade para assets ausentes ──
 // Para los logos/ilustraciones que TCGdex no tiene no existe fuente
@@ -26,12 +27,39 @@ export function dorsoCarta(extraClase = '') {
 // container queries. Si el set tiene símbolo real se incrusta como
 // pequeña marca (asset legítimo aprovechado).
 export function placeholderLogo(nombre, simbolo = null) {
-    const seguro = escapeHtml(nombre || 'Sin nombre');
+    const seguro = escapeHtml(nombre || t('comun.sinNombre'));
     return `<div class="ph-logo" role="img" aria-label="${seguro}">` +
         (simbolo ? `<img class="ph-logo-simbolo" src="${escapeHtml(simbolo)}" alt="" loading="lazy" />` : '') +
         `<span class="ph-logo-nombre">${seguro}</span>` +
         `<span class="ph-logo-barra" aria-hidden="true"></span>` +
         `</div>`;
+}
+
+// ─── Arranque de cada página ──
+// Sustituye a document.addEventListener('DOMContentLoaded', fn).
+//
+// Ya NO vale escuchar el evento: i18n.js tiene un await de nivel superior
+// (espera al diccionario del idioma activo), y eso aplaza la ejecución de
+// todo módulo que lo importe hasta DESPUÉS de que DOMContentLoaded haya
+// disparado. El listener se registraba para un evento ya pasado y la
+// página se quedaba en los esqueletos, en silencio y sin ningún error.
+//
+// Como los <script> son type="module" (diferidos), al llegar aquí el DOM
+// ya está siempre parseado; la rama del listener solo cubre que algún día
+// deje de serlo.
+//
+// El microtask NO es un adorno: llamar a fn() en el acto la ejecutaría en
+// mitad del cuerpo del módulo, cuando las variables declaradas más abajo
+// con let/const todavía están en su zona muerta temporal (a catalogo.js le
+// estallaba `temporizadorAviso` antes de inicializarse). queueMicrotask lo
+// aplaza a cuando el módulo ha terminado de evaluarse, que es exactamente
+// la garantía que daba DOMContentLoaded.
+export function alCargarDOM(fn) {
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', fn);
+    } else {
+        queueMicrotask(fn);
+    }
 }
 
 // Retrasa la ejecución de fn hasta que pasen ms sin nuevas llamadas.
@@ -52,7 +80,7 @@ export async function buscarCartasCatalogo(texto = '', limite = 60) {
     if (texto) params.set('nombre', texto);
 
     const res = await fetch(`${API_URL}/cartas?${params}`);
-    if (!res.ok) throw new Error('Error al conectar con la API');
+    if (!res.ok) throw new Error(t('comun.errorApi'));
     const datos = await res.json();
 
     return datos.data.map(c => ({
@@ -72,18 +100,18 @@ export function escapeHtml(str) {
         .replace(/"/g, '&quot;');
 }
 
+// Fecha y precio siguen el locale del idioma activo (i18n.js): la misma
+// fecha sale "13 jul 2026" en español y "13 Jul 2026" en inglés, y el
+// mismo precio "12,50 €" o "€12.50". La moneda no cambia — Cardmarket
+// publica en euros y la plataforma es española—, solo el formato.
 export function formatearFecha(iso) {
-    if (!iso) return '';
-    return new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' });
+    return fecha(iso);
 }
 
-// Formatea el precio medio de Cardmarket en EUR (es-ES).
 // Devuelve null si la carta no tiene precio publicado, para que el
 // llamador decida no pintar nada (manejo con gracia de la ausencia).
-export function formatearPrecio(precio) {
-    const valor = Number(precio);
-    if (precio === null || precio === undefined || Number.isNaN(valor)) return null;
-    return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(valor);
+export function formatearPrecio(valor) {
+    return precio(valor);
 }
 
 export function mostrarAlerta(msg, tipo, elementoId = 'alerta') {
@@ -97,7 +125,7 @@ export function mostrarAlerta(msg, tipo, elementoId = 'alerta') {
 }
 
 export function tarjetaCarta(carta) {
-    const nombre = carta.nombre || 'Sin nombre';
+    const nombre = carta.nombre || t('comun.sinNombre');
     // ID interno o, si la carta aún no está en BD (resultados de la
     // búsqueda global), el de TCGdex: el detalle acepta ambos y crea
     // la fila bajo demanda
@@ -110,16 +138,16 @@ export function tarjetaCarta(carta) {
     const imgHTML = imagen
         ? `<img src="${escapeHtml(imagen)}" alt="${nombreSeguro}" loading="lazy" />`
         : dorsoCarta();
-    const precio = formatearPrecio(carta.precio_cardmarket);
+    const precioTexto = formatearPrecio(carta.precio_cardmarket);
     return `
-        <a class="carta-card" href="${url}" aria-label="Ver detalle de ${nombreSeguro}">
+        <a class="carta-card" href="${url}" aria-label="${escapeHtml(t('comun.verDetalleDe', { nombre }))}">
             ${imgHTML}
             <div class="carta-info">
                 <h3>${nombreSeguro}</h3>
                 ${carta.tipo          ? `<span class="carta-tipo">${escapeHtml(carta.tipo)}</span>`         : ''}
                 ${carta.rareza        ? `<span class="carta-rareza">${escapeHtml(carta.rareza)}</span>`     : ''}
                 ${carta.set_expansion ? `<span class="carta-set">${escapeHtml(carta.set_expansion)}</span>` : ''}
-                ${precio              ? `<span class="carta-precio">${precio}</span>`                       : ''}
+                ${precioTexto         ? `<span class="carta-precio">${precioTexto}</span>`                  : ''}
             </div>
         </a>`;
 }

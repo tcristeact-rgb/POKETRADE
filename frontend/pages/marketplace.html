@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
-    <title>Marketplace - PokeTrade</title>
-    <meta name="description" content="Explora todos los tradeos activos de la comunidad PokeTrade y encuentra el intercambio perfecto.">
+    <script>try{var d=document.documentElement,s=localStorage;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var i=s.getItem('idioma')||(navigator.language||'es').slice(0,2);d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}}catch(e){}</script>
+    <title data-i18n="meta.marketplace.title">Marketplace - PokeTrade</title>
+    <meta name="description" data-i18n-attr="content:meta.marketplace.desc" content="Explora todos los tradeos activos de la comunidad PokeTrade y encuentra el intercambio perfecto.">
     <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
 </head>
@@ -15,55 +15,56 @@
 
     <!-- Hero: solo título (el buscador vive en la barra sticky) -->
     <section class="marketplace-hero">
-        <h1><img class="icono" src="../img/icons/tradeos.svg" alt="" /> Marketplace de Tradeos</h1>
-        <p>Encuentra el intercambio perfecto entre coleccionistas de toda la comunidad</p>
+        <h1><img class="icono" src="../img/icons/tradeos.svg" alt="" /> <span data-i18n="mkt.titulo">Marketplace de Tradeos</span></h1>
+        <p data-i18n="mkt.subtitulo">Encuentra el intercambio perfecto entre coleccionistas de toda la comunidad</p>
     </section>
 
     <main class="marketplace-contenedor">
 
         <!-- Barra de búsqueda sticky bajo el header (patrón del
              catálogo); el contador de resultados viaja con ella -->
-        <div class="filtros filtros-catalogo filtros-marketplace" role="search" aria-label="Búsqueda de tradeos">
+        <div class="filtros filtros-catalogo filtros-marketplace" role="search"
+             data-i18n-attr="aria-label:mkt.busquedaAria" aria-label="Búsqueda de tradeos">
             <input
                 type="text"
                 id="buscar-carta"
+                data-i18n-attr="placeholder:mkt.buscarPlaceholder;aria-label:mkt.buscarAria"
                 placeholder="Buscar por carta (ofrece o busca)..."
                 aria-label="Buscar tradeo por carta"
             />
-            <select id="filtro-tipo" aria-label="Filtrar por tipo de carta">
-                <option value="">Todos los tipos</option>
-                <option value="Fuego">Fuego</option>
-                <option value="Agua">Agua</option>
-                <option value="Planta">Planta</option>
-                <option value="Eléctrico">Eléctrico</option>
-                <option value="Psíquico">Psíquico</option>
-                <option value="Normal">Normal</option>
-                <option value="Lucha">Lucha</option>
-                <option value="Veneno">Veneno</option>
-                <option value="Tierra">Tierra</option>
-                <option value="Roca">Roca</option>
-                <option value="Bicho">Bicho</option>
-                <option value="Fantasma">Fantasma</option>
-                <option value="Acero">Acero</option>
-                <option value="Dragón">Dragón</option>
-                <option value="Siniestro">Siniestro</option>
-                <option value="Hada">Hada</option>
-                <option value="Hielo">Hielo</option>
-                <option value="Volador">Volador</option>
+            <!-- Los 11 tipos REALES del TCG. Antes había 18 tipos del
+                 videojuego (Eléctrico, Veneno, Tierra, Roca...) que no
+                 existen en las cartas: filtrar por ellos no devolvía
+                 nunca nada. El value sigue siendo la cadena española
+                 porque es lo que hay hoy en la BD; la Fase 3 lo cambia
+                 por la clave canónica y esta atadura desaparece. -->
+            <select id="filtro-tipo" data-i18n-attr="aria-label:mkt.filtrarTipoAria" aria-label="Filtrar por tipo de carta">
+                <option value=""          data-i18n="catalogo.todosTipos">Todos los tipos</option>
+                <option value="Agua"      data-i18n="tipo.agua">Agua</option>
+                <option value="Dragón"    data-i18n="tipo.dragon">Dragón</option>
+                <option value="Fuego"     data-i18n="tipo.fuego">Fuego</option>
+                <option value="Hada"      data-i18n="tipo.hada">Hada</option>
+                <option value="Incolora"  data-i18n="tipo.incolora">Incolora</option>
+                <option value="Lucha"     data-i18n="tipo.lucha">Lucha</option>
+                <option value="Metálica"  data-i18n="tipo.metalica">Metálica</option>
+                <option value="Oscura"    data-i18n="tipo.oscura">Oscura</option>
+                <option value="Planta"    data-i18n="tipo.planta">Planta</option>
+                <option value="Psíquico"  data-i18n="tipo.psiquico">Psíquico</option>
+                <option value="Rayo"      data-i18n="tipo.rayo">Rayo</option>
             </select>
-            <span class="contador-resultados" id="contador">Cargando tradeos...</span>
+            <span class="contador-resultados" id="contador" data-i18n="mkt.cargando">Cargando tradeos...</span>
         </div>
 
         <!-- CTA publicar tradeo -->
         <div class="cta-publicar" id="cta-publicar" hidden>
-            <p>¿Tienes cartas para intercambiar? Publica tu tradeo y llega a toda la comunidad.</p>
-            <a href="publicar-tradeo.html" class="btn-primario">+ Publicar mi tradeo</a>
+            <p data-i18n="mkt.ctaPublicar">¿Tienes cartas para intercambiar? Publica tu tradeo y llega a toda la comunidad.</p>
+            <a href="publicar-tradeo.html" class="btn-primario" data-i18n="mkt.publicarMio">+ Publicar mi tradeo</a>
         </div>
 
         <!-- Error de red -->
         <div id="error-box" class="alerta-error" hidden role="alert">
-            <span id="error-msg">No se pudieron cargar los tradeos.</span>
-            <button id="btn-reintentar-mkt" type="button">Reintentar</button>
+            <span id="error-msg" data-i18n="mkt.errorCargar">No se pudieron cargar los tradeos.</span>
+            <button id="btn-reintentar-mkt" type="button" data-i18n="comun.reintentar">Reintentar</button>
         </div>
 
         <!-- Grid de tradeos (skeletons iniciales; el grid reparte
@@ -145,11 +146,12 @@
                 <div class="detalle-autor">
                     <div class="usuario-avatar" id="detalle-avatar" aria-hidden="true"></div>
                     <div class="detalle-autor-txt">
-                        <h3 id="detalle-titulo">Detalle del tradeo</h3>
+                        <h3 id="detalle-titulo" data-i18n="mkt.detalleTradeo">Detalle del tradeo</h3>
                         <p class="detalle-meta" id="detalle-meta"></p>
                     </div>
                 </div>
-                <button class="btn-cerrar-modal" id="btn-cerrar-detalle" type="button" aria-label="Cerrar">✕</button>
+                <button class="btn-cerrar-modal" id="btn-cerrar-detalle" type="button"
+                        data-i18n-attr="aria-label:comun.cerrar" aria-label="Cerrar">✕</button>
             </div>
             <div class="modal-contenido">
                 <div id="detalle-cuerpo"></div>
@@ -162,16 +164,18 @@
     <div id="modal-aceptar" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-titulo" hidden>
         <div class="modal-caja">
             <div class="modal-header">
-                <h3 id="modal-titulo">Aceptar tradeo</h3>
-                <button class="btn-cerrar-modal" id="btn-cerrar-aceptar" type="button" aria-label="Cerrar">✕</button>
+                <h3 id="modal-titulo" data-i18n="mkt.aceptarTradeo">Aceptar tradeo</h3>
+                <button class="btn-cerrar-modal" id="btn-cerrar-aceptar" type="button"
+                        data-i18n-attr="aria-label:comun.cerrar" aria-label="Cerrar">✕</button>
             </div>
             <div class="modal-contenido">
                 <div id="modal-cuerpo"></div>
                 <p id="modal-estado" class="modal-estado" role="status"></p>
             </div>
             <div class="modal-footer">
-                <button class="btn-cancelar-modal" id="btn-cancelar-aceptar" type="button">Cancelar</button>
-                <button id="btn-confirmar" class="btn-confirmar-modal" type="button" disabled>
+                <button class="btn-cancelar-modal" id="btn-cancelar-aceptar" type="button" data-i18n="comun.cancelar">Cancelar</button>
+                <button id="btn-confirmar" class="btn-confirmar-modal" type="button" disabled
+                        data-i18n="mkt.confirmarIntercambio">
                     Confirmar intercambio
                 </button>
             </div>

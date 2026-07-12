@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
-    <title>Mi Perfil - PokeTrade</title>
-    <meta name="description" content="Edita tu perfil y cambia tu contraseña en PokeTrade.">
+    <script>try{var d=document.documentElement,s=localStorage;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var i=s.getItem('idioma')||(navigator.language||'es').slice(0,2);d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}}catch(e){}</script>
+    <title data-i18n="meta.perfil.title">Mi Perfil - PokeTrade</title>
+    <meta name="description" data-i18n-attr="content:meta.perfil.desc" content="Edita tu perfil y cambia tu contraseña en PokeTrade.">
     <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
 </head>
@@ -14,11 +14,11 @@
 
     <main>
         <div class="perfil-contenedor">
-            <h1><img class="icono" src="../img/icons/perfil.svg" alt="" /> Mi Perfil</h1>
+            <h1><img class="icono" src="../img/icons/perfil.svg" alt="" /> <span data-i18n="perfil.titulo">Mi Perfil</span></h1>
 
             <!-- Datos personales -->
             <div class="seccion-card">
-                <h2>Datos personales</h2>
+                <h2 data-i18n="perfil.datosPersonales">Datos personales</h2>
 
                 <div id="alerta-perfil" class="alerta"></div>
 
@@ -29,60 +29,66 @@
                 </div>
 
                 <div class="formulario-grupo">
-                    <label for="nombre">Nombre</label>
-                    <input type="text" id="nombre" placeholder="Tu nombre" autocomplete="given-name" />
+                    <label for="nombre" data-i18n="auth.nombre">Nombre</label>
+                    <input type="text" id="nombre"
+                           data-i18n-attr="placeholder:auth.nombrePlaceholder" placeholder="Tu nombre" autocomplete="given-name" />
                 </div>
 
                 <div class="formulario-grupo">
-                    <label for="apellido">Apellido</label>
-                    <input type="text" id="apellido" placeholder="Tu apellido" autocomplete="family-name" />
+                    <label for="apellido" data-i18n="auth.apellido">Apellido</label>
+                    <input type="text" id="apellido"
+                           data-i18n-attr="placeholder:auth.apellidoPlaceholder" placeholder="Tu apellido" autocomplete="family-name" />
                 </div>
 
                 <div class="formulario-grupo">
-                    <label for="email">Email</label>
-                    <input type="email" id="email" placeholder="tu@email.com" disabled />
+                    <label for="email" data-i18n="auth.email">Email</label>
+                    <input type="email" id="email"
+                           data-i18n-attr="placeholder:auth.emailPlaceholder" placeholder="tu@email.com" disabled />
                 </div>
 
                 <div class="formulario-grupo">
-                    <label for="nacionalidad">Nacionalidad</label>
-                    <input type="text" id="nacionalidad" placeholder="Ej: España" autocomplete="country-name" />
+                    <label for="nacionalidad" data-i18n="auth.nacionalidad">Nacionalidad</label>
+                    <input type="text" id="nacionalidad"
+                           data-i18n-attr="placeholder:perfil.nacionalidadPlaceholder" placeholder="Ej: España" autocomplete="country-name" />
                 </div>
 
                 <div class="formulario-grupo">
-                    <label for="fecha_nacimiento">Fecha de nacimiento</label>
+                    <label for="fecha_nacimiento" data-i18n="auth.fechaNacimiento">Fecha de nacimiento</label>
                     <input type="date" id="fecha_nacimiento" />
                 </div>
 
                 <div class="formulario-grupo">
-                    <label for="avatar_url">URL de avatar</label>
+                    <label for="avatar_url" data-i18n="perfil.avatarUrl">URL de avatar</label>
                     <input type="url" id="avatar_url" placeholder="https://..." />
                 </div>
 
-                <button class="btn-formulario" id="btn-guardar-perfil" type="button">Guardar cambios</button>
+                <button class="btn-formulario" id="btn-guardar-perfil" type="button" data-i18n="perfil.guardar">Guardar cambios</button>
             </div>
 
             <!-- Cambiar contraseña -->
             <div class="seccion-card">
-                <h2>Cambiar contraseña</h2>
+                <h2 data-i18n="perfil.cambiarPassword">Cambiar contraseña</h2>
 
                 <div id="alerta-password" class="alerta"></div>
 
                 <div class="formulario-grupo">
-                    <label for="password_actual">Contraseña actual</label>
+                    <label for="password_actual" data-i18n="perfil.passwordActual">Contraseña actual</label>
                     <input type="password" id="password_actual" placeholder="••••••" autocomplete="current-password" />
                 </div>
 
                 <div class="formulario-grupo">
-                    <label for="password_nueva">Nueva contraseña</label>
-                    <input type="password" id="password_nueva" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
+                    <label for="password_nueva" data-i18n="perfil.passwordNueva">Nueva contraseña</label>
+                    <input type="password" id="password_nueva"
+                           data-i18n-attr="placeholder:perfil.minimo6" placeholder="Mínimo 6 caracteres" autocomplete="new-password" />
                 </div>
 
                 <div class="formulario-grupo">
-                    <label for="password_confirmar">Confirmar nueva contraseña</label>
-                    <input type="password" id="password_confirmar" placeholder="Repite la nueva contraseña" autocomplete="new-password" />
+                    <label for="password_confirmar" data-i18n="perfil.passwordConfirmar">Confirmar nueva contraseña</label>
+                    <input type="password" id="password_confirmar"
+                           data-i18n-attr="placeholder:perfil.repiteNueva" placeholder="Repite la nueva contraseña" autocomplete="new-password" />
                 </div>
 
-                <button class="btn-formulario" id="btn-cambiar-password" type="button">Cambiar contraseña</button>
+                <button class="btn-formulario" id="btn-cambiar-password" type="button" data-i18n="perfil.cambiarPassword">Cambiar contraseña</button>
             </div>
         </div>
     </main>

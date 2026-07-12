@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
-    <title>Aviso Legal - PokeTrade</title>
-    <meta name="description" content="Aviso legal del proyecto académico PokeTrade.">
+    <script>try{var d=document.documentElement,s=localStorage;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var i=s.getItem('idioma')||(navigator.language||'es').slice(0,2);d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}}catch(e){}</script>
+    <title data-i18n="meta.avisoLegal.title">Aviso Legal - PokeTrade</title>
+    <meta name="description" data-i18n-attr="content:meta.avisoLegal.desc" content="Aviso legal del proyecto académico PokeTrade.">
     <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
 </head>
@@ -14,31 +14,31 @@
 
     <main>
         <div class="legal-contenedor">
-            <h1>Aviso Legal</h1>
-            <p class="legal-fecha">Última actualización: mayo de 2026</p>
+            <h1 data-i18n="legal.avisoTitulo">Aviso Legal</h1>
+            <p class="legal-fecha" data-i18n="legal.ultimaAct">Última actualización: mayo de 2026</p>
 
-            <h2>1. Identificación del titular</h2>
-            <p>
+            <h2 data-i18n="legal.av1Titulo">1. Identificación del titular</h2>
+            <p data-i18n="legal.av1">
                 PokeTrade es un proyecto académico desarrollado por Daniel Leal y Teo Cristea, alumnos del IES El Lago (Madrid), en el marco de un Trabajo de Fin de Grado (TFG). No constituye una entidad comercial ni tiene ánimo de lucro.
             </p>
 
-            <h2>2. Objeto y finalidad</h2>
-            <p>
+            <h2 data-i18n="legal.av2Titulo">2. Objeto y finalidad</h2>
+            <p data-i18n="legal.av2">
                 Esta plataforma tiene como único fin educativo demostrar el desarrollo de una aplicación web completa (frontend + API REST) como parte de una evaluación académica. No se realizan transacciones económicas reales.
             </p>
 
-            <h2>3. Propiedad intelectual</h2>
-            <p>
+            <h2 data-i18n="legal.av3Titulo">3. Propiedad intelectual</h2>
+            <p data-i18n="legal.av3">
                 Los nombres, imágenes y marcas relacionadas con Pokémon son propiedad de Nintendo, Game Freak y The Pokémon Company. PokeTrade no tiene ninguna relación oficial con dichas empresas. El uso de estos elementos es estrictamente educativo y sin ánimo de lucro.
             </p>
 
-            <h2>4. Limitación de responsabilidad</h2>
-            <p>
+            <h2 data-i18n="legal.av4Titulo">4. Limitación de responsabilidad</h2>
+            <p data-i18n="legal.av4">
                 Los titulares del proyecto no asumen responsabilidad alguna por los daños o perjuicios que pudieran derivarse del uso de este sitio web, el cual se ofrece en estado de prototipo académico sin garantía de disponibilidad continua.
             </p>
 
-            <h2>5. Legislación aplicable</h2>
-            <p>
+            <h2 data-i18n="legal.av5Titulo">5. Legislación aplicable</h2>
+            <p data-i18n-html="legal.av5">
                 Este aviso legal se rige por la legislación española. Para cualquier consulta puedes contactarnos a través de <a href="contacto.html">nuestro formulario de Soporte</a>.
             </p>
         </div>

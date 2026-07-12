@@ -1,7 +1,8 @@
 // inventario.js — Gestión del inventario del usuario
 
 import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
-import { buscarCartasCatalogo, debounce, escapeHtml, mostrarAlerta, dorsoCarta, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
+import { t } from './i18n.js';
+import { alCargarDOM, buscarCartasCatalogo, debounce, escapeHtml, mostrarAlerta, dorsoCarta, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
 
 protegerRuta('inventario');
 
@@ -11,7 +12,7 @@ let resultadosModal      = [];   // Resultados de la búsqueda actual
 let cartaSeleccionadaId  = null;
 let cantidadSeleccionada = 1;
 
-document.addEventListener('DOMContentLoaded', () => {
+alCargarDOM(() => {
     cargarInventario();
     cargarCatalogoModal();
 
@@ -63,7 +64,7 @@ async function cargarInventario() {
         const items = await res.json();
         renderizarInventario(items);
     } catch (e) {
-        grid.innerHTML = `<p class="error-texto">Error al cargar el inventario: ${e.message}</p>`;
+        grid.innerHTML = `<p class="error-texto">${escapeHtml(t('inv.errorCargar', { mensaje: e.message }))}</p>`;
     }
 }
 
@@ -73,14 +74,14 @@ function renderizarInventario(items) {
     if (!items.length) {
         grid.innerHTML = `
             <div class="vacio-msg">
-                <p>Tu inventario está vacío.</p>
-                <button class="btn-primario" type="button" data-accion="abrir-modal">Añadir primera carta</button>
+                <p>${escapeHtml(t('inv.vacio'))}</p>
+                <button class="btn-primario" type="button" data-accion="abrir-modal">${escapeHtml(t('inv.anadirPrimera'))}</button>
             </div>`;
         return;
     }
 
     grid.innerHTML = items.map(item => {
-        const nombre = item.carta?.nombre || 'Carta';
+        const nombre = item.carta?.nombre || t('carta.breadcrumb');
         return `
         <div class="carta-inventario">
             <span class="badge-cantidad">${item.cantidad}</span>
@@ -91,23 +92,23 @@ function renderizarInventario(items) {
             <span class="carta-tipo">${escapeHtml(item.carta?.tipo || '—')}</span>
             <span class="carta-rareza">${escapeHtml(item.carta?.rareza || '')}</span>
             <button class="btn-eliminar" type="button" data-accion="eliminar" data-item-id="${item.id}"
-                    aria-label="Eliminar ${escapeHtml(nombre)} del inventario">Eliminar</button>
+                    aria-label="${escapeHtml(t('inv.eliminarAria', { nombre }))}">${escapeHtml(t('comun.eliminar'))}</button>
         </div>`;
     }).join('');
 }
 
 async function eliminarItem(id) {
-    if (!confirm('¿Eliminar esta carta del inventario? Se quitarán todas las copias que tengas de ella.')) return;
+    if (!confirm(t('inv.confirmarEliminar'))) return;
     try {
         const res = await fetch(`${API_URL}/inventario/${id}`, {
             method: 'DELETE',
             headers: headersAuth()
         });
         if (!res.ok) throw new Error(manejarErrorHTTP(res.status));
-        mostrarAlerta('Carta eliminada del inventario.', 'exito');
+        mostrarAlerta(t('inv.eliminada'), 'exito');
         cargarInventario();
     } catch (e) {
-        mostrarAlerta(`Error: ${e.message}`, 'error');
+        mostrarAlerta(t('comun.error', { mensaje: e.message }), 'error');
     }
 }
 
@@ -122,7 +123,7 @@ async function cargarCatalogoModal(texto = '') {
         renderizarModal(resultadosModal);
     } catch (e) {
         document.getElementById('lista-cartas-modal').innerHTML =
-            `<p class="error-texto">No se pudo cargar el catálogo: ${e.message}</p>`;
+            `<p class="error-texto">${escapeHtml(t('inv.errorCatalogo', { mensaje: e.message }))}</p>`;
     }
 }
 
@@ -130,14 +131,14 @@ function renderizarModal(cartas) {
     const lista = document.getElementById('lista-cartas-modal');
 
     if (!cartas.length) {
-        lista.innerHTML = '<p>No se encontraron cartas.</p>';
+        lista.innerHTML = `<p>${escapeHtml(t('inv.sinResultados'))}</p>`;
         return;
     }
 
     lista.innerHTML = cartas.map(carta => `
         <div class="carta-seleccionable" role="button" tabindex="0"
              data-carta-id="${carta.id}"
-             aria-label="Seleccionar ${escapeHtml(carta.nombre)}">
+             aria-label="${escapeHtml(t('inv.seleccionarAria', { nombre: carta.nombre }))}">
             ${carta.imagen_url
                 ? `<img src="${escapeHtml(carta.imagen_url)}" alt="${escapeHtml(carta.nombre)}" />`
                 : dorsoCarta()}
@@ -156,7 +157,8 @@ function seleccionarCarta(id, el) {
     const carta = resultadosModal.find(c => c.id === id);
     cartaSeleccionadaId  = id;
     cantidadSeleccionada = 1;
-    document.getElementById('nombre-seleccionada').textContent = carta?.nombre || `Carta #${id}`;
+    document.getElementById('nombre-seleccionada').textContent =
+        carta?.nombre || t('inv.cartaNum', { id: String(id) });
     document.getElementById('cantidad-valor').textContent = 1;
     document.getElementById('seleccion-panel').hidden = false;
 
@@ -184,10 +186,10 @@ async function confirmarAnadir() {
         const datos = await parsearRespuesta(res);
         if (!res.ok) throw new Error(datos.error || manejarErrorHTTP(res.status));
         cerrarModal();
-        mostrarAlerta('Carta añadida al inventario.', 'exito');
+        mostrarAlerta(t('carta.anadida'), 'exito');
         cargarInventario();
     } catch (e) {
-        mostrarAlerta(`Error: ${e.message}`, 'error');
+        mostrarAlerta(t('comun.error', { mensaje: e.message }), 'error');
     }
 }
 

@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
-    <title>Catálogo - PokeTrade</title>
-    <meta name="description" content="Explora el catálogo completo del TCG de Pokémon por series y sets de expansión, busca cartas por nombre y filtra por tipo o rareza.">
+    <script>try{var d=document.documentElement,s=localStorage;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var i=s.getItem('idioma')||(navigator.language||'es').slice(0,2);d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}}catch(e){}</script>
+    <title data-i18n="meta.catalogo.title">Catálogo - PokeTrade</title>
+    <meta name="description" data-i18n-attr="content:meta.catalogo.desc" content="Explora el catálogo completo del TCG de Pokémon por series y sets de expansión, busca cartas por nombre y filtra por tipo o rareza.">
     <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
 </head>
@@ -16,14 +16,15 @@
             <!-- Breadcrumb y cabecera: los ajusta catalogo.js según la
                  vista (series, sets de una serie ?serie=, cartas de un
                  set ?set= o resultados de la búsqueda global) -->
-            <nav class="breadcrumb" id="breadcrumb" aria-label="Ruta de navegación">
-                <a href="../index.html">Inicio</a> ›
-                <span>Catálogo</span>
+            <nav class="breadcrumb" id="breadcrumb"
+                 data-i18n-attr="aria-label:catalogo.rutaNavegacion" aria-label="Ruta de navegación">
+                <a href="../index.html" data-i18n="comun.inicio">Inicio</a> ›
+                <span data-i18n="catalogo.titulo">Catálogo</span>
             </nav>
 
             <div id="cabecera-catalogo" class="set-cabecera">
                 <div>
-                    <h1 id="titulo-catalogo">Catálogo</h1>
+                    <h1 id="titulo-catalogo" data-i18n="catalogo.titulo">Catálogo</h1>
                     <p class="set-meta" id="subtitulo-catalogo"></p>
                 </div>
             </div>
@@ -31,16 +32,20 @@
             <!-- Barra de filtros persistente: visible en todos los
                  niveles, sticky bajo el header. Su estado vive en la
                  URL (q, tipo, rareza) → filtros-catalogo.js -->
-            <div class="filtros filtros-catalogo" role="search" aria-label="Filtros del catálogo">
-                <input type="text" id="filtro-nombre" placeholder="Buscar carta por nombre..."
+            <div class="filtros filtros-catalogo" role="search"
+                 data-i18n-attr="aria-label:catalogo.filtrosAria" aria-label="Filtros del catálogo">
+                <input type="text" id="filtro-nombre"
+                       data-i18n-attr="placeholder:catalogo.buscarNombre;aria-label:catalogo.buscarNombre"
+                       placeholder="Buscar carta por nombre..."
                        aria-label="Buscar carta por nombre" />
-                <select id="filtro-tipo" aria-label="Filtrar por tipo">
-                    <option value="">Todos los tipos</option>
+                <select id="filtro-tipo" data-i18n-attr="aria-label:catalogo.filtrarTipo" aria-label="Filtrar por tipo">
+                    <option value="" data-i18n="catalogo.todosTipos">Todos los tipos</option>
                 </select>
-                <select id="filtro-rareza" aria-label="Filtrar por rareza">
-                    <option value="">Todas las rarezas</option>
+                <select id="filtro-rareza" data-i18n-attr="aria-label:catalogo.filtrarRareza" aria-label="Filtrar por rareza">
+                    <option value="" data-i18n="catalogo.todasRarezas">Todas las rarezas</option>
                 </select>
-                <button id="btn-limpiar-filtros" class="btn-limpiar-filtros" type="button" hidden>
+                <button id="btn-limpiar-filtros" class="btn-limpiar-filtros" type="button" hidden
+                        data-i18n="catalogo.limpiarFiltros">
                     ✕ Limpiar filtros
                 </button>
             </div>
@@ -55,7 +60,7 @@
             <!-- Aviso de espera larga: la primera visita a un set no
                  cacheado tiene que traerlo de TCGdex (cache-aside).
                  catalogo.js lo muestra a los 2,5 s de espera. -->
-            <p class="aviso-carga" id="aviso-carga" role="status" hidden>
+            <p class="aviso-carga" id="aviso-carga" role="status" hidden data-i18n="catalogo.avisoCarga">
                 Cargando el set por primera vez… puede tardar unos segundos.
             </p>
 
@@ -72,7 +77,8 @@
             </div>
 
             <!-- Paginación (solo en la vista de cartas de un set) -->
-            <nav class="paginacion" id="paginacion" aria-label="Paginación del catálogo"></nav>
+            <nav class="paginacion" id="paginacion"
+                 data-i18n-attr="aria-label:catalogo.paginacionAria" aria-label="Paginación del catálogo"></nav>
         </div>
     </main>
 

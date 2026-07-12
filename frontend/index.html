@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script>try{if(localStorage.getItem('tema')==='oscuro')document.documentElement.setAttribute('data-tema','oscuro');}catch(e){}</script>
-  <title>PokeTrade – Intercambia tus cartas Pokémon</title>
-  <meta name="description" content="Plataforma de intercambio de cartas Pokémon. Conecta con coleccionistas, publica tus tradeos y encuentra las cartas que buscas.">
+  <script>try{var d=document.documentElement,s=localStorage;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var i=s.getItem('idioma')||(navigator.language||'es').slice(0,2);d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}}catch(e){}</script>
+  <title data-i18n="meta.home.title">PokeTrade – Intercambia tus cartas Pokémon</title>
+  <meta name="description" data-i18n-attr="content:meta.home.desc" content="Plataforma de intercambio de cartas Pokémon. Conecta con coleccionistas, publica tus tradeos y encuentra las cartas que buscas.">
   <link rel="icon" type="image/svg+xml" href="img/favicon.svg">
   <link rel="stylesheet" href="css/estilos.css">
 </head>
@@ -28,8 +28,8 @@
   ════════════════════════════════════════════════ -->
   <section class="hero hero-showcase" aria-labelledby="hero-titulo">
     <div class="hero-texto">
-      <h1 id="hero-titulo">Intercambia tus cartas Pokémon</h1>
-      <p>
+      <h1 id="hero-titulo" data-i18n="home.heroTitulo">Intercambia tus cartas Pokémon</h1>
+      <p data-i18n="home.heroTexto">
         Encuentra los tradeos que buscas, publica los tuyos y conecta
         con coleccionistas de toda España.
       </p>
@@ -41,9 +41,9 @@
     </div>
 
     <div class="hero-escaparate" id="hero-escaparate"
-         role="region" aria-label="Cartas destacadas">
+         role="region" data-i18n-attr="aria-label:home.cartasDestacadas" aria-label="Cartas destacadas">
       <button class="carrusel-flecha" id="carrusel-prev" type="button"
-              aria-label="Carta anterior" hidden>❮</button>
+              data-i18n-attr="aria-label:comun.cartaAnterior" aria-label="Carta anterior" hidden>❮</button>
       <a class="carrusel-escena" id="carrusel-escena" href="pages/catalogo.html">
         <span class="carrusel-glow" aria-hidden="true"></span>
         <div class="carrusel-carta" id="carrusel-carta">
@@ -51,7 +51,7 @@
         </div>
       </a>
       <button class="carrusel-flecha" id="carrusel-next" type="button"
-              aria-label="Carta siguiente" hidden>❯</button>
+              data-i18n-attr="aria-label:comun.cartaSiguiente" aria-label="Carta siguiente" hidden>❯</button>
       <div class="carrusel-puntos" id="carrusel-puntos" hidden></div>
     </div>
   </section>
@@ -63,8 +63,10 @@
   ════════════════════════════════════════════════ -->
   <section class="novedades-seccion" aria-labelledby="titulo-novedades">
     <div class="seccion-header">
-      <h2 id="titulo-novedades">Últimas novedades</h2>
-      <a href="pages/novedades.html" class="ver-todos" aria-label="Ver todas las novedades">
+      <h2 id="titulo-novedades" data-i18n="home.novedadesTitulo">Últimas novedades</h2>
+      <a href="pages/novedades.html" class="ver-todos"
+         data-i18n="home.verTodos"
+         data-i18n-attr="aria-label:home.verTodasNovedades" aria-label="Ver todas las novedades">
         Ver todos →
       </a>
     </div>
@@ -74,8 +76,8 @@
       El botón "Reintentar" vuelve a llamar a cargarNovedades().
     -->
     <div id="error-novedades" class="alerta-error" hidden role="alert">
-      <p><img class="icono" src="img/icons/aviso.svg" alt="" /> <span id="error-novedades-msg">No se pudieron cargar las novedades.</span></p>
-      <button id="btn-reintentar-novedades" type="button">Reintentar</button>
+      <p><img class="icono" src="img/icons/aviso.svg" alt="" /> <span id="error-novedades-msg" data-i18n="home.errorNovedades">No se pudieron cargar las novedades.</span></p>
+      <button id="btn-reintentar-novedades" type="button" data-i18n="comun.reintentar">Reintentar</button>
     </div>
 
     <!--
@@ -95,22 +97,22 @@
        3 pasos explicativos (Registro → Publicar → Intercambiar)
   ════════════════════════════════════════════════ -->
   <section class="como-funciona" aria-labelledby="titulo-como-funciona">
-    <h2 id="titulo-como-funciona">¿Cómo funciona PokeTrade?</h2>
+    <h2 id="titulo-como-funciona" data-i18n="home.comoFunciona">¿Cómo funciona PokeTrade?</h2>
     <div class="pasos">
       <div class="paso">
         <div class="paso-icono" aria-hidden="true"><img class="icono" src="img/icons/paso-1.svg" alt="" /></div>
-        <h3>Regístrate</h3>
-        <p>Crea tu cuenta gratis y añade las cartas de tu colección al inventario.</p>
+        <h3 data-i18n="home.paso1Titulo">Regístrate</h3>
+        <p data-i18n="home.paso1Texto">Crea tu cuenta gratis y añade las cartas de tu colección al inventario.</p>
       </div>
       <div class="paso">
         <div class="paso-icono" aria-hidden="true"><img class="icono" src="img/icons/paso-2.svg" alt="" /></div>
-        <h3>Publica un tradeo</h3>
-        <p>Selecciona las cartas que ofreces y las que buscas a cambio.</p>
+        <h3 data-i18n="home.paso2Titulo">Publica un tradeo</h3>
+        <p data-i18n="home.paso2Texto">Selecciona las cartas que ofreces y las que buscas a cambio.</p>
       </div>
       <div class="paso">
         <div class="paso-icono" aria-hidden="true"><img class="icono" src="img/icons/paso-3.svg" alt="" /></div>
-        <h3>¡Intercambia!</h3>
-        <p>Conecta con otros coleccionistas y completa el intercambio.</p>
+        <h3 data-i18n="home.paso3Titulo">¡Intercambia!</h3>
+        <p data-i18n="home.paso3Texto">Conecta con otros coleccionistas y completa el intercambio.</p>
       </div>
     </div>
   </section>
@@ -120,11 +122,11 @@
   ════════════════════════════════════════════════ -->
   <section class="cta-seccion" id="cta-seccion" aria-labelledby="titulo-cta">
     <div class="cta-contenido">
-      <h2 id="titulo-cta">Únete a PokeTrade</h2>
-      <p>Cientos de cartas TCG reales con sus ilustraciones oficiales. Crea tu cuenta gratis y empieza a intercambiar.</p>
+      <h2 id="titulo-cta" data-i18n="home.ctaTitulo">Únete a PokeTrade</h2>
+      <p data-i18n="home.ctaTexto">Cientos de cartas TCG reales con sus ilustraciones oficiales. Crea tu cuenta gratis y empieza a intercambiar.</p>
       <div class="hero-botones">
-        <a href="pages/registro.html" class="btn-primario">Crear cuenta gratis</a>
-        <a href="pages/login.html"    class="btn-secundario">Iniciar sesión</a>
+        <a href="pages/registro.html" class="btn-primario"  data-i18n="home.crearCuentaGratis">Crear cuenta gratis</a>
+        <a href="pages/login.html"    class="btn-secundario" data-i18n="menu.iniciarSesion">Iniciar sesión</a>
       </div>
     </div>
   </section>

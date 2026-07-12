@@ -1,7 +1,8 @@
 // publicar-tradeo.js — Crear y publicar un tradeo (módulo ES6)
 
 import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
-import { buscarCartasCatalogo, debounce, escapeHtml, mostrarAlerta, dorsoCarta } from './utils.js';
+import { t } from './i18n.js';
+import { alCargarDOM, buscarCartasCatalogo, debounce, escapeHtml, mostrarAlerta, dorsoCarta } from './utils.js';
 
 protegerRuta('publicar');
 
@@ -13,7 +14,7 @@ const cartasConocidas = new Map();    // id → carta, para las previews
 let idsOfrece = new Set();
 let idsBusca  = new Set();
 
-document.addEventListener('DOMContentLoaded', () => {
+alCargarDOM(() => {
     cargarInventarioOfrece();
     cargarCatalogoBusca();
 
@@ -64,7 +65,7 @@ async function cargarInventarioOfrece() {
         inventario = await res.json();
         renderizarOfrece(inventario);
     } catch (e) {
-        grid.innerHTML = `<p class="vacio-seccion error-texto">Error al cargar inventario: ${e.message}</p>`;
+        grid.innerHTML = `<p class="vacio-seccion error-texto">${escapeHtml(t('pub.errorInventario', { mensaje: e.message }))}</p>`;
     }
 }
 
@@ -80,7 +81,7 @@ async function cargarCatalogoBusca(texto = '') {
         resultadosBusca.forEach(c => cartasConocidas.set(c.id, c));
         renderizarBusca(resultadosBusca);
     } catch (e) {
-        grid.innerHTML = `<p class="vacio-seccion error-texto">Error al cargar catálogo: ${e.message}</p>`;
+        grid.innerHTML = `<p class="vacio-seccion error-texto">${escapeHtml(t('pub.errorCatalogo', { mensaje: e.message }))}</p>`;
     }
 }
 
@@ -96,10 +97,10 @@ function cartaSeleccionableHTML(carta, seleccionada, infoExtra) {
     return `
         <div class="carta-seleccionable${seleccionada ? ' seleccionada' : ''}"
              role="button" tabindex="0" aria-pressed="${seleccionada}"
-             data-carta-id="${carta.id}" aria-label="Seleccionar ${nombre}">
+             data-carta-id="${carta.id}" aria-label="${escapeHtml(t('inv.seleccionarAria', { nombre: carta.nombre }))}">
             ${img}
             <p>${nombre}</p>
-            <small>${infoExtra}</small>
+            <small>${escapeHtml(infoExtra)}</small>
         </div>`;
 }
 
@@ -107,7 +108,7 @@ function renderizarOfrece(items) {
     const grid = document.getElementById('grid-ofrece');
 
     if (!items.length) {
-        grid.innerHTML = `<p class="vacio-seccion">Tu inventario está vacío. <a href="inventario.html">Añade cartas primero</a>.</p>`;
+        grid.innerHTML = `<p class="vacio-seccion">${t('pub.inventarioVacio')}</p>`;
         return;
     }
 
@@ -120,12 +121,13 @@ function renderizarBusca(cartas) {
     const grid = document.getElementById('grid-busca');
 
     if (!cartas.length) {
-        grid.innerHTML = `<p class="vacio-seccion">No se encontraron cartas.</p>`;
+        grid.innerHTML = `<p class="vacio-seccion">${escapeHtml(t('pub.sinResultados'))}</p>`;
         return;
     }
 
     grid.innerHTML = cartas.map(carta =>
-        cartaSeleccionableHTML(carta, idsBusca.has(carta.id), carta.numero ? `Nº ${carta.numero}` : '')
+        cartaSeleccionableHTML(carta, idsBusca.has(carta.id),
+            carta.numero ? t('carta.numero', { numero: carta.numero }) : '')
     ).join('');
 }
 
@@ -160,13 +162,14 @@ function toggleBusca(id, el) {
 function actualizarPreview(contenedorId, ids, fuente) {
     const preview = document.getElementById(contenedorId);
     if (!ids.size) {
-        preview.innerHTML = '<span class="preview-vacio">Ninguna seleccionada</span>';
+        preview.innerHTML = `<span class="preview-vacio">${escapeHtml(t('pub.ningunaSeleccionada'))}</span>`;
         return;
     }
     preview.innerHTML = [...ids].map(id => {
         const carta = fuente.find(c => c.id === id);
-        const nombre = escapeHtml(carta?.nombre || `#${id}`);
-        return `<span class="chip-carta">${nombre}<button type="button" data-carta-id="${id}" aria-label="Quitar ${nombre}">×</button></span>`;
+        const nombre = carta?.nombre || `#${id}`;
+        return `<span class="chip-carta">${escapeHtml(nombre)}` +
+               `<button type="button" data-carta-id="${id}" aria-label="${escapeHtml(t('pub.quitar', { nombre }))}">×</button></span>`;
     }).join('');
 }
 
@@ -196,11 +199,11 @@ function actualizarContador() {
 
 async function publicarTradeo() {
     if (!idsOfrece.size) {
-        mostrarAlerta('Selecciona al menos una carta que ofrecer.', 'error');
+        mostrarAlerta(t('pub.seleccionaOfrece'), 'error');
         return;
     }
     if (!idsBusca.size) {
-        mostrarAlerta('Selecciona al menos una carta que buscar.', 'error');
+        mostrarAlerta(t('pub.seleccionaBusca'), 'error');
         return;
     }
 
@@ -220,9 +223,9 @@ async function publicarTradeo() {
         });
         const datos = await parsearRespuesta(res);
         if (!res.ok) throw new Error(datos.error || manejarErrorHTTP(res.status));
-        mostrarAlerta('¡Tradeo publicado correctamente!', 'exito');
+        mostrarAlerta(t('pub.publicado'), 'exito');
         setTimeout(() => { window.location.href = 'tradeos.html'; }, 1600);
     } catch (e) {
-        mostrarAlerta(`Error al publicar: ${e.message}`, 'error');
+        mostrarAlerta(t('pub.errorPublicar', { mensaje: e.message }), 'error');
     }
 }
