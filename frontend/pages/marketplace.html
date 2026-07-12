@@ -136,6 +136,28 @@
 
     <div id="app-footer"></div>
 
+    <!-- Modal: detalle del tradeo (público, informativo). El grid ya trae
+         el tradeo entero desde /api/tradeos, así que se pinta al instante
+         sin pedir nada: no hay skeleton porque no hay espera. -->
+    <div id="modal-detalle" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="detalle-titulo" hidden>
+        <div class="modal-caja modal-caja-detalle">
+            <div class="modal-header">
+                <div class="detalle-autor">
+                    <div class="usuario-avatar" id="detalle-avatar" aria-hidden="true"></div>
+                    <div class="detalle-autor-txt">
+                        <h3 id="detalle-titulo">Detalle del tradeo</h3>
+                        <p class="detalle-meta" id="detalle-meta"></p>
+                    </div>
+                </div>
+                <button class="btn-cerrar-modal" id="btn-cerrar-detalle" type="button" aria-label="Cerrar">✕</button>
+            </div>
+            <div class="modal-contenido">
+                <div id="detalle-cuerpo"></div>
+            </div>
+            <div class="modal-footer" id="detalle-footer"></div>
+        </div>
+    </div>
+
     <!-- Modal: aceptar tradeo -->
     <div id="modal-aceptar" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-titulo" hidden>
         <div class="modal-caja">

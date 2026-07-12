@@ -6,19 +6,27 @@
 // mismo grid sin cerrar. La gestión de foco (trampa + devolución al
 // cerrar) reutiliza abrirModalAccesible/cerrarModalAccesible de utils.
 
+import { paginaUrl } from './auth.js';
 import { abrirModalAccesible, cerrarModalAccesible, URL_DORSO } from './utils.js';
 
 let lightbox = null;   // Nodo raíz (se crea una sola vez, al primer uso)
 let cartas   = [];     // Cartas navegables en la sesión de zoom actual
 let indice   = 0;
+let conFicha = false;  // ¿Mostrar el enlace a la ficha completa?
 
 // ── API pública ────────────────────────────────────
 
 // Abre el lightbox sobre la carta `posicion` de la lista `lista`.
 // Cada carta necesita nombre y alguna imagen (imagen_high/imagen_low).
-export function abrirLightbox(lista, posicion = 0) {
-    cartas = lista;
-    indice = posicion;
+//
+// opciones.enlaceFicha añade una salida al detalle de la carta. Va por
+// opción y no siempre porque solo tiene sentido donde no hay otro camino:
+// se abre desde el modal de un tradeo, que es un callejón. En el catálogo
+// la propia tarjeta ya enlaza al detalle, y en la ficha ya estás en ella.
+export function abrirLightbox(lista, posicion = 0, opciones = {}) {
+    cartas   = lista;
+    indice   = posicion;
+    conFicha = opciones.enlaceFicha === true;
 
     crearLightbox();
     mostrarCarta();
@@ -71,7 +79,10 @@ function crearLightbox() {
         <button class="lightbox-flecha lightbox-anterior" type="button" aria-label="Carta anterior">❮</button>
         <figure class="lightbox-cuerpo">
             <img class="lightbox-img" src="" alt="" />
-            <figcaption class="lightbox-nombre"></figcaption>
+            <figcaption class="lightbox-pie">
+                <span class="lightbox-nombre"></span>
+                <a class="lightbox-ficha" href="#" hidden>Ver ficha completa →</a>
+            </figcaption>
         </figure>
         <button class="lightbox-flecha lightbox-siguiente" type="button" aria-label="Carta siguiente">❯</button>`;
 
@@ -94,7 +105,11 @@ function crearLightbox() {
     });
 }
 
-function cerrarLightbox() {
+// Se exporta porque quien lo abre por encima de un modal debe poder
+// cerrarlo al cerrarse ese modal (p. ej. Atrás del navegador sobre el
+// detalle de un tradeo): si no, la carta ampliada quedaría flotando sola.
+// Es idempotente: si ya está cerrado, no hace nada.
+export function cerrarLightbox() {
     if (!lightbox || lightbox.hidden) return;
 
     lightbox.classList.remove('visible');
@@ -122,6 +137,16 @@ function mostrarCarta() {
 
     img.alt = `Ilustración de ${carta.nombre || 'la carta'}`;
     lightbox.querySelector('.lightbox-nombre').textContent = carta.nombre || '';
+
+    // Salida a la ficha completa (precio, PS, ilustrador, set...). Solo si
+    // el llamador la pidió y la carta existe ya en nuestro catálogo.
+    const ficha = lightbox.querySelector('.lightbox-ficha');
+    const idCarta = carta.id ?? carta.tcgdex_id;
+    ficha.hidden = !(conFicha && idCarta);
+    if (!ficha.hidden) {
+        ficha.href = paginaUrl(`pages/detalle-carta.html?id=${encodeURIComponent(idCarta)}`);
+        ficha.setAttribute('aria-label', `Ver ficha completa de ${carta.nombre || 'la carta'}`);
+    }
 
     // Sin ilustración (o si la URL muere): dorso propio en grande, no un
     // hueco vacío. El dorso es un SVG local que no falla.

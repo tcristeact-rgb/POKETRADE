@@ -240,8 +240,26 @@ export function cerrarModalAccesible() {
 // El fondo no debe scrollarse mientras quede alguna ventana abierta. Lo
 // gobierna la pila (y no cada modal por su cuenta) para que cerrar el
 // lightbox sobre un modal no desbloquee el scroll con el modal aún abierto.
+//
+// La clase va en <html>, no en <body>: html declara overflow-x: hidden, así
+// que su overflow computado no es 'visible' y NO hereda el del body. Es él
+// quien scrollea. Un overflow:hidden en body se queda en nada —era el caso
+// del bloqueo del lightbox, que nunca llegó a bloquear.
 function sincronizarScrollFondo() {
-    document.body.classList.toggle('modal-abierto', pilaModales.length > 0);
+    const raiz = document.documentElement;
+    const abierto = pilaModales.length > 0;
+
+    // Antes de congelar, medimos lo que ocupa la barra de scroll: al ocultarla
+    // el contenido se ensancharía de golpe. Se le devuelve ese hueco exacto
+    // como padding (ver html.modal-abierto). Hay que medirlo ANTES de poner la
+    // clase — después, la barra ya no está y saldría 0.
+    if (abierto && !raiz.classList.contains('modal-abierto')) {
+        const barra = window.innerWidth - raiz.clientWidth;
+        raiz.style.setProperty('--barra-scroll', `${barra}px`);
+    }
+
+    raiz.classList.toggle('modal-abierto', abierto);
+    if (!abierto) raiz.style.removeProperty('--barra-scroll');
 }
 
 // Miniaturas de cartas para tarjetas de trade
