@@ -123,4 +123,43 @@ class ExpansionesTest extends TestCase
 
         $respuesta->assertStatus(404);
     }
+
+    // --- Test 7: Atajo de las series de un solo set ---
+    // La serie con un único set expone su id en set_unico para que el
+    // catálogo enlace directo a las cartas; las de varios sets, null
+    public function test_serie_de_un_solo_set_expone_set_unico()
+    {
+        $this->crearSerie('col', 'Call of Legends', [
+            ['tcgdex_id' => 'col1', 'nombre' => 'Call of Legends', 'fecha_lanzamiento' => '2011-02-09'],
+        ]);
+        $this->crearSerie('sv', 'Escarlata y Púrpura', [
+            ['tcgdex_id' => 'sv01',   'nombre' => 'Escarlata y Púrpura', 'fecha_lanzamiento' => '2023-03-31'],
+            ['tcgdex_id' => 'sv03.5', 'nombre' => '151',                 'fecha_lanzamiento' => '2023-09-22'],
+        ]);
+
+        $respuesta = $this->getJson('/api/series');
+
+        $series = collect($respuesta->json())->keyBy('tcgdex_id');
+
+        $respuesta->assertStatus(200);
+        $this->assertSame('col1', $series['col']['set_unico']);
+        $this->assertNull($series['sv']['set_unico']);
+        // El índice sigue siendo ligero: los sets no viajan en él
+        $this->assertArrayNotHasKey('sets', $series['sv']);
+    }
+
+    // --- Test 8: El detalle del set trae el nº de sets de su serie ---
+    // El frontend lo necesita para no pintar en el breadcrumb un nivel
+    // de serie que sería un click muerto
+    public function test_detalle_de_set_incluye_sets_count_de_la_serie()
+    {
+        $this->crearSerie('col', 'Call of Legends', [
+            ['tcgdex_id' => 'col1', 'nombre' => 'Call of Legends'],
+        ]);
+
+        $respuesta = $this->getJson('/api/sets/col1');
+
+        $respuesta->assertStatus(200)
+                  ->assertJsonPath('serie.sets_count', 1);
+    }
 }

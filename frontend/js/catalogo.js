@@ -105,13 +105,27 @@ function tarjetaSerie(serie) {
     const nombre = escapeHtml(serie.nombre);
     const anio   = serie.fecha_ultimo_set ? serie.fecha_ultimo_set.slice(0, 4) : null;
 
+    // Serie de un solo set (el backend manda su id en set_unico): el
+    // enlace salta directo a las cartas. Un grid con una sola tarjeta
+    // sería un click muerto. Los filtros activos viajan igualmente.
+    const destino = serie.set_unico
+        ? urlCatalogo({ set: serie.set_unico })
+        : urlCatalogo({ serie: serie.tcgdex_id });
+
+    const etiqueta = serie.set_unico
+        ? `Ver cartas de ${nombre}`
+        : `Ver sets de la serie ${nombre}`;
+
+    const meta = serie.sets_count === 1
+        ? `1 set${anio ? ` · ${anio}` : ''}`
+        : `${serie.sets_count} sets${anio ? ` · hasta ${anio}` : ''}`;
+
     return `
-        <a class="set-card" href="${urlCatalogo({ serie: serie.tcgdex_id })}"
-           aria-label="Ver sets de la serie ${nombre}">
+        <a class="set-card" href="${destino}" aria-label="${etiqueta}">
             ${logoHTML(serie.logo, null, serie.nombre)}
             <div class="set-info">
                 <h3>${nombre}</h3>
-                <p class="set-meta">${serie.sets_count} sets${anio ? ` · hasta ${anio}` : ''}</p>
+                <p class="set-meta">${meta}</p>
             </div>
         </a>`;
 }
@@ -131,6 +145,21 @@ async function vistaSets(serieId) {
         if (res.status === 404) { mostrarError('Esta serie no existe.'); return; }
         if (!res.ok) throw new Error('Error al conectar con la API');
         const serie = await res.json();
+
+        // Serie de un solo set: no hay nada que elegir. Sustituimos la
+        // URL por la del set (sin ensuciar el historial, y conservando
+        // los filtros) y pintamos sus cartas. Esta es la red de
+        // seguridad para marcadores y enlaces antiguos a ?serie=; el
+        // camino normal ya enlaza directo desde el grid de series.
+        if (serie.sets.length === 1) {
+            const setId = serie.sets[0].tcgdex_id;
+            const url = new URL(window.location.href);
+            url.searchParams.delete('serie');
+            url.searchParams.set('set', setId);
+            history.replaceState(null, '', url);
+            vistaSet(setId, 1);
+            return;
+        }
 
         document.title = `${serie.nombre} - PokeTrade`;
         cabecera(serie.nombre, `${serie.sets.length} sets de expansión, del más reciente al más antiguo.`);
@@ -228,8 +257,20 @@ async function cargarCabeceraSet(setId) {
         cabeceraEl.dataset.nombre = set.nombre;
         modoFiltro(filtros.hayFiltros() ? `Filtrando en ${set.nombre}` : null);
 
+        // Breadcrumb: en una serie de varios sets el nivel de serie es
+        // un enlace normal. Si la serie tiene un único set, ese enlace
+        // volvería a este mismo sitio, así que se degrada a texto plano
+        // (mantiene el contexto sin click muerto) y se omite del todo
+        // cuando serie y set se llaman igual, para no repetir el nombre.
         const miga = [['Inicio', '../index.html'], ['Catálogo', urlCatalogo({})]];
-        if (set.serie) miga.push([set.serie.nombre, urlCatalogo({ serie: set.serie.tcgdex_id })]);
+        if (set.serie) {
+            const serieDeUnSet = set.serie.sets_count === 1;
+            if (!serieDeUnSet) {
+                miga.push([set.serie.nombre, urlCatalogo({ serie: set.serie.tcgdex_id })]);
+            } else if (set.serie.nombre !== set.nombre) {
+                miga.push(set.serie.nombre);
+            }
+        }
         miga.push(set.nombre);
         breadcrumb(miga);
     } catch (_) { /* la cabecera es secundaria: el grid sigue funcionando */ }

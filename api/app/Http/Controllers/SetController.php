@@ -43,9 +43,12 @@ class SetController extends Controller
     // {id} admite el ID de TCGdex (ej: "sv03.5") o el ID interno numérico.
     // Las cartas del set se piden aparte (GET /api/sets/{id}/cartas), que
     // es la llamada que dispara el cacheo bajo demanda.
+    // La serie llega con sets_count para que el frontend sepa si es una
+    // serie de un solo set y arme el breadcrumb sin un nivel que sería
+    // un click muerto (llevaría de vuelta a este mismo set).
     public function show($id)
     {
-        $set = Set::with('serie')
+        $set = Set::with(['serie' => fn ($q) => $q->withCount('sets')])
             ->where('tcgdex_id', $id)
             ->when(ctype_digit((string) $id), fn ($q) => $q->orWhere('id', $id))
             ->first();

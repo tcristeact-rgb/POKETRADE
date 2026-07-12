@@ -12,10 +12,15 @@ class SerieController extends Controller
     // Devuelve el índice de series para la vista de expansiones, cada una
     // con su nº de sets, ordenadas de más reciente a más antigua según la
     // fecha de lanzamiento de su set más nuevo.
+    // Cada serie incluye además set_unico: el tcgdex_id de su único set
+    // cuando solo tiene uno (null en el resto). Con él, el catálogo
+    // enlaza directamente a las cartas y se ahorra al usuario un grid de
+    // una sola tarjeta, que es un click muerto.
     public function index()
     {
         $series = Serie::withCount('sets')
             ->withMax('sets as fecha_ultimo_set', 'fecha_lanzamiento')
+            ->with('sets:id,serie_id,tcgdex_id')
             ->get();
 
         // Ordenamos en memoria (~25 filas): PostgreSQL no permite usar el
@@ -24,6 +29,16 @@ class SerieController extends Controller
         $ordenadas = $series
             ->sortByDesc(fn ($serie) => $serie->fecha_ultimo_set ?? '')
             ->values();
+
+        $ordenadas->each(function (Serie $serie) {
+            $serie->set_unico = $serie->sets_count === 1
+                ? $serie->sets->first()?->tcgdex_id
+                : null;
+
+            // La lista de sets solo servía para calcular set_unico: fuera
+            // de la respuesta, que este endpoint es un índice ligero
+            $serie->unsetRelation('sets');
+        });
 
         return response()->json($ordenadas);
     }
