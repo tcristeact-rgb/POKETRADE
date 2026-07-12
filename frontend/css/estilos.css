@@ -2981,7 +2981,11 @@ body.modal-abierto { overflow: hidden; }
 
 /* Modal del marketplace */
 .modal-caja {
-  background: white;
+  /* Con 'white' fijo, en tema oscuro la caja salía blanca mientras el texto
+     seguía siendo claro (var(--texto) = #F2F2F2): título ilegible sobre su
+     propio fondo. El token ya vale #FFF en claro, así que el tema claro no
+     cambia. */
+  background: var(--fondo-card);
   border-radius: var(--radius-lg);
   width: 100%;
   max-width: 520px;
@@ -3074,7 +3078,7 @@ body.modal-abierto { overflow: hidden; }
   justify-content: flex-end;
 }
 .btn-cancelar-modal {
-  background: white;
+  background: var(--fondo-card);
   color: var(--muted);
   border: 1.5px solid var(--borde);
   padding: 0.6rem 1.25rem;
