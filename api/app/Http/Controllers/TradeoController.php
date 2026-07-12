@@ -10,6 +10,13 @@ use Illuminate\Support\Facades\Validator; // Para validar los datos recibidos
 
 class TradeoController extends Controller
 {
+    // Lo único que se publica del autor de un tradeo. Estos dos endpoints
+    // son públicos y sin token, y $hidden en User solo tapa la contraseña:
+    // un 'usuario' sin acotar serializa el modelo entero (email, rol,
+    // fecha de nacimiento, nacionalidad) a cualquiera que abra el
+    // marketplace. El eager load va acotado siempre.
+    private const USUARIO_PUBLICO = 'usuario:id,nombre,apellido';
+
     // --- Listar todos los tradeos activos ---
     // Endpoint: GET /api/tradeos
     // Acceso: público (sin token)
@@ -18,7 +25,7 @@ class TradeoController extends Controller
     {
         // with() carga las relaciones en una sola consulta (eager loading)
         // Evita el problema N+1 queries al cargar usuario y cartas de cada tradeo
-        $tradeos = Tradeo::with(['usuario', 'cartasOfrece', 'cartasBusca'])
+        $tradeos = Tradeo::with([self::USUARIO_PUBLICO, 'cartasOfrece', 'cartasBusca'])
             ->where('estado', 'activo')          // Solo tradeos activos
             ->orderBy('created_at', 'desc')      // Más recientes primero
             ->get();
@@ -32,7 +39,7 @@ class TradeoController extends Controller
     public function show($id)
     {
         // Buscamos el tradeo por ID cargando todas sus relaciones
-        $tradeo = Tradeo::with(['usuario', 'cartasOfrece', 'cartasBusca'])->find($id);
+        $tradeo = Tradeo::with([self::USUARIO_PUBLICO, 'cartasOfrece', 'cartasBusca'])->find($id);
 
         // Si no existe devolvemos 404
         if (!$tradeo) {

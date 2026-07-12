@@ -198,4 +198,71 @@ class TradeoTest extends TestCase
         // Verificamos que el tradeo ya no existe en la BD
         $this->assertDatabaseMissing('tradeos', ['id' => $tradeo->id]);
     }
+
+    // --- Método auxiliar: tradeo publicado por $usuario con dos cartas ---
+    private function crearTradeoDe(User $usuario)
+    {
+        $tradeo = Tradeo::create([
+            'user_id'     => $usuario->id,
+            'descripcion' => 'Busco Mewtwo, ofrezco Pikachu',
+            'estado'      => 'activo',
+        ]);
+
+        $tradeo->cartasOfrece()->attach([$this->crearCarta('Pikachu')->id]);
+        $tradeo->cartasBusca()->attach([$this->crearCarta('Mewtwo')->id]);
+
+        return $tradeo;
+    }
+
+    // --- Test 7: El listado público no expone datos personales del autor ---
+    // /api/tradeos es público y sin token: del publicador solo puede salir
+    // lo que el marketplace pinta (nombre y apellido). $hidden en User solo
+    // tapa la contraseña, así que un eager load sin acotar serializaría el
+    // modelo entero — email incluido — a cualquier visitante.
+    public function test_listado_publico_de_tradeos_no_expone_datos_personales()
+    {
+        $usuario = $this->crearUsuario();
+        $this->crearTradeoDe($usuario);
+
+        // Sin token: es el marketplace visto por un visitante anónimo
+        $respuesta = $this->getJson('/api/tradeos');
+        $respuesta->assertStatus(200);
+
+        $publicador = $respuesta->json('0.usuario');
+
+        // Lo que sí necesita el frontend para identificar al autor
+        $this->assertEqualsCanonicalizing(
+            ['id', 'nombre', 'apellido'],
+            array_keys($publicador),
+            'El autor de un tradeo solo debe publicar id, nombre y apellido.'
+        );
+
+        // Y, explícitamente, lo que no debe viajar jamás
+        foreach (['email', 'rol', 'fecha_nacimiento', 'nacionalidad', 'password'] as $campo) {
+            $this->assertArrayNotHasKey($campo, $publicador);
+        }
+
+        // Red de seguridad: el email tampoco puede asomar por ningún otro
+        // rincón del cuerpo de la respuesta
+        $respuesta->assertDontSee($usuario->email);
+    }
+
+    // --- Test 8: El detalle público tampoco los expone ---
+    // Mismo endpoint público, misma regla: GET /api/tradeos/{id}
+    public function test_detalle_publico_de_tradeo_no_expone_datos_personales()
+    {
+        $usuario = $this->crearUsuario();
+        $tradeo  = $this->crearTradeoDe($usuario);
+
+        $respuesta = $this->getJson("/api/tradeos/{$tradeo->id}");
+        $respuesta->assertStatus(200);
+
+        $publicador = $respuesta->json('usuario');
+
+        $this->assertEqualsCanonicalizing(
+            ['id', 'nombre', 'apellido'],
+            array_keys($publicador)
+        );
+        $respuesta->assertDontSee($usuario->email);
+    }
 }
