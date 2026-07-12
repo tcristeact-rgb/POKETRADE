@@ -57,12 +57,65 @@ export function headersAuth() {
 // PROTECCIÓN DE RUTAS
 // ─────────────────────────────────────────────────
 
-export function protegerRuta() {
+// ─────────────────────────────────────────────────
+// VOLVER AL ORIGEN TRAS EL LOGIN
+// El destino viaja en sessionStorage y NO en un ?volver= de la URL:
+// un parámetro es controlable por cualquiera que difunda un enlace
+// (…/login.html?volver=https://sitio-malo) y se convierte en un
+// open-redirect para phishing. sessionStorage solo lo escribe nuestro
+// código, es del mismo origen y muere al cerrar la pestaña. Aun así se
+// valida al leer: solo rutas internas.
+// ─────────────────────────────────────────────────
+
+const CLAVE_VOLVER = 'volver_tras_login';
+const CLAVE_MOTIVO = 'motivo_login';
+const CLAVE_ACCION = 'accion_tras_login';
+
+// Solo rutas internas: fuera absolutas (http://…) y protocol-relative
+// (//otro-sitio), que el navegador trataría como externas
+function esRutaInterna(valor) {
+  return typeof valor === 'string'
+      && valor.startsWith('/')
+      && !valor.startsWith('//');
+}
+
+// Lleva al login recordando de dónde venimos, por qué, y opcionalmente
+// la acción que el usuario intentaba hacer (para retomarla al volver).
+export function irALogin(motivo = '', accion = null) {
+  const origen = window.location.pathname + window.location.search + window.location.hash;
+
+  try {
+    sessionStorage.setItem(CLAVE_VOLVER, origen);
+    if (motivo) sessionStorage.setItem(CLAVE_MOTIVO, motivo);
+    else sessionStorage.removeItem(CLAVE_MOTIVO);
+    if (accion) sessionStorage.setItem(CLAVE_ACCION, JSON.stringify(accion));
+    else sessionStorage.removeItem(CLAVE_ACCION);
+  } catch (_) { /* sin sessionStorage se pierde el retorno, no el login */ }
+
+  window.location.href = paginaUrl('pages/login.html');
+}
+
+// Motivo por el que se pidió la sesión (lo muestra la página de login)
+export function motivoLogin() {
+  try { return sessionStorage.getItem(CLAVE_MOTIVO) || ''; } catch (_) { return ''; }
+}
+
+// Acción pendiente que dejó a medias el usuario. Se consume al leerla:
+// solo debe retomarse una vez.
+export function accionPendiente() {
+  try {
+    const dato = sessionStorage.getItem(CLAVE_ACCION);
+    if (!dato) return null;
+    sessionStorage.removeItem(CLAVE_ACCION);
+    return JSON.parse(dato);
+  } catch (_) {
+    return null;
+  }
+}
+
+export function protegerRuta(motivo = '') {
   if (!estaLogueado()) {
-    // Guardar la página actual para redirigir después del login
-    const paginaActual = window.location.pathname;
-    sessionStorage.setItem('redirigir_tras_login', paginaActual);
-    window.location.href = paginaUrl('pages/login.html');
+    irALogin(motivo);
   }
 }
 
@@ -83,9 +136,10 @@ export function manejarErrorHTTP(status, elementoId = null) {
       if (!_redireccion401EnCurso) {
         _redireccion401EnCurso = true;
         eliminarSesion();
-        // Redirigir al login si estamos en una página protegida
+        // Redirigir al login si estamos en una página protegida, y
+        // recordar dónde estaba para devolverlo tras reautenticarse
         if (!window.location.pathname.includes('login')) {
-          setTimeout(() => { window.location.href = paginaUrl('pages/login.html'); }, 1500);
+          setTimeout(() => irALogin('expirada'), 1500);
         }
       }
       break;
@@ -157,13 +211,17 @@ export async function login(email, password) {
   // Guardar token y datos del usuario en localStorage
   guardarSesion(datos.token, datos.usuario);
 
-  const redirigir = sessionStorage.getItem('redirigir_tras_login');
-  if (redirigir) {
-    sessionStorage.removeItem('redirigir_tras_login');
-    window.location.href = redirigir;
-  } else {
-    window.location.href = paginaUrl('index.html');
-  }
+  // Volvemos exactamente a donde estaba el usuario (con su query: el
+  // set que miraba, sus filtros...). La acción pendiente NO se borra
+  // aquí: la consume la página de destino al retomarla.
+  let destino = null;
+  try {
+    destino = sessionStorage.getItem(CLAVE_VOLVER);
+    sessionStorage.removeItem(CLAVE_VOLVER);
+    sessionStorage.removeItem(CLAVE_MOTIVO);
+  } catch (_) { /* ignorado: se cae al destino por defecto */ }
+
+  window.location.href = esRutaInterna(destino) ? destino : paginaUrl('index.html');
 
   return datos;
 }

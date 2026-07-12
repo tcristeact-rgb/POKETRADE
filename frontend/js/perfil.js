@@ -3,7 +3,7 @@
 import { API_URL, headersAuth, protegerRuta, obtenerUsuario, manejarErrorHTTP, parsearRespuesta, renderizarMenu, paginaUrl } from './auth.js';
 import { mostrarAlerta } from './utils.js';
 
-protegerRuta();
+protegerRuta('perfil');
 
 document.addEventListener('DOMContentLoaded', () => {
     cargarPerfil();

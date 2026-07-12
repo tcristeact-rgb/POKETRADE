@@ -3,7 +3,7 @@
 // los datos a nuestra API (que incluye anterior_id/siguiente_id para
 // navegar por el catálogo sin asumir IDs consecutivos).
 
-import { API_URL, estaLogueado, headersAuth, manejarErrorHTTP, parsearRespuesta } from './auth.js';
+import { API_URL, estaLogueado, headersAuth, irALogin, manejarErrorHTTP, parsearRespuesta } from './auth.js';
 import { escapeHtml, mostrarAlerta, formatearPrecio, dorsoCarta } from './utils.js';
 import { abrirLightbox } from './lightbox.js';
 
@@ -75,10 +75,11 @@ function renderizarDetalle(carta) {
 
     const nombreSeguro = escapeHtml(carta.nombre);
 
-    // Botón de inventario solo si el usuario está logueado
+    // Sin sesión, el botón lleva al login recordando esta carta: al
+    // volver, el usuario aterriza aquí mismo con el botón ya activo
     const botonInventario = estaLogueado()
         ? `<button class="btn-inventario" id="btn-add-inventario" type="button">+ Añadir a mi inventario</button>`
-        : `<a href="login.html" class="btn-primario">Inicia sesión para añadir</a>`;
+        : `<button class="btn-primario" id="btn-login-inventario" type="button">Inicia sesión para añadir</button>`;
 
     // En el detalle usamos la ilustración en alta calidad (high.webp);
     // imagen_url queda como respaldo para filas antiguas
@@ -129,6 +130,12 @@ function renderizarDetalle(carta) {
     // Enlazar el botón de inventario
     document.getElementById('btn-add-inventario')
         ?.addEventListener('click', () => anadirAInventario(carta));
+
+    // Sin sesión: al login y de vuelta. No se añade la carta sola al
+    // volver — hacerlo en silencio sería una sorpresa desagradable; el
+    // botón queda a un click.
+    document.getElementById('btn-login-inventario')
+        ?.addEventListener('click', () => irALogin('anadir'));
 
     // Zoom de la ilustración: botón accesible también con teclado
     document.getElementById('btn-zoom-carta')

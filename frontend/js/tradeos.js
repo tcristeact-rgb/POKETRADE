@@ -3,7 +3,7 @@
 import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
 import { formatearFecha, miniaturas, mostrarAlerta, escapeHtml } from './utils.js';
 
-protegerRuta();
+protegerRuta('tradeos');
 
 let todosMisTradeos = [];
 

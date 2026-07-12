@@ -2,7 +2,20 @@
 // login.js — Inicio de sesión 
 // ===================================================
 
-import { login } from './auth.js';
+import { login, motivoLogin } from './auth.js';
+
+// Por qué se le ha pedido la sesión al usuario. El aviso lo da el
+// propio login (no una página previa que sería un callejón), y tras
+// autenticarse vuelve solo a donde estaba.
+const MOTIVOS = {
+  aceptar:    'Inicia sesión para aceptar este tradeo.',
+  anadir:     'Inicia sesión para añadir la carta a tu inventario.',
+  publicar:   'Inicia sesión para publicar un tradeo.',
+  inventario: 'Inicia sesión para ver tu inventario.',
+  tradeos:    'Inicia sesión para ver tus tradeos.',
+  perfil:     'Inicia sesión para ver tu perfil.',
+  expirada:   'Tu sesión ha caducado. Vuelve a iniciar sesión para continuar.',
+};
 
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('form-login');
@@ -12,6 +25,15 @@ document.addEventListener('DOMContentLoaded', () => {
   if (new URLSearchParams(window.location.search).get('registro') === 'ok') {
     const aviso = document.getElementById('aviso-registro');
     if (aviso) aviso.hidden = false;
+  }
+
+  const texto = MOTIVOS[motivoLogin()];
+  if (texto) {
+    const aviso = document.getElementById('aviso-motivo');
+    if (aviso) {
+      aviso.textContent = texto;
+      aviso.hidden = false;
+    }
   }
 });
 

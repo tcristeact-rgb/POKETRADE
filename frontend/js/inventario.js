@@ -3,7 +3,7 @@
 import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
 import { buscarCartasCatalogo, debounce, escapeHtml, mostrarAlerta, dorsoCarta, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
 
-protegerRuta();
+protegerRuta('inventario');
 
 const MAX_MODAL_VISIBLE = 60;
 

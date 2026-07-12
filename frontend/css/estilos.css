@@ -990,6 +990,19 @@ footer a:hover { color: white; }
   margin-bottom: 1rem;
 }
 
+/* Por qué se pide la sesión ("Inicia sesión para aceptar este
+   tradeo"): lo muestra el propio login, no una pantalla previa */
+.aviso-motivo {
+  background: var(--primario-soft);
+  color: var(--primario-texto);
+  border-left: 3px solid var(--primario);
+  border-radius: var(--radius-sm);
+  padding: 0.7rem 0.9rem;
+  margin-bottom: 1.25rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
 /* ══════════════════════════════════════════════════
    ALERTAS
 ══════════════════════════════════════════════════ */

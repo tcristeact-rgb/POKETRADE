@@ -1,6 +1,6 @@
 // marketplace.js — Listado público de tradeos activos
 
-import { API_URL, estaLogueado, obtenerUsuario, headersAuth, parsearRespuesta } from './auth.js';
+import { API_URL, estaLogueado, obtenerUsuario, headersAuth, irALogin, accionPendiente, parsearRespuesta } from './auth.js';
 import { formatearFecha, formatearPrecio, escapeHtml, dorsoCarta, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
 
 let todosLosTradeos   = [];
@@ -21,6 +21,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!el) return;
         if (el.dataset.accion === 'aceptar') abrirModalAceptar(Number(el.dataset.tradeoId));
         else if (el.dataset.accion === 'limpiar') limpiarFiltros();
+        else if (el.dataset.accion === 'login') {
+            irALogin('aceptar', { tipo: 'aceptar', tradeoId: Number(el.dataset.tradeoId) });
+        }
     });
 
     // Imágenes muertas dentro del grid (error no burbujea: captura):
@@ -74,9 +77,25 @@ async function cargarTradeos() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         todosLosTradeos = await res.json();
         filtrar();
+        retomarAccionPendiente();
     } catch (e) {
         mostrarError('No se pudieron cargar los tradeos. ¿Está el servidor activo?');
     }
+}
+
+// El usuario pulsó "aceptar" sin sesión, pasó por el login y ha vuelto:
+// le reabrimos el modal del tradeo que quería. Abrirlo no ejecuta nada,
+// solo lo devuelve al punto de decisión donde lo dejó.
+function retomarAccionPendiente() {
+    const accion = accionPendiente();
+    if (accion?.tipo !== 'aceptar' || !estaLogueado()) return;
+
+    const tradeo = todosLosTradeos.find(t => t.id === accion.tradeoId);
+    const usuario = obtenerUsuario();
+    // Ya no existe, o resulta ser suyo: mejor no abrir nada
+    if (!tradeo || tradeo.usuario?.id === usuario?.id) return;
+
+    abrirModalAceptar(accion.tradeoId);
 }
 
 // ─── Filtrado ──────────────────────────────────────────
@@ -129,7 +148,8 @@ function tarjetaTradeo(t) {
 
     let botonAccion;
     if (!estaLogueado()) {
-        botonAccion = `<a href="login.html" class="btn-contactar">Inicia sesión para aceptar</a>`;
+        // Al login recordando este tradeo: al volver se reabre su modal
+        botonAccion = `<button class="btn-contactar" type="button" data-accion="login" data-tradeo-id="${t.id}">Inicia sesión para aceptar</button>`;
     } else if (esPropioTradeo) {
         botonAccion = `<button class="btn-contactar btn-propio" type="button" disabled>Tu propio tradeo</button>`;
     } else {

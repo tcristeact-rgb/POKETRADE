@@ -3,7 +3,7 @@
 import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
 import { buscarCartasCatalogo, debounce, escapeHtml, mostrarAlerta, dorsoCarta } from './utils.js';
 
-protegerRuta();
+protegerRuta('publicar');
 
 const MAX_BUSCA_VISIBLE = 60;
 
