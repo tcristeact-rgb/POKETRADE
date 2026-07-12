@@ -13,11 +13,17 @@
 
     <div id="app-header"></div>
 
-    <!-- Hero con buscador -->
+    <!-- Hero: solo título (el buscador vive en la barra sticky) -->
     <section class="marketplace-hero">
         <h1><img class="icono" src="../img/icons/tradeos.svg" alt="" /> Marketplace de Tradeos</h1>
         <p>Encuentra el intercambio perfecto entre coleccionistas de toda la comunidad</p>
-        <div class="barra-busqueda" role="search" aria-label="Búsqueda de tradeos">
+    </section>
+
+    <main class="marketplace-contenedor">
+
+        <!-- Barra de búsqueda sticky bajo el header (patrón del
+             catálogo); el contador de resultados viaja con ella -->
+        <div class="filtros filtros-catalogo filtros-marketplace" role="search" aria-label="Búsqueda de tradeos">
             <input
                 type="text"
                 id="buscar-carta"
@@ -45,10 +51,8 @@
                 <option value="Hielo">Hielo</option>
                 <option value="Volador">Volador</option>
             </select>
+            <span class="contador-resultados" id="contador">Cargando tradeos...</span>
         </div>
-    </section>
-
-    <main class="marketplace-contenedor">
 
         <!-- CTA publicar tradeo -->
         <div class="cta-publicar" id="cta-publicar" hidden>
@@ -62,14 +66,9 @@
             <button id="btn-reintentar-mkt" type="button">Reintentar</button>
         </div>
 
-        <!-- Toolbar: contador -->
-        <div class="marketplace-toolbar">
-            <span class="contador-resultados" id="contador">Cargando tradeos...</span>
-        </div>
-
-        <!-- Grid de tradeos -->
+        <!-- Grid de tradeos (skeletons iniciales; el grid reparte
+             las columnas solo con auto-fill) -->
         <div class="grid-tradeos" id="grid-tradeos">
-            <!-- Skeletons iniciales -->
             <div class="skeleton-card">
                 <div class="skeleton-block skeleton-block-header"></div>
                 <div class="skeleton-card-cuerpo">
@@ -90,6 +89,44 @@
                 <div class="skeleton-block skeleton-block-header"></div>
                 <div class="skeleton-card-cuerpo">
                     <div class="skeleton-block skeleton-block-grande"></div>
+                </div>
+                <div class="skeleton-block skeleton-block-footer"></div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-block skeleton-block-header"></div>
+                <div class="skeleton-card-cuerpo">
+                    <div class="skeleton-block skeleton-block-grande"></div>
+                    <div class="skeleton-block skeleton-block-linea"></div>
+                </div>
+                <div class="skeleton-block skeleton-block-footer"></div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-block skeleton-block-header"></div>
+                <div class="skeleton-card-cuerpo">
+                    <div class="skeleton-block skeleton-block-grande"></div>
+                </div>
+                <div class="skeleton-block skeleton-block-footer"></div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-block skeleton-block-header"></div>
+                <div class="skeleton-card-cuerpo">
+                    <div class="skeleton-block skeleton-block-grande"></div>
+                    <div class="skeleton-block skeleton-block-linea"></div>
+                </div>
+                <div class="skeleton-block skeleton-block-footer"></div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-block skeleton-block-header"></div>
+                <div class="skeleton-card-cuerpo">
+                    <div class="skeleton-block skeleton-block-grande"></div>
+                </div>
+                <div class="skeleton-block skeleton-block-footer"></div>
+            </div>
+            <div class="skeleton-card">
+                <div class="skeleton-block skeleton-block-header"></div>
+                <div class="skeleton-card-cuerpo">
+                    <div class="skeleton-block skeleton-block-grande"></div>
+                    <div class="skeleton-block skeleton-block-linea"></div>
                 </div>
                 <div class="skeleton-block skeleton-block-footer"></div>
             </div>

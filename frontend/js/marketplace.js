@@ -1,7 +1,7 @@
 // marketplace.js — Listado público de tradeos activos
 
 import { API_URL, estaLogueado, obtenerUsuario, headersAuth, parsearRespuesta } from './auth.js';
-import { formatearFecha, escapeHtml, miniaturas, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
+import { formatearFecha, formatearPrecio, escapeHtml, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
 
 let todosLosTradeos   = [];
 let inventarioUsuario = [];
@@ -22,6 +22,22 @@ document.addEventListener('DOMContentLoaded', () => {
         if (el.dataset.accion === 'aceptar') abrirModalAceptar(Number(el.dataset.tradeoId));
         else if (el.dataset.accion === 'limpiar') limpiarFiltros();
     });
+
+    // Imágenes muertas dentro del grid (error no burbujea: captura):
+    // la protagonista se convierte en placeholder, las minis se ocultan
+    document.getElementById('grid-tradeos')?.addEventListener('error', (e) => {
+        const img = e.target;
+        if (!(img instanceof HTMLImageElement)) return;
+        if (img.classList.contains('tradeo-protagonista')) {
+            const hueco = document.createElement('div');
+            hueco.className = 'tradeo-protagonista tradeo-protagonista-vacia';
+            hueco.setAttribute('aria-hidden', 'true');
+            hueco.textContent = '?';
+            img.replaceWith(hueco);
+        } else if (img.classList.contains('busca-mini')) {
+            img.style.visibility = 'hidden';
+        }
+    }, true);
 
     // Modal de aceptar tradeo
     document.getElementById('btn-cerrar-aceptar')?.addEventListener('click', cerrarModal);
@@ -98,9 +114,6 @@ function tarjetaTradeo(t) {
     const usuarioActual = obtenerUsuario();
     const esPropioTradeo = usuarioActual && t.usuario?.id === usuarioActual.id;
 
-    const miniaturasOfrece = miniaturas(t.cartas_ofrece);
-    const miniaturasBusca  = miniaturas(t.cartas_busca);
-
     const descripcion = t.descripcion
         ? `<p class="tradeo-descripcion">"${escapeHtml(t.descripcion)}"</p>` : '';
 
@@ -123,16 +136,13 @@ function tarjetaTradeo(t) {
             <span class="tradeo-fecha">${fecha}</span>
         </div>
         <div class="tradeo-card-body">
-            <div class="intercambio">
-                <div class="intercambio-lado">
-                    <div class="intercambio-label label-ofrece">Ofrece</div>
-                    <div class="cartas-miniaturas">${miniaturasOfrece}</div>
-                </div>
-                <div class="flecha-intercambio" aria-hidden="true">⇄</div>
-                <div class="intercambio-lado">
-                    <div class="intercambio-label label-busca">Busca</div>
-                    <div class="cartas-miniaturas">${miniaturasBusca}</div>
-                </div>
+            <div class="tradeo-ofrece">
+                <span class="intercambio-label label-ofrece">Ofrece</span>
+                ${bloqueOfrece(t.cartas_ofrece)}
+            </div>
+            <div class="tradeo-busca">
+                <span class="intercambio-label label-busca">Busca ⇄</span>
+                ${bloqueBusca(t.cartas_busca)}
             </div>
             ${descripcion}
         </div>
@@ -140,6 +150,64 @@ function tarjetaTradeo(t) {
             ${botonAccion}
         </div>
     </div>`;
+}
+
+// Lado "ofrece": la primera carta es la protagonista (ilustración
+// vertical grande + nombre); el resto se resume en "+N más" y el
+// valor suma los precios Cardmarket conocidos del lado
+function bloqueOfrece(cartas = []) {
+    if (!cartas.length) {
+        return '<span class="miniaturas-vacio">—</span>';
+    }
+
+    const [principal, ...resto] = cartas;
+    const imagen = principal.imagen_low || principal.imagen_url;
+
+    const conPrecio = cartas.filter(c => c.precio_cardmarket != null);
+    const valor = conPrecio.length
+        ? formatearPrecio(conPrecio.reduce((suma, c) => suma + Number(c.precio_cardmarket), 0))
+        : null;
+
+    return `
+        <div class="ofrece-principal">
+            ${imagen
+                ? `<img class="tradeo-protagonista" src="${escapeHtml(imagen)}"
+                       alt="${escapeHtml(principal.nombre)}" loading="lazy" />`
+                : `<div class="tradeo-protagonista tradeo-protagonista-vacia" aria-hidden="true">?</div>`}
+            <div class="ofrece-detalle">
+                <span class="ofrece-nombre">${escapeHtml(principal.nombre)}</span>
+                ${resto.length
+                    ? `<span class="ofrece-extra">+${resto.length} ${resto.length === 1 ? 'carta más' : 'cartas más'}</span>`
+                    : ''}
+                ${valor ? `<span class="ofrece-valor">~ ${valor}</span>` : ''}
+            </div>
+        </div>`;
+}
+
+// Lado "busca": fila de miniaturas verticales (máx. 4) con el nombre
+// completo en title; el resto queda en un chip "+N"
+function bloqueBusca(cartas = []) {
+    if (!cartas.length) {
+        return '<span class="miniaturas-vacio">—</span>';
+    }
+
+    const visibles = cartas.slice(0, 4);
+    const ocultas  = cartas.length - visibles.length;
+
+    const minis = visibles.map(c => {
+        const imagen = c.imagen_low || c.imagen_url;
+        const nombre = escapeHtml(c.nombre);
+        return imagen
+            ? `<img class="busca-mini" src="${escapeHtml(imagen)}" alt="${nombre}" title="${nombre}" loading="lazy" />`
+            : `<div class="busca-mini busca-mini-vacia" title="${nombre}" aria-label="${nombre}">?</div>`;
+    }).join('');
+
+    return `
+        <div class="busca-minis">
+            ${minis}
+            ${ocultas > 0 ? `<span class="busca-mas" title="${escapeHtml(
+                cartas.slice(4).map(c => c.nombre).join(', '))}">+${ocultas}</span>` : ''}
+        </div>`;
 }
 
 // ─── Modal: aceptar tradeo ─────────────────────────────

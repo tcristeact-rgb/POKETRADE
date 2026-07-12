@@ -89,6 +89,7 @@
 
   /* Layout */
   --max-w:           1200px;
+  --max-w-ancho:     1600px;   /* páginas-tablón densas (marketplace) */
   --nav-h:           64px;
   --hdr-gap:         14px;   /* separación de la píldora respecto a los bordes */
 
@@ -2688,74 +2689,45 @@ body.nav-drawer-abierto { overflow: hidden; }
   text-align: center;
 }
 .marketplace-hero h1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
   font-family: var(--font-heading);
   font-size: 2rem;
   font-weight: 800;
   margin-bottom: 0.5rem;
   letter-spacing: -0.02em;
 }
+.marketplace-hero h1 .icono { height: 1em; }
 .marketplace-hero p {
   color: rgba(255,255,255,0.72);
-  margin-bottom: 1.5rem;
   font-size: 0.95rem;
 }
-.barra-busqueda {
-  display: flex;
-  gap: 0.75rem;
-  max-width: 600px;
-  margin: 0 auto;
-  flex-wrap: wrap;
-}
-.barra-busqueda input {
-  flex: 1;
-  min-width: 200px;
-  padding: 0.65rem 1rem;
-  border: none;
-  border-radius: var(--radius);
-  font-family: var(--font-body);
-  font-size: 0.925rem;
-  background: var(--fondo-card);
-  color: var(--texto);
-  outline: none;
-}
-.barra-busqueda input:focus { box-shadow: 0 0 0 3px rgba(251,191,36,0.5); }
-.barra-busqueda select {
-  padding: 0.65rem 1rem;
-  border: none;
-  border-radius: var(--radius);
-  font-family: var(--font-body);
-  font-size: 0.9rem;
-  background: var(--fondo-card);
-  color: var(--texto);
-  cursor: pointer;
-}
-
-[data-tema="oscuro"] .barra-busqueda input,
-[data-tema="oscuro"] .barra-busqueda select {
-  border: 1px solid var(--borde);
-}
+/* Tablón a ancho casi completo: deliberadamente más amplio que las
+   páginas editoriales (1200): es un grid denso de anuncios.
+   width: 100% es imprescindible: main es item del body (flex column)
+   y sus margin auto laterales anulan el stretch del eje transversal */
 .marketplace-contenedor {
-  max-width: 1100px;
-  margin: 2rem auto;
-  padding: 0 1.5rem;
+  width: 100%;
+  max-width: var(--max-w-ancho);
+  margin: 1.5rem auto 2rem;
+  padding-inline: clamp(1rem, 3vw, 2.5rem);
 }
-.marketplace-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
+/* La barra de búsqueda reutiliza .filtros + .filtros-catalogo
+   (sticky bajo la píldora); el contador viaja a su derecha */
+.filtros-marketplace .contador-resultados { margin-left: auto; }
 .contador-resultados {
   color: var(--muted);
   font-size: var(--text-sm);
   font-weight: 500;
 }
+/* auto-fill reparte las columnas solo: ~5 a 1600, 4 a 1280, 3 a
+   1024, 2 en tablet, 1 en móvil — sin breakpoints por columna */
 .grid-tradeos {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
 }
 .tradeo-card {
   background: var(--fondo-card);
@@ -2807,9 +2779,8 @@ body.nav-drawer-abierto { overflow: hidden; }
 }
 .tradeo-fecha { font-size: 0.775rem; color: var(--muted); }
 .tradeo-card-body { padding: 1rem 1.1rem; flex: 1; }
-.intercambio { display: flex; align-items: flex-start; gap: 0.75rem; }
-.intercambio-lado { flex: 1; min-width: 0; }
 .intercambio-label {
+  display: block;
   font-size: 0.7rem;
   text-transform: uppercase;
   letter-spacing: 0.07em;
@@ -2818,12 +2789,84 @@ body.nav-drawer-abierto { overflow: hidden; }
 }
 .label-ofrece { color: var(--exito); }
 .label-busca  { color: var(--primario-texto); }
-.flecha-intercambio {
-  font-size: 1.2rem;
-  color: var(--borde-hover);
-  align-self: center;
+
+/* Lado ofrece: protagonista vertical + nombre + "+N más" + valor */
+.ofrece-principal {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+.tradeo-protagonista {
+  width: 88px;
+  aspect-ratio: 245 / 337;   /* proporción de la carta física */
+  object-fit: contain;
+  border-radius: 6px;
+  border: 1px solid var(--borde);
+  background: var(--superficie-img);
   flex-shrink: 0;
-  margin-top: 1rem;
+}
+.tradeo-protagonista-vacia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.6rem;
+  color: var(--placeholder-icono);
+}
+.ofrece-detalle {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+.ofrece-nombre {
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--texto);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.ofrece-extra { font-size: var(--text-xs); color: var(--muted); }
+.ofrece-valor {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-weight: 800;
+  color: var(--primario-texto);
+}
+
+/* Lado busca: fila de miniaturas verticales + chip "+N" */
+.tradeo-busca { margin-top: 0.9rem; }
+.busca-minis {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.busca-mini {
+  width: 40px;
+  aspect-ratio: 245 / 337;
+  object-fit: contain;
+  border-radius: 4px;
+  border: 1px solid var(--borde);
+  background: var(--superficie-img);
+}
+.busca-mini-vacia {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  color: var(--placeholder-icono);
+}
+.busca-mas {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--texto-sec);
+  background: var(--fondo);
+  border: 1px solid var(--borde);
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  cursor: default;
 }
 .tradeo-descripcion {
   margin-top: 0.85rem;
@@ -3236,8 +3279,6 @@ body.nav-drawer-abierto { overflow: hidden; }
 
   .marketplace-hero { padding: 2.5rem 1rem; }
   .marketplace-hero h1 { font-size: 1.6rem; }
-  .marketplace-contenedor { padding: 0 1rem; margin: 1.5rem auto; }
-  .grid-tradeos { grid-template-columns: 1fr; gap: 1rem; }
   .modal-footer { flex-direction: column-reverse; }
   .btn-cancelar-modal, .btn-confirmar-modal { width: 100%; }
 
@@ -3289,10 +3330,7 @@ body.nav-drawer-abierto { overflow: hidden; }
   .tradeo-acciones { width: 100%; }
   .tradeo-acciones .btn-accion { flex: 1; }
 
-  .barra-busqueda { flex-direction: column; }
-  .barra-busqueda input { min-width: 0; width: 100%; }
-  .barra-busqueda select { width: 100%; }
-  .marketplace-toolbar { flex-direction: column; align-items: stretch; }
+  .filtros-marketplace .contador-resultados { margin-left: 0; width: 100%; }
   .cta-publicar { padding: 1.5rem 1.25rem; }
   .modal-header, .modal-contenido, .modal-footer { padding-left: 1rem; padding-right: 1rem; }
 
