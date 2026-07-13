@@ -19,6 +19,7 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 
 const RAIZ   = fileURLToPath(new URL('../frontend', import.meta.url));
@@ -61,8 +62,26 @@ http.createServer((req, res) => {
         return;
     }
 
-    const cabeceras = { 'Content-Type': TIPOS[path.extname(archivo)] ?? 'application/octet-stream' };
+    const tipo      = TIPOS[path.extname(archivo)] ?? 'application/octet-stream';
+    const cabeceras = { 'Content-Type': tipo };
     if (prefijo) cabeceras['Content-Language'] = prefijo;
+
+    // Comprime el texto, que es lo que Vercel hace por su cuenta. Sin esto, medir
+    // el rendimiento en local engaña: el CSS pesa 123 KB en disco y ~20 KB por el
+    // cable, y uno acaba optimizando bytes que en producción no existen.
+    const comprimible = /text|javascript|json|xml|svg/.test(tipo);
+    const brotli      = /\bbr\b/.test(req.headers['accept-encoding'] ?? '');
+    const gzip        = /\bgzip\b/.test(req.headers['accept-encoding'] ?? '');
+
+    if (comprimible && (brotli || gzip)) {
+        cabeceras['Content-Encoding'] = brotli ? 'br' : 'gzip';
+        cabeceras['Vary'] = 'Accept-Encoding';
+        res.writeHead(200, cabeceras);
+        fs.createReadStream(archivo)
+          .pipe(brotli ? zlib.createBrotliCompress() : zlib.createGzip())
+          .pipe(res);
+        return;
+    }
 
     res.writeHead(200, cabeceras);
     fs.createReadStream(archivo).pipe(res);

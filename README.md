@@ -103,6 +103,22 @@ Both URLs serve **the same HTML file** — a Vercel rewrite (`/en/:path*` → `/
 | `GET /api/sets/{id}/cartas` | Paginated cards of a set — triggers the on-demand caching |
 | `GET /api/cartas/{id}` | Card detail — triggers lazy hydration from TCGdex |
 
+### Load performance
+
+Measured in a real browser on throttled slow-4G (150 ms RTT, 4× CPU slowdown), which is where round trips actually cost something. Three things were wrong, and none of them were "too many bytes" — brotli takes the 123 KB stylesheet down to 20 KB.
+
+| | before | after |
+|---|---|---|
+| First paint, `/` | 904 ms | **732 ms** |
+| First paint, `/en/` | 1272 ms | **856 ms** |
+| `load` | 1448 ms | **1219 ms** |
+
+1. **The dictionary was a dead round trip at the end of the chain.** `i18n.js` loads it with a dynamic `import()`, so the browser's preload scanner cannot see it — it only started downloading once the *whole* module graph had landed, and nothing renders until it does. It now ships as a `<link rel="modulepreload">` injected by the boot script, which is the only code that knows the active language. The core modules get static `modulepreload` hints for the same reason: `header.js → auth.js → config.js` was three sequential round trips. All of it now downloads in parallel.
+2. **The font was loaded with an `@import` inside the stylesheet** — the worst option available. The `@import` isn't discovered until the CSS has been downloaded *and parsed*, and it then chains two fresh cross-origin connections (`fonts.googleapis.com`, then `fonts.gstatic.com`), each with its own DNS lookup and TLS handshake. DM Sans is now self-hosted: no third parties, no new connections, and one less thing for the privacy policy to declare. It is deliberately **not** preloaded — 61 KB competing with the render-blocking CSS pushed first paint 130 ms *later*, and `font-display: swap` means it was never blocking anything.
+3. **Production ran `php artisan serve`**, PHP's development server, which handles **one request at a time**. The catalogue fires three API calls in parallel and they were queueing: measured at 493 ms in parallel versus 497 ms in series — no parallelism at all. Fixed with `PHP_CLI_SERVER_WORKERS` (which `ServeCommand` silently ignores unless you also pass `--no-reload`). OPcache was not installed either, so PHP recompiled all of Laravel on every request, and `config:cache`/`route:cache` were never run. All three are one-line changes in the Dockerfile.
+
+The API itself was fine: 1–6 queries per endpoint, no N+1 (a card always travels with its set, eagerly loaded).
+
 ## Technical Highlights
 
 - Bilingual (Spanish/English), no i18n library — the UI runs on a hand-rolled dictionary with `Intl.PluralRules` and `Intl.NumberFormat` (so `12,50 €` and `€12.50` are the same number, and a third language's plural rules will not silently break); the API negotiates `Accept-Language` and answers with `Content-Language` + `Vary`; and the card data lives in per-language columns filled lazily. Adding a language means editing one dictionary.

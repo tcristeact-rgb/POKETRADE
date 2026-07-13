@@ -136,19 +136,27 @@ function inyectarHeader() {
 }
 
 // ── Selector de idioma ─────────────────────────────
-// Un <select> nativo: se recorre con teclado, lo anuncian los lectores
-// de pantalla y en móvil abre el selector del sistema, todo sin una
-// línea de JS. Las opciones salen del registro de i18n.js, así que un
-// idioma nuevo aparece aquí sin tocar el header.
+// Un <select> nativo: se recorre con teclado, lo anuncian los lectores de
+// pantalla y en móvil abre el selector del sistema, todo sin una línea de JS.
+// Las opciones salen del registro de i18n.js, así que un idioma nuevo aparece
+// aquí sin tocar el header.
+//
+// Pero un <select> se dimensiona por su opción MÁS LARGA, y "ES · Español" son
+// 125 px: era el control más ancho del header —más que el botón de registro— y
+// a 1200 px empujaba la barra fuera de la pantalla. Así que se separa lo que se
+// VE de lo que FUNCIONA: la píldora enseña el código y ya, y el <select> real va
+// encima, transparente, quedándose con toda la interacción. Los nombres
+// completos siguen en el desplegable, que es donde se elige.
 function selectorIdiomaHTML() {
   const opciones = Object.entries(IDIOMAS)
     .map(([codigo, nombre]) =>
-      '<option value="' + codigo + '"' + (codigo === idioma ? ' selected' : '') + '>' +
-      codigo.toUpperCase() + ' · ' + nombre + '</option>')
+      '<option value="' + codigo + '"' + (codigo === idioma ? ' selected' : '') + '>' + nombre + '</option>')
     .join('');
 
-  return '<select id="selector-idioma" class="selector-idioma" aria-label="' + t('header.idioma') + '">' +
-         opciones + '</select>';
+  return '<div class="selector-idioma">' +
+         '<span class="selector-idioma-codigo" aria-hidden="true">' + idioma.toUpperCase() + '</span>' +
+         '<select id="selector-idioma" aria-label="' + t('header.idioma') + '">' + opciones + '</select>' +
+         '</div>';
 }
 
 function configurarIdioma() {

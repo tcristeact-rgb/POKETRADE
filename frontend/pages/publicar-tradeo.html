@@ -3,11 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>try{var d=document.documentElement,s=localStorage;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var p=location.pathname.split('/')[1]||'',pre=p.length===2&&p!=='es',raiz=pre||p===''||p==='pages'||p.slice(-5)==='.html',i=pre?p:(s.getItem('idioma')||'es');if(raiz&&!pre&&i!=='es'){location.replace('/'+i+location.pathname+location.search);}d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}}catch(err){}</script>
+    <script>try{var d=document.documentElement,s=localStorage,h=document.head;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var p=location.pathname.split('/')[1]||'',pre=p.length===2&&p!=='es',raiz=pre||p===''||p==='pages'||p.slice(-5)==='.html',i=pre?p:(s.getItem('idioma')||'es');if(raiz&&!pre&&i!=='es'){location.replace('/'+i+location.pathname+location.search);}d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}function pista(r,u,c){var l=document.createElement('link');l.rel=r;l.href=u;if(c)l.crossOrigin='';h.appendChild(l);}pista('modulepreload',(location.pathname.indexOf('/pages/')>-1?'../':'')+'js/i18n/'+i+'.js');if(!/^(localhost|127\.)/.test(location.hostname))pista('preconnect','https://poketrade-api-3nwm.onrender.com',1);}catch(err){}</script>
     <title data-i18n="meta.publicar.title">Publicar Tradeo - PokeTrade</title>
     <meta name="description" data-i18n-attr="content:meta.publicar.desc" content="Publica un nuevo tradeo de cartas Pokémon en PokeTrade.">
     <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
+
+    <!-- Pistas de carga. El núcleo de módulos se descubre en cascada (header.js
+         → auth.js → config.js) y cada nivel cuesta un ida y vuelta entero: esto
+         los baja todos a la vez. El diccionario del idioma lo añade el script de
+         arriba, que es el único que sabe cuál es.
+
+         La fuente NO se precarga a propósito: son 61 KB que le robarían ancho de
+         banda al CSS, que es lo único que bloquea el pintado. Y no hace falta —
+         con font-display: swap el texto se lee desde el primer instante y la
+         fuente entra cuando llega. Medido: precargarla retrasaba el primer
+         pintado 130 ms. -->
+    <link rel="modulepreload" href="../js/i18n.js">
+    <link rel="modulepreload" href="../js/auth.js">
+    <link rel="modulepreload" href="../js/config.js">
+    <link rel="modulepreload" href="../js/utils.js">
+    <link rel="modulepreload" href="../js/seo.js">
 </head>
 <body>
     <div id="app-header"></div>
