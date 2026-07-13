@@ -5,6 +5,7 @@
 
 import { paginaUrl, estaLogueado, obtenerUsuario, cerrarSesion, renderizarMenu } from './auth.js';
 import { t, idioma, IDIOMAS, cambiarIdioma, aplicarTraducciones } from './i18n.js';
+import { sellarCabecera } from './seo.js';
 
 // Rutas calculadas una sola vez (válidas desde la raíz y desde pages/)
 const rIndex       = paginaUrl('index.html');
@@ -32,6 +33,10 @@ function activa(href) {
 // para traducir el HTML estático (los data-i18n del markup). Va antes de
 // inyectar nada: el header y el footer ya se construyen traducidos.
 aplicarTraducciones(document);
+
+// Y por lo mismo, el punto natural para firmar la cabecera con el canonical y
+// los hreflang de esta página (ver seo.js)
+sellarCabecera();
 
 inyectarHeader();
 inyectarFooter();

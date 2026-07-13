@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script>try{var d=document.documentElement,s=localStorage;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var i=s.getItem('idioma')||(navigator.language||'es').slice(0,2);d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}}catch(e){}</script>
+    <script>try{var d=document.documentElement,s=localStorage;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var p=location.pathname.split('/')[1]||'',pre=/^[a-z]{2}$/.test(p)&&p!=='es',i=pre?p:(s.getItem('idioma')||'es');if(!pre&&i!=='es'){location.replace('/'+i+location.pathname+location.search);}d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}}catch(err){}</script>
     <title data-i18n="meta.perfil.title">Mi Perfil - PokeTrade</title>
     <meta name="description" data-i18n-attr="content:meta.perfil.desc" content="Edita tu perfil y cambia tu contraseña en PokeTrade.">
     <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">

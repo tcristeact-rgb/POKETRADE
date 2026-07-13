@@ -1,15 +1,130 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<!-- GENERADO por tools/generar-sitemap.mjs — no editar a mano.
+
+     Las dos versiones de cada página, cada una declarando a las demás con
+     hreflang. Google lee el hreflang del sitemap sin ejecutar JavaScript, así
+     que este es el canal fiable; las etiquetas <link> que inyecta seo.js en la
+     cabecera son el refuerzo, no el sustituto. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://poketrade-beryl.vercel.app/index.html</loc>
+    <loc>https://poketrade-beryl.vercel.app/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/"/>
+  </url>
+  <url>
+    <loc>https://poketrade-beryl.vercel.app/en/</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/"/>
+  </url>
+  <url>
+    <loc>https://poketrade-beryl.vercel.app/pages/novedades.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/novedades.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/novedades.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/novedades.html"/>
+  </url>
+  <url>
+    <loc>https://poketrade-beryl.vercel.app/en/pages/novedades.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/novedades.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/novedades.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/novedades.html"/>
+  </url>
+  <url>
+    <loc>https://poketrade-beryl.vercel.app/pages/mas-vendido.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/mas-vendido.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/mas-vendido.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/mas-vendido.html"/>
+  </url>
+  <url>
+    <loc>https://poketrade-beryl.vercel.app/en/pages/mas-vendido.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/mas-vendido.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/mas-vendido.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/mas-vendido.html"/>
   </url>
   <url>
     <loc>https://poketrade-beryl.vercel.app/pages/catalogo.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/catalogo.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/catalogo.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/catalogo.html"/>
+  </url>
+  <url>
+    <loc>https://poketrade-beryl.vercel.app/en/pages/catalogo.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/catalogo.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/catalogo.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/catalogo.html"/>
+  </url>
+  <url>
+    <loc>https://poketrade-beryl.vercel.app/pages/marketplace.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/marketplace.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/marketplace.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/marketplace.html"/>
+  </url>
+  <url>
+    <loc>https://poketrade-beryl.vercel.app/en/pages/marketplace.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/marketplace.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/marketplace.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/marketplace.html"/>
   </url>
   <url>
     <loc>https://poketrade-beryl.vercel.app/pages/login.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/login.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/login.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/login.html"/>
+  </url>
+  <url>
+    <loc>https://poketrade-beryl.vercel.app/en/pages/login.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/login.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/login.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/login.html"/>
   </url>
   <url>
     <loc>https://poketrade-beryl.vercel.app/pages/registro.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/registro.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/registro.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/registro.html"/>
+  </url>
+  <url>
+    <loc>https://poketrade-beryl.vercel.app/en/pages/registro.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/registro.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/registro.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/registro.html"/>
+  </url>
+  <url>
+    <loc>https://poketrade-beryl.vercel.app/pages/aviso-legal.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/aviso-legal.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/aviso-legal.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/aviso-legal.html"/>
+  </url>
+  <url>
+    <loc>https://poketrade-beryl.vercel.app/en/pages/aviso-legal.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/aviso-legal.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/aviso-legal.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/aviso-legal.html"/>
+  </url>
+  <url>
+    <loc>https://poketrade-beryl.vercel.app/pages/privacidad.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/privacidad.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/privacidad.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/privacidad.html"/>
+  </url>
+  <url>
+    <loc>https://poketrade-beryl.vercel.app/en/pages/privacidad.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/privacidad.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/privacidad.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/privacidad.html"/>
+  </url>
+  <url>
+    <loc>https://poketrade-beryl.vercel.app/pages/contacto.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/contacto.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/contacto.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/contacto.html"/>
+  </url>
+  <url>
+    <loc>https://poketrade-beryl.vercel.app/en/pages/contacto.html</loc>
+    <xhtml:link rel="alternate" hreflang="es" href="https://poketrade-beryl.vercel.app/pages/contacto.html"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://poketrade-beryl.vercel.app/en/pages/contacto.html"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://poketrade-beryl.vercel.app/pages/contacto.html"/>
   </url>
 </urlset>

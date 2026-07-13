@@ -24,15 +24,67 @@ const CODIGOS     = Object.keys(IDIOMAS);
 const POR_DEFECTO = CODIGOS[0];
 const CLAVE       = 'idioma';
 
+// ── El idioma vive en la URL ───────────────────────
+//
+//   /pages/catalogo.html      → español (el de por defecto, sin prefijo:
+//                               las URLs que ya existían siguen valiendo)
+//   /en/pages/catalogo.html   → inglés
+//
+// El mismo fichero HTML se sirve en las dos rutas (rewrite de Vercel, ver
+// vercel.json): no hay dos copias de nada. Lo que cambia es lo que decide el
+// idioma — y a partir de ahora lo decide la URL, no el visitante. Es lo que
+// permite que Google indexe las dos versiones por separado, que era el objetivo.
+
+export function prefijoDe(codigo) {
+    return codigo === POR_DEFECTO ? '' : `/${codigo}`;
+}
+
+// La ruta actual sin su prefijo de idioma
+function rutaBase() {
+    const partes = window.location.pathname.split('/');
+
+    return idiomaDelPrefijo() ? '/' + partes.slice(2).join('/') : window.location.pathname;
+}
+
+function idiomaDelPrefijo() {
+    const primerTramo = window.location.pathname.split('/')[1];
+
+    return CODIGOS.includes(primerTramo) && primerTramo !== POR_DEFECTO ? primerTramo : null;
+}
+
+// La MISMA página en otro idioma, con la ruta y los filtros intactos
+export function urlEnIdioma(codigo) {
+    return prefijoDe(codigo) + rutaBase() + window.location.search;
+}
+
 // ── Idioma activo ──────────────────────────────────
-// Preferencia guardada → idioma del navegador → respaldo.
+// Prefijo de la URL → preferencia guardada → respaldo.
+//
+// Y NO el idioma del navegador. Esa era la detección de la fase 1 y aquí ya no
+// vale: Googlebot renderiza con un Chrome en inglés y sin localStorage, así que
+// mandarle al inglés por navigator.language lo sacaría de TODAS las URLs
+// españolas, y Google acabaría indexando solo la mitad del sitio. Google
+// desaconseja explícitamente redirigir por idioma detectado. Quien llega en
+// inglés tiene el selector en la cabecera, que es lo que Google recomienda.
 function detectar() {
+    // El prefijo manda sobre todo lo demás: es lo que hace que un enlace
+    // compartido llegue en el idioma en el que se compartió, aunque quien lo
+    // abra tenga otro guardado.
+    const dePrefijo = idiomaDelPrefijo();
+
+    if (dePrefijo) {
+        try { localStorage.setItem(CLAVE, dePrefijo); } catch (_) { /* da igual: la URL ya lo dice */ }
+        return dePrefijo;
+    }
+
+    // Sin prefijo: o es el idioma por defecto, o el visitante eligió otro en su
+    // día y ha entrado por una URL vieja. En ese caso el script de arranque del
+    // <head> ya lo ha mandado a su URL antes de que se pintara nada; si estamos
+    // aquí es porque no había nada guardado (o era el de por defecto).
     let guardado = null;
     try { guardado = localStorage.getItem(CLAVE); } catch (_) { /* sin localStorage: al respaldo */ }
-    if (CODIGOS.includes(guardado)) return guardado;
 
-    const navegador = (navigator.language || '').slice(0, 2).toLowerCase();
-    return CODIGOS.includes(navegador) ? navegador : POR_DEFECTO;
+    return CODIGOS.includes(guardado) ? guardado : POR_DEFECTO;
 }
 
 export const idioma = detectar();
@@ -148,12 +200,16 @@ export function aplicarTraducciones(raiz = document) {
 
 // ── Cambio de idioma ───────────────────────────────
 
-// Recarga la página: el DOM lo pintan a medias el HTML estático y varios
-// módulos JS con su propio estado (grids, modales, cabeceras de set...).
-// Recargar es la forma barata de garantizar que no queda ni un rincón en
-// el idioma anterior, y conserva la URL con sus filtros.
+// Navega a la MISMA página en el otro idioma. Ya no recarga: el idioma vive en
+// la URL, así que cambiarlo es cambiar de URL. La ruta y los filtros (?set=,
+// ?tipo=, ?page=) viajan intactos — cambias de idioma sin perder dónde estabas
+// — y el resultado es una URL que se puede compartir y que Google puede indexar.
+//
+// Cargar la página entera de nuevo, además, es la forma barata de garantizar
+// que no queda ni un rincón en el idioma anterior: el DOM lo pintan a medias el
+// HTML estático y una docena de módulos con su propio estado.
 export function cambiarIdioma(nuevo) {
     if (!CODIGOS.includes(nuevo) || nuevo === idioma) return;
     try { localStorage.setItem(CLAVE, nuevo); } catch (_) { /* sin persistencia, pero cambia */ }
-    window.location.reload();
+    window.location.assign(urlEnIdioma(nuevo));
 }

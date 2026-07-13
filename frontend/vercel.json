@@ -15,6 +15,36 @@
             "source": "/pages/set.html",
             "destination": "/pages/catalogo.html",
             "permanent": true
+        },
+
+        {
+            "source": "/en/pages/expansiones.html",
+            "destination": "/en/pages/catalogo.html",
+            "permanent": true
+        },
+        {
+            "source": "/en/pages/set.html",
+            "has": [{ "type": "query", "key": "id", "value": "(?<id>.+)" }],
+            "destination": "/en/pages/catalogo.html?set=$id",
+            "permanent": true
+        },
+        {
+            "source": "/en/pages/set.html",
+            "destination": "/en/pages/catalogo.html",
+            "permanent": true
+        }
+    ],
+
+    "rewrites": [
+        { "source": "/en", "destination": "/index.html" },
+        { "source": "/en/", "destination": "/index.html" },
+        { "source": "/en/:ruta*", "destination": "/:ruta*" }
+    ],
+
+    "headers": [
+        {
+            "source": "/en/:ruta*",
+            "headers": [{ "key": "Content-Language", "value": "en" }]
         }
     ]
 }

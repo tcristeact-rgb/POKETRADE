@@ -76,6 +76,20 @@ TCGdex's answers are distinguished three ways, which is what makes the per-langu
 
 The browser never talks to TCGdex directly, and all external responses are cached server-side for 24 h. `cartas:sincronizar-tcgdex [--idioma=en]` still refreshes prices/data of already-stored cards on demand.
 
+### The language lives in the URL
+
+```
+/pages/catalogo.html        → Spanish (the default: no prefix, so every URL that already existed still works)
+/en/pages/catalogo.html     → English
+```
+
+Both URLs serve **the same HTML file** — a Vercel rewrite (`/en/:path*` → `/:path*`) strips the prefix, so there is no second copy of anything to keep in sync. Two consequences fall out of that:
+
+- **Every internal link is relative**, so the prefix propagates by itself: `../index.html` from `/en/pages/catalogo.html` resolves to `/en/index.html`. No link-rewriting layer was needed.
+- **`canonical` and `hreflang` have to be computed client-side**, because the same file is served at two URLs and a static `canonical` would point *both* at the Spanish one — which would get the English version dropped from the index, the exact opposite of the goal. The `hreflang` cluster also ships in `sitemap.xml`, which is static and needs no JavaScript; the injected `<link>` tags are the second belt, not the only one.
+
+**There is no automatic redirect based on the browser's language.** Googlebot renders with a Chrome set to English and no `localStorage`, so bouncing visitors by `navigator.language` would bounce Googlebot out of *every* Spanish URL and Google would end up indexing half the site. Google explicitly advises against it. The language selector sits in the header, which is what they recommend instead. A visitor who has explicitly picked a language *is* sent to their URL — that trigger is the stored choice, which a crawler never has.
+
 **Excluded catalogs** — `config/tcgdex.php` holds a `series_excluidas` list (currently `tcgp` Pokémon Pocket, `mc` McDonald's, `tk` Trainer Kits: non-physical or asset-less catalogs). Adding a serie id there requires no code changes: the sync skips it, the global search filters its cards out, and `php artisan tcgdex:purgar-excluidos` (dry-run by default, `--force` to apply) removes anything already imported, including inventories and trades that reference those cards.
 
 ### Catalog & expansion endpoints
