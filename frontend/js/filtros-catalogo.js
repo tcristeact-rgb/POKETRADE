@@ -125,10 +125,14 @@ export function iniciarFiltros({ alCambiar }) {
         } catch (_) { /* los desplegables son secundarios */ }
     }
 
-    function rellenarSelect(select, valores) {
-        if (!select || !Array.isArray(valores)) return;
+    // Cada opción viene como {clave, etiqueta}: se ENSEÑA la etiqueta ya
+    // traducida y se ENVÍA la clave canónica. Por eso ?tipo=fire vale igual
+    // en los dos idiomas y un enlace con filtros se puede compartir entre
+    // usuarios que no hablan el mismo.
+    function rellenarSelect(select, opciones) {
+        if (!select || !Array.isArray(opciones)) return;
         select.length = 1; // conserva la primera opción ("Todos los ...")
-        valores.forEach(v => select.add(new Option(v, v)));
+        opciones.forEach(o => select.add(new Option(o.etiqueta, o.clave)));
     }
 
     return { actuales, hayFiltros, aplicarSobre, limpiar };

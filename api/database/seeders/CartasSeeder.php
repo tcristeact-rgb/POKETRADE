@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Carta;
 use App\Services\TcgdexService;
+use App\Support\CatalogoTcg;
 use Illuminate\Database\Seeder;
 
 class CartasSeeder extends Seeder
@@ -48,8 +49,8 @@ class CartasSeeder extends Seeder
                     ['tcgdex_id' => $carta['id']],
                     [
                         'nombre'            => $carta['name'],
-                        'tipo'              => $carta['types'][0] ?? null,
-                        'rareza'            => $carta['rarity'] ?? null,
+                        'tipo_key'          => CatalogoTcg::claveTipo($carta['types'][0] ?? null),
+                        'rareza_key'        => CatalogoTcg::claveRareza($carta['rarity'] ?? null),
                         'set_expansion'     => $carta['set']['name'] ?? $set['name'],
                         'set_id'            => $carta['set']['id'] ?? $setId,
                         'numero'            => $carta['localId'] ?? null,

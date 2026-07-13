@@ -32,25 +32,15 @@
                 placeholder="Buscar por carta (ofrece o busca)..."
                 aria-label="Buscar tradeo por carta"
             />
-            <!-- Los 11 tipos REALES del TCG. Antes había 18 tipos del
-                 videojuego (Eléctrico, Veneno, Tierra, Roca...) que no
-                 existen en las cartas: filtrar por ellos no devolvía
-                 nunca nada. El value sigue siendo la cadena española
-                 porque es lo que hay hoy en la BD; la Fase 3 lo cambia
-                 por la clave canónica y esta atadura desaparece. -->
+            <!-- Los tipos los rellena marketplace.js desde la API
+                 (GET /cartas/filtros), igual que el catálogo: son los 11
+                 reales del TCG, ya traducidos y con la clave canónica como
+                 value. Antes estaban escritos aquí a mano, y encima eran los
+                 18 tipos del VIDEOJUEGO (Eléctrico, Veneno, Tierra, Roca...),
+                 que no existen en las cartas: filtrar por ellos no devolvía
+                 nunca nada. -->
             <select id="filtro-tipo" data-i18n-attr="aria-label:mkt.filtrarTipoAria" aria-label="Filtrar por tipo de carta">
-                <option value=""          data-i18n="catalogo.todosTipos">Todos los tipos</option>
-                <option value="Agua"      data-i18n="tipo.agua">Agua</option>
-                <option value="Dragón"    data-i18n="tipo.dragon">Dragón</option>
-                <option value="Fuego"     data-i18n="tipo.fuego">Fuego</option>
-                <option value="Hada"      data-i18n="tipo.hada">Hada</option>
-                <option value="Incolora"  data-i18n="tipo.incolora">Incolora</option>
-                <option value="Lucha"     data-i18n="tipo.lucha">Lucha</option>
-                <option value="Metálica"  data-i18n="tipo.metalica">Metálica</option>
-                <option value="Oscura"    data-i18n="tipo.oscura">Oscura</option>
-                <option value="Planta"    data-i18n="tipo.planta">Planta</option>
-                <option value="Psíquico"  data-i18n="tipo.psiquico">Psíquico</option>
-                <option value="Rayo"      data-i18n="tipo.rayo">Rayo</option>
+                <option value="" data-i18n="catalogo.todosTipos">Todos los tipos</option>
             </select>
             <span class="contador-resultados" id="contador" data-i18n="mkt.cargando">Cargando tradeos...</span>
         </div>

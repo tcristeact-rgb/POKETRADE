@@ -184,6 +184,12 @@ return [
     */
 
     'custom' => [
+        // Tipo y rareza son un conjunto cerrado (ver App\Support\CatalogoTcg):
+        // un valor que no esté en él se rechaza en vez de acabar en la BD sin
+        // traducción posible.
+        'tcg' => [
+            'desconocido' => 'El valor de :attribute no existe en el catálogo del TCG.',
+        ],
         'password' => [
             'min' => 'La contraseña debe tener al menos :min caracteres.',
         ],

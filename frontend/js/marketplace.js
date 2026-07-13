@@ -13,6 +13,7 @@ let urlEmpujada       = false;  // ¿El modal abierto metió una entrada en el h
 
 alCargarDOM(() => {
     mostrarCtaPublicar();
+    cargarTiposFiltro();
 
     // Filtros y reintento
     document.getElementById('buscar-carta')?.addEventListener('input', filtrar);
@@ -144,11 +145,28 @@ function filtrar() {
     const filtrados = todosLosTradeos.filter(tradeo => {
         const cartas        = [...(tradeo.cartas_ofrece || []), ...(tradeo.cartas_busca || [])];
         const coincideTexto = !texto || cartas.some(c => c.nombre.toLowerCase().includes(texto));
-        const coincideTipo  = !tipo  || cartas.some(c => c.tipo === tipo);
+        // Se compara la CLAVE, no el texto: carta.tipo ya viene traducido, y
+        // compararlo contra el value del <select> ataría el filtro al idioma
+        const coincideTipo  = !tipo  || cartas.some(c => c.tipo_key === tipo);
         return coincideTexto && coincideTipo;
     });
 
     renderizarTradeos(filtrados);
+}
+
+// Los tipos del desplegable salen de la API, ya traducidos y con la clave
+// canónica como value. Si falla, el <select> se queda solo con "Todos los
+// tipos" y el buscador por nombre sigue funcionando.
+async function cargarTiposFiltro() {
+    const select = document.getElementById('filtro-tipo');
+    if (!select) return;
+
+    try {
+        const res = await apiFetch('/cartas/filtros');
+        if (!res.ok) return;
+        const { tipos } = await res.json();
+        (tipos || []).forEach(op => select.add(new Option(op.etiqueta, op.clave)));
+    } catch (_) { /* el desplegable es secundario */ }
 }
 
 // ─── Renderizado ───────────────────────────────────────

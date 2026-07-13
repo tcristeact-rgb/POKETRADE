@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Carta;
 use App\Services\TcgdexService;
+use App\Support\CatalogoTcg;
 use Illuminate\Console\Command;
 
 class SincronizarCartasTcgdex extends Command
@@ -44,10 +45,13 @@ class SincronizarCartasTcgdex extends Command
             if ($this->option('solo-precios')) {
                 $carta->update(['precio_cardmarket' => $precio]);
             } else {
+                // TCGdex devuelve el tipo y la rareza como texto ya traducido
+                // ("Fire"/"Fuego"): se normalizan a la clave canónica, que es
+                // lo único que guarda la BD
                 $carta->update([
                     'nombre'            => $datos['name'],
-                    'tipo'              => $datos['types'][0] ?? null,
-                    'rareza'            => $datos['rarity'] ?? null,
+                    'tipo_key'          => CatalogoTcg::claveTipo($datos['types'][0] ?? null),
+                    'rareza_key'        => CatalogoTcg::claveRareza($datos['rarity'] ?? null),
                     'numero'            => $datos['localId'] ?? $carta->numero,
                     'imagen_url'        => $datos['image'] ?? $carta->imagen_url,
                     'descripcion'       => $datos['description'] ?? $carta->descripcion,

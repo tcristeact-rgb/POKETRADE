@@ -6,6 +6,7 @@ use App\Models\Carta;
 use App\Models\Serie;
 use App\Models\Set;
 use App\Services\TcgdexService;
+use App\Support\CatalogoTcg;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -125,21 +126,27 @@ class SetController extends Controller
 
     // Filtro por tipo y rareza sobre las cartas de un set. No puede ir
     // directamente en SQL: la mayoría de cartas cacheadas bajo demanda
-    // aún no está hidratada (tipo y rareza a NULL). En su lugar se pide
-    // a TCGdex la lista de cartas del set que cumplen el filtro (una
+    // aún no está hidratada (tipo_key y rareza_key a NULL). En su lugar se
+    // pide a TCGdex la lista de cartas del set que cumplen el filtro (una
     // petición, cacheada) y se intersecta por tcgdex_id. Si TCGdex no
     // responde, se degrada al filtro SQL sobre lo ya hidratado.
+    //
+    // Los filtros llegan como clave canónica ('fire'), no como texto: así el
+    // mismo enlace filtrado funciona igual en español y en inglés.
     private function filtrarPorTipoYRareza($query, Set $set, TcgdexService $tcgdex, string $tipo, string $rareza): void
     {
-        if ($tipo === '' && $rareza === '') {
+        $tipoKey   = CatalogoTcg::claveTipo($tipo);
+        $rarezaKey = CatalogoTcg::claveRareza($rareza);
+
+        if ($tipoKey === null && $rarezaKey === null) {
             return;
         }
 
         // 500 cubre de sobra el set más grande (~450 cartas)
         $coincidentes = $tcgdex->buscarCartas(array_filter([
-            'set.id' => $set->tcgdex_id,
-            'types'  => $tipo,
-            'rarity' => $rareza,
+            'set.id'     => $set->tcgdex_id,
+            'tipo_key'   => $tipoKey,
+            'rareza_key' => $rarezaKey,
         ]), 500);
 
         if ($coincidentes !== null) {
@@ -147,11 +154,11 @@ class SetController extends Controller
             return;
         }
 
-        if ($tipo !== '') {
-            $query->where('tipo', $tipo);
+        if ($tipoKey !== null) {
+            $query->where('tipo_key', $tipoKey);
         }
-        if ($rareza !== '') {
-            $query->where('rareza', $rareza);
+        if ($rarezaKey !== null) {
+            $query->where('rareza_key', $rarezaKey);
         }
     }
 

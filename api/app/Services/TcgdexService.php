@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Support\CatalogoTcg;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
@@ -26,23 +27,6 @@ class TcgdexService
     // pero no tiene sentido retenerlas un día entero
     private const CACHE_TTL_BUSQUEDA = 600; // 10 minutos
 
-    // Los valores de tipo son distintos por idioma en TCGdex; esta
-    // tabla permite repetir en el catálogo inglés una búsqueda hecha
-    // con el tipo en español (sets antiguos nunca traducidos)
-    private const TIPOS_EN = [
-        'Agua'     => 'Water',
-        'Dragón'   => 'Dragon',
-        'Fuego'    => 'Fire',
-        'Hada'     => 'Fairy',
-        'Incolora' => 'Colorless',
-        'Lucha'    => 'Fighting',
-        'Metálica' => 'Metal',
-        'Oscura'   => 'Darkness',
-        'Planta'   => 'Grass',
-        'Psíquico' => 'Psychic',
-        'Rayo'     => 'Lightning',
-    ];
-
     // Campos que se completan desde "en" si "es" los trae vacíos.
     // Solo los tres primeros disparan la petición de fallback: los
     // demás pueden faltar legítimamente (Entrenador/Energía sin tipos,
@@ -50,41 +34,31 @@ class TcgdexService
     private const CAMPOS_FALLBACK  = ['name', 'rarity', 'image', 'illustrator', 'description'];
     private const CAMPOS_CRITICOS  = ['name', 'rarity', 'image'];
 
-    // --- Tipos y rarezas del TCG, localizados ---
-    // GET /v2/{lang}/types · GET /v2/{lang}/rarities → ["Agua", ...]
-    // Pueblan los desplegables de filtros del catálogo: los DISTINCT de
-    // la BD no sirven porque la mayoría de cartas cacheadas bajo
-    // demanda aún no está hidratada (tipo y rareza a NULL).
-    public function listarTipos(): ?array
-    {
-        return $this->get('es', 'types') ?? $this->get('en', 'types');
-    }
-
-    public function listarRarezas(): ?array
-    {
-        return $this->get('es', 'rarities') ?? $this->get('en', 'rarities');
-    }
-
     // --- Búsqueda de cartas por filtros en todo el catálogo ---
     // GET /v2/{lang}/cards?name=&types=&rarity=&set.id=&pagination:...
-    // Filtros combinables (AND). Devuelve resúmenes [{id, localId,
-    // name, image?}]. Español primero y, si no llena el límite,
-    // complemento inglés deduplicado por id (sets nunca traducidos).
-    // El tipo se traduce con TIPOS_EN para el catálogo inglés; la
-    // rareza no tiene traducción fiable, así que con ese filtro activo
-    // no hay complemento. Devuelve null solo si TCGdex no responde.
+    //
+    // Los filtros llegan con las claves canónicas de PokeTrade (tipo_key,
+    // rareza_key) y aquí se traducen al texto que entiende cada catálogo de
+    // TCGdex, que es distinto en cada idioma ("Fuego" / "Fire").
+    //
+    // Se consulta español primero y, si no llena el límite, se complementa con
+    // inglés deduplicando por id (los sets antiguos solo existen ahí).
+    //
+    // Antes, con el filtro de rareza activo NO se hacía el complemento inglés
+    // ("la rareza no tiene traducción fiable"). Ahora sí la tiene: el catálogo
+    // sabe cómo se llama cada rareza en cada idioma, así que la búsqueda por
+    // rareza también alcanza los sets clásicos. Y si una rareza solo existe en
+    // el catálogo inglés (las de los sets clásicos), la consulta española se
+    // salta directamente en vez de preguntar por un valor que no existe.
+    //
+    // Devuelve null solo si TCGdex no responde en ninguno de los dos idiomas.
     public function buscarCartas(array $filtros, int $limite = 60): ?array
     {
         $es = $this->consultarCartas('es', $filtros, $limite);
 
         $en = null;
-        $sinRareza = empty($filtros['rarity']);
-        if (($es === null || count($es) < $limite) && $sinRareza) {
-            $filtrosEn = $filtros;
-            if (!empty($filtrosEn['types'])) {
-                $filtrosEn['types'] = self::TIPOS_EN[$filtrosEn['types']] ?? $filtrosEn['types'];
-            }
-            $en = $this->consultarCartas('en', $filtrosEn, $limite);
+        if ($es === null || count($es) < $limite) {
+            $en = $this->consultarCartas('en', $filtros, $limite);
         }
 
         if ($es === null && $en === null) {
@@ -103,10 +77,38 @@ class TcgdexService
         return $cartas->take($limite)->values()->all();
     }
 
-    // Una consulta de búsqueda en un idioma concreto, con caché corta
+    // Una consulta de búsqueda en un idioma concreto, con caché corta.
+    // Devuelve null (sin llamar a la API) si algún filtro pedido no existe en
+    // ese catálogo: preguntar por una rareza que ese idioma no tiene devuelve
+    // cero resultados igualmente, y así nos ahorramos la petición.
     private function consultarCartas(string $idioma, array $filtros, int $limite): ?array
     {
-        $params = array_filter($filtros) + [
+        $params = [];
+
+        if (!empty($filtros['name'])) {
+            $params['name'] = $filtros['name'];
+        }
+        if (!empty($filtros['set.id'])) {
+            $params['set.id'] = $filtros['set.id'];
+        }
+
+        if (!empty($filtros['tipo_key'])) {
+            $tipo = CatalogoTcg::tipoTcgdex($filtros['tipo_key'], $idioma);
+            if ($tipo === null) {
+                return null;
+            }
+            $params['types'] = $tipo;
+        }
+
+        if (!empty($filtros['rareza_key'])) {
+            $rareza = CatalogoTcg::rarezaTcgdex($filtros['rareza_key'], $idioma);
+            if ($rareza === null) {
+                return null;
+            }
+            $params['rarity'] = $rareza;
+        }
+
+        $params += [
             'pagination:page'         => 1,
             'pagination:itemsPerPage' => $limite,
         ];

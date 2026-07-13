@@ -19,8 +19,8 @@ class CartaTest extends TestCase
         // Creamos una carta directamente en la BD
         Carta::create([
             'nombre' => 'Charizard',
-            'tipo'   => 'Fuego',
-            'rareza' => 'Rara Holo',
+            'tipo_key'   => 'fire',
+            'rareza_key' => 'holo-rare',
         ]);
 
         // Hacemos GET al catálogo sin token de autenticación
@@ -39,8 +39,8 @@ class CartaTest extends TestCase
         // Creamos la carta y guardamos el objeto para obtener su ID
         $carta = Carta::create([
             'nombre' => 'Pikachu',
-            'tipo'   => 'Electrico',
-            'rareza' => 'Comun',
+            'tipo_key'   => 'lightning',
+            'rareza_key' => 'common',
         ]);
 
         // Hacemos GET al endpoint de detalle usando el ID de la carta creada
@@ -106,17 +106,48 @@ class CartaTest extends TestCase
         // Generamos su token JWT para autenticarnos como administrador
         $token = auth()->login($admin);
 
-        // Creamos una carta con el token del admin
+        // Creamos una carta con el token del admin. El tipo va como clave
+        // canónica; la rareza, como nombre en español, para comprobar que
+        // el endpoint acepta las dos formas
         $respuesta = $this->withHeader('Authorization', "Bearer {$token}")
                           ->postJson('/api/cartas', [
                               'nombre' => 'Mewtwo',
-                              'tipo'   => 'Psiquico',
+                              'tipo'   => 'psychic',
                               'rareza' => 'Ultra Rara',
                           ]);
 
         // Debe devolver 201 (creado) y contener el nombre de la carta en el JSON
         $respuesta->assertStatus(201)
                   ->assertJsonFragment(['nombre' => 'Mewtwo']);
+
+        // Y lo que se guarda es la clave, no el texto
+        $this->assertDatabaseHas('cartas', [
+            'nombre'     => 'Mewtwo',
+            'tipo_key'   => 'psychic',
+            'rareza_key' => 'ultra-rare',
+        ]);
+    }
+
+    // --- Test 5a: Un tipo que no existe en el TCG se rechaza ---
+    // Antes se guardaba tal cual y quedaba una carta con un tipo inventado,
+    // sin traducción posible, que además ensuciaba el filtro del catálogo
+    public function test_no_se_puede_crear_una_carta_con_un_tipo_inventado()
+    {
+        $admin = User::create([
+            'nombre'   => 'Admin',
+            'apellido' => 'Test',
+            'email'    => 'admin2@test.com',
+            'password' => bcrypt('123456'),
+            'rol'      => 'admin',
+        ]);
+
+        // "Eléctrico" es un tipo del VIDEOJUEGO: en el TCG no existe
+        // (el equivalente es "Rayo" / lightning)
+        $this->withHeader('Authorization', 'Bearer ' . auth()->login($admin))
+             ->postJson('/api/cartas', ['nombre' => 'Pikachu', 'tipo' => 'Eléctrico'])
+             ->assertStatus(422);
+
+        $this->assertDatabaseMissing('cartas', ['nombre' => 'Pikachu']);
     }
 
     // --- Test 5b: Navegación anterior/siguiente acotada al set ---
@@ -142,8 +173,8 @@ class CartaTest extends TestCase
     public function test_se_puede_filtrar_cartas_por_tipo()
     {
         // Creamos dos cartas de tipos diferentes
-        Carta::create(['nombre' => 'Charizard', 'tipo' => 'Fuego', 'rareza' => 'Rara']);
-        Carta::create(['nombre' => 'Gyarados',  'tipo' => 'Agua',  'rareza' => 'Rara']);
+        Carta::create(['nombre' => 'Charizard', 'tipo_key' => 'fire',  'rareza_key' => 'rare']);
+        Carta::create(['nombre' => 'Gyarados',  'tipo_key' => 'water', 'rareza_key' => 'rare']);
 
         // Filtramos por tipo Fuego usando el parámetro de la query
         $respuesta = $this->getJson('/api/cartas?tipo=Fuego');

@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Carta;
+use App\Rules\ClaveTcgValida;
 use App\Services\TcgdexService;
+use App\Support\CatalogoTcg;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator; // Para validar los datos recibidos
@@ -15,8 +17,8 @@ class CartaController extends Controller
     // Acceso: público (sin token)
     // Query params opcionales:
     //   ?nombre=X       → búsqueda parcial insensible a mayúsculas
-    //   ?tipo=X         → filtro exacto (ej: "Fuego")
-    //   ?rareza=X       → filtro exacto (ej: "Rara Doble")
+    //   ?tipo=X         → clave canónica del tipo (ej: "fire")
+    //   ?rareza=X       → clave canónica de la rareza (ej: "double-rare")
     //   ?set=X          → filtro exacto por nombre de set (ej: "151")
     //   ?orden=recientes→ más nuevas primero (para novedades del home)
     //   ?page=N&por_pagina=M → paginación (24 por defecto, máx. 100)
@@ -38,16 +40,17 @@ class CartaController extends Controller
             $query->where('nombre', $operadorLike, '%' . $request->nombre . '%');
         }
 
-        // Filtro por tipo — búsqueda exacta
-        // Ejemplo: ?tipo=Fuego → devuelve solo cartas de tipo Fuego
-        if ($request->has('tipo')) {
-            $query->where('tipo', $request->tipo);
+        // Filtro por tipo y rareza — por CLAVE canónica, no por el texto
+        // traducido: ?tipo=fire funciona igual en cualquier idioma, y un
+        // enlace con filtros se puede compartir entre usuarios de idiomas
+        // distintos. claveTipo() acepta además el nombre en español o inglés,
+        // para no romper los enlaces antiguos (?tipo=Fuego sigue valiendo).
+        if ($request->filled('tipo')) {
+            $query->where('tipo_key', CatalogoTcg::claveTipo($request->tipo));
         }
 
-        // Filtro por rareza — búsqueda exacta
-        // Ejemplo: ?rareza=Rara Doble → devuelve solo esa rareza
-        if ($request->has('rareza')) {
-            $query->where('rareza', $request->rareza);
+        if ($request->filled('rareza')) {
+            $query->where('rareza_key', CatalogoTcg::claveRareza($request->rareza));
         }
 
         // Filtro por set de expansión — búsqueda exacta
@@ -80,17 +83,21 @@ class CartaController extends Controller
     // --- Valores disponibles para los filtros del catálogo ---
     // Endpoint: GET /api/cartas/filtros
     // Acceso: público (sin token)
-    // Tipos y rarezas del TCG desde TCGdex (localizados y completos,
-    // cacheados 24 h): los DISTINCT de la BD se quedarían casi vacíos
-    // porque la mayoría de cartas cacheadas bajo demanda aún no está
-    // hidratada. Si TCGdex no responde, degradamos a la BD.
-    public function filtros(TcgdexService $tcgdex)
+    //
+    // Tipos y rarezas son un conjunto CERRADO y pequeño (11 y 40), así que
+    // salen de nuestro propio catálogo y ya no de TCGdex. Eso arregla tres
+    // cosas de golpe: la lista deja de depender de que una API de terceros
+    // responda, sale ya traducida al idioma de la petición, y el español
+    // deja de tener rarezas a medio traducir ("Uncommon", "Shiny rare"),
+    // que es lo que TCGdex devuelve en su propio catálogo español.
+    //
+    // Cada entrada es {clave, etiqueta}: la clave viaja en la URL (?tipo=fire)
+    // y la etiqueta es lo que se lee en el desplegable.
+    public function filtros()
     {
         return response()->json([
-            'tipos'   => $tcgdex->listarTipos()
-                            ?? Carta::whereNotNull('tipo')->distinct()->orderBy('tipo')->pluck('tipo'),
-            'rarezas' => $tcgdex->listarRarezas()
-                            ?? Carta::whereNotNull('rareza')->distinct()->orderBy('rareza')->pluck('rareza'),
+            'tipos'   => CatalogoTcg::tipos(),
+            'rarezas' => CatalogoTcg::rarezas(),
             'sets'    => Carta::whereNotNull('set_expansion')->distinct()->orderBy('set_expansion')->pluck('set_expansion'),
         ]);
     }
@@ -165,10 +172,12 @@ class CartaController extends Controller
             return response()->json(['error' => __('mensajes.busqueda_corta')], 422);
         }
 
+        // Los filtros llegan como clave canónica; el servicio se encarga de
+        // traducirlos al texto que entiende cada catálogo de TCGdex
         $resultados = $tcgdex->buscarCartas(array_filter([
-            'name'   => $q,
-            'types'  => $tipo,
-            'rarity' => $rareza,
+            'name'       => $q,
+            'tipo_key'   => CatalogoTcg::claveTipo($tipo),
+            'rareza_key' => CatalogoTcg::claveRareza($rareza),
         ]));
 
         if ($resultados === null) {
@@ -275,8 +284,8 @@ class CartaController extends Controller
             ['tcgdex_id' => $datos['id'] ?? $tcgdexId],
             [
                 'nombre'            => $datos['name'],
-                'tipo'              => $datos['types'][0] ?? null,
-                'rareza'            => $datos['rarity'] ?? null,
+                'tipo_key'          => CatalogoTcg::claveTipo($datos['types'][0] ?? null),
+                'rareza_key'        => CatalogoTcg::claveRareza($datos['rarity'] ?? null),
                 // El id de TCGdex es "{set}-{numero}": si el detalle no
                 // trae el set, se deriva del prefijo
                 'set_id'            => $datos['set']['id'] ?? strtok($tcgdexId, '-'),
@@ -309,8 +318,8 @@ class CartaController extends Controller
 
         $carta->update([
             'nombre'            => $datos['name'] ?? $carta->nombre,
-            'tipo'              => $datos['types'][0] ?? $carta->tipo,
-            'rareza'            => $datos['rarity'] ?? $carta->rareza,
+            'tipo_key'          => CatalogoTcg::claveTipo($datos['types'][0] ?? null) ?? $carta->tipo_key,
+            'rareza_key'        => CatalogoTcg::claveRareza($datos['rarity'] ?? null) ?? $carta->rareza_key,
             'numero'            => $datos['localId'] ?? $carta->numero,
             'imagen_url'        => $datos['image'] ?? $carta->imagen_url,
             'descripcion'       => $datos['description'] ?? $carta->descripcion,
@@ -329,12 +338,15 @@ class CartaController extends Controller
     public function store(Request $request)
     {
         // Validamos los datos recibidos
-        // Solo el nombre es obligatorio, el resto son opcionales
+        // Solo el nombre es obligatorio, el resto son opcionales.
+        // tipo y rareza se aceptan como CLAVE ('fire') o como el nombre en
+        // español o inglés: Rule::in acota a lo que el catálogo conoce, así
+        // que una rareza inventada se rechaza en vez de acabar en la BD.
         $validacion = Validator::make($request->all(), [
-            'nombre'     => 'required|string',  // Obligatorio
-            'tipo'       => 'nullable|string',  // Opcional
-            'rareza'     => 'nullable|string',  // Opcional
-            'imagen_url' => 'nullable|string',  // Opcional
+            'nombre'     => 'required|string',
+            'tipo'       => ['nullable', 'string', new ClaveTcgValida('tipo')],
+            'rareza'     => ['nullable', 'string', new ClaveTcgValida('rareza')],
+            'imagen_url' => 'nullable|string',
         ]);
 
         // Si la validación falla devolvemos el primer error con código 422
@@ -342,9 +354,11 @@ class CartaController extends Controller
             return response()->json(['error' => $validacion->errors()->first()], 422);
         }
 
-        // Creamos la carta con todos los datos recibidos
         // Los campos que no vengan en el request se quedarán como null
-        $carta = Carta::create($request->all());
+        $carta = Carta::create($request->except(['tipo', 'rareza']) + [
+            'tipo_key'   => CatalogoTcg::claveTipo($request->tipo),
+            'rareza_key' => CatalogoTcg::claveRareza($request->rareza),
+        ]);
 
         // Devolvemos 201 (creado) con los datos de la carta creada
         return response()->json($carta, 201);
@@ -366,7 +380,10 @@ class CartaController extends Controller
 
         // Actualizamos solo los campos que vengan en el request
         // Los campos no enviados mantienen su valor actual
-        $carta->update($request->all());
+        $carta->update($request->except(['tipo', 'rareza']) + array_filter([
+            'tipo_key'   => CatalogoTcg::claveTipo($request->tipo),
+            'rareza_key' => CatalogoTcg::claveRareza($request->rareza),
+        ]));
 
         // Devolvemos la carta actualizada
         return response()->json($carta);

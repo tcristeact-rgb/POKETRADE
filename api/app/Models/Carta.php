@@ -2,16 +2,19 @@
 
 namespace App\Models;
 
+use App\Support\CatalogoTcg;
 use Illuminate\Database\Eloquent\Model;
 
 class Carta extends Model
 {
-    // Campos que se pueden rellenar
+    // Campos que se pueden rellenar. tipo y rareza NO están: en la BD viven
+    // como clave canónica (tipo_key, rareza_key) y en el JSON salen ya
+    // traducidas, desde los accesores de abajo.
     protected $fillable = [
         'tcgdex_id',
         'nombre',
-        'tipo',
-        'rareza',
+        'tipo_key',
+        'rareza_key',
         'set_expansion',
         'set_id',
         'numero',
@@ -30,11 +33,27 @@ class Carta extends Model
         'detalle_synced_at' => 'datetime',
     ];
 
-    // URLs de imagen listas para el frontend. TCGdex sirve la imagen
-    // base SIN extensión y hay que añadir calidad y formato:
-    //   low.webp  → listados y grids
-    //   high.webp → vista detalle
-    protected $appends = ['imagen_low', 'imagen_high'];
+    // Atributos calculados que el frontend recibe en el JSON.
+    //
+    // tipo y rareza ya no son columnas: se derivan de la clave canónica y del
+    // idioma de la petición. Conservan el nombre de antes a propósito — el
+    // frontend sigue pintando carta.tipo y carta.rareza sin enterarse de
+    // nada, y ahora salen traducidos.
+    protected $appends = ['imagen_low', 'imagen_high', 'tipo', 'rareza'];
+
+    // --- Tipo y rareza, en el idioma de la petición ---
+    // El idioma lo fijó el middleware EstablecerIdioma desde Accept-Language.
+    // La clave viaja igualmente en el JSON (tipo_key / rareza_key): es lo que
+    // usa el frontend para filtrar, porque no depende del idioma.
+    public function getTipoAttribute(): ?string
+    {
+        return $this->tipo_key ? __("tcg.tipos.{$this->tipo_key}") : null;
+    }
+
+    public function getRarezaAttribute(): ?string
+    {
+        return $this->rareza_key ? __("tcg.rarezas.{$this->rareza_key}") : null;
+    }
 
     public function getImagenLowAttribute(): ?string
     {

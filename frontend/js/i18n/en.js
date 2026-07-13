@@ -27,22 +27,6 @@ export default {
     'estado.cerrado':   'Closed',
     'estado.cancelado': 'Cancelled',
 
-    // ── TCG types ──────────────────────────────────
-    // A CLOSED set: there are 11 and they do not change. These are the
-    // official English names from TCGdex, and the seed of the in-house
-    // dictionary that phase 3 will use to translate types and rarities
-    // without touching the card rows at all.
-    'tipo.agua':     'Water',
-    'tipo.dragon':   'Dragon',
-    'tipo.fuego':    'Fire',
-    'tipo.hada':     'Fairy',
-    'tipo.incolora': 'Colorless',
-    'tipo.lucha':    'Fighting',
-    'tipo.metalica': 'Metal',
-    'tipo.oscura':   'Darkness',
-    'tipo.planta':   'Grass',
-    'tipo.psiquico': 'Psychic',
-    'tipo.rayo':     'Lightning',
 
     // ── HTTP and network errors ────────────────────
     'error.401':          'Your session has expired. Please log in again.',

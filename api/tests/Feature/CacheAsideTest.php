@@ -131,7 +131,7 @@ class CacheAsideTest extends TestCase
             'nombre'            => 'Pikachu',
             'tcgdex_id'         => 'sv03.5-025',
             'set_id'            => 'sv03.5',
-            'rareza'            => 'Común',
+            'rareza_key'        => 'common',
             'precio_cardmarket' => 3.50,
         ]);
 

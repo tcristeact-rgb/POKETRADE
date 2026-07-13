@@ -179,6 +179,12 @@ return [
     */
 
     'custom' => [
+        // Types and rarities are a closed set (see App\Support\CatalogoTcg):
+        // a value outside it is rejected rather than stored with no possible
+        // translation.
+        'tcg' => [
+            'desconocido' => 'The :attribute value does not exist in the TCG catalogue.',
+        ],
         'password' => [
             'min' => 'The password must be at least :min characters long.',
         ],

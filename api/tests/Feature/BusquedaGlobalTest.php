@@ -206,17 +206,38 @@ class BusquedaGlobalTest extends TestCase
     }
 
     // --- Test 9: Los desplegables salen de TCGdex ---
-    public function test_filtros_sirven_tipos_y_rarezas_de_tcgdex()
+    // Los tipos y rarezas ya NO vienen de TCGdex: son un conjunto cerrado y
+    // salen de nuestro catálogo, ya traducidos. Así el desplegable de filtros
+    // deja de depender de que una API de terceros responda.
+    public function test_los_filtros_no_dependen_de_tcgdex()
     {
-        Http::fake([
-            'api.tcgdex.net/v2/es/types'    => Http::response(['Agua', 'Fuego', 'Planta']),
-            'api.tcgdex.net/v2/es/rarities' => Http::response(['Común', 'Rara Doble']),
-        ]);
+        Http::fake();   // cualquier petición saliente haría fallar el test
 
         $respuesta = $this->getJson('/api/cartas/filtros');
 
         $respuesta->assertStatus(200)
-                  ->assertJsonPath('tipos', ['Agua', 'Fuego', 'Planta'])
-                  ->assertJsonPath('rarezas', ['Común', 'Rara Doble']);
+                  ->assertJsonCount(11, 'tipos')     // los 11 tipos del TCG
+                  ->assertJsonCount(40, 'rarezas');
+
+        Http::assertNothingSent();
+    }
+
+    // Cada opción es {clave, etiqueta}: la clave viaja en la URL y no depende
+    // del idioma; la etiqueta es lo que lee la persona.
+    public function test_los_filtros_llegan_traducidos_y_con_su_clave()
+    {
+        Http::fake();
+
+        $es = $this->withHeader('Accept-Language', 'es')->getJson('/api/cartas/filtros');
+        $es->assertJsonFragment(['clave' => 'fire', 'etiqueta' => 'Fuego']);
+
+        // "Poco Común" es una MEJORA sobre TCGdex, cuyo catálogo español
+        // devuelve esta rareza sin traducir ("Uncommon"), y son 92 de
+        // nuestras cartas
+        $es->assertJsonFragment(['clave' => 'uncommon', 'etiqueta' => 'Poco Común']);
+
+        $en = $this->withHeader('Accept-Language', 'en')->getJson('/api/cartas/filtros');
+        $en->assertJsonFragment(['clave' => 'fire', 'etiqueta' => 'Fire']);
+        $en->assertJsonFragment(['clave' => 'uncommon', 'etiqueta' => 'Uncommon']);
     }
 }

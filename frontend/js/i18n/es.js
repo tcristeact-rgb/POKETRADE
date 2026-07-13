@@ -27,21 +27,6 @@ export default {
     'estado.cerrado':   'Cerrado',
     'estado.cancelado': 'Cancelado',
 
-    // ── Tipos del TCG ──────────────────────────────
-    // Conjunto CERRADO: son 11 y no cambian. Esta es la semilla del
-    // diccionario propio de la Fase 3, que sacará tipos y rarezas de la
-    // BD y los traducirá aquí sin volver a tocar las cartas.
-    'tipo.agua':     'Agua',
-    'tipo.dragon':   'Dragón',
-    'tipo.fuego':    'Fuego',
-    'tipo.hada':     'Hada',
-    'tipo.incolora': 'Incolora',
-    'tipo.lucha':    'Lucha',
-    'tipo.metalica': 'Metálica',
-    'tipo.oscura':   'Oscura',
-    'tipo.planta':   'Planta',
-    'tipo.psiquico': 'Psíquico',
-    'tipo.rayo':     'Rayo',
 
     // ── Errores HTTP y de red ──────────────────────
     'error.401':          'Sesión expirada. Por favor, inicia sesión de nuevo.',
