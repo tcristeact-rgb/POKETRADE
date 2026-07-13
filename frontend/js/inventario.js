@@ -1,6 +1,6 @@
 // inventario.js — Gestión del inventario del usuario
 
-import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
+import { apiFetch, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
 import { t } from './i18n.js';
 import { alCargarDOM, buscarCartasCatalogo, debounce, escapeHtml, mostrarAlerta, dorsoCarta, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
 
@@ -59,7 +59,7 @@ async function cargarInventario() {
     grid.innerHTML = Array(10)
         .fill('<div class="carta-inventario skeleton" aria-hidden="true"></div>').join('');
     try {
-        const res = await fetch(`${API_URL}/inventario`, { headers: headersAuth() });
+        const res = await apiFetch(`/inventario`);
         if (!res.ok) throw new Error(manejarErrorHTTP(res.status));
         const items = await res.json();
         renderizarInventario(items);
@@ -100,9 +100,8 @@ function renderizarInventario(items) {
 async function eliminarItem(id) {
     if (!confirm(t('inv.confirmarEliminar'))) return;
     try {
-        const res = await fetch(`${API_URL}/inventario/${id}`, {
-            method: 'DELETE',
-            headers: headersAuth()
+        const res = await apiFetch(`/inventario/${id}`, {
+            method: 'DELETE',
         });
         if (!res.ok) throw new Error(manejarErrorHTTP(res.status));
         mostrarAlerta(t('inv.eliminada'), 'exito');
@@ -175,9 +174,8 @@ async function confirmarAnadir() {
     if (!cartaSeleccionadaId) return;
     try {
         // La carta ya existe en el catálogo del backend: basta con su ID
-        const res = await fetch(`${API_URL}/inventario`, {
-            method: 'POST',
-            headers: headersAuth(),
+        const res = await apiFetch(`/inventario`, {
+            method: 'POST',
             body: JSON.stringify({
                 carta_id: cartaSeleccionadaId,
                 cantidad: cantidadSeleccionada

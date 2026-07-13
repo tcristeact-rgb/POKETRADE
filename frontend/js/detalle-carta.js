@@ -3,7 +3,7 @@
 // los datos a nuestra API (que incluye anterior_id/siguiente_id para
 // navegar por el catálogo sin asumir IDs consecutivos).
 
-import { API_URL, estaLogueado, headersAuth, irALogin, manejarErrorHTTP, parsearRespuesta } from './auth.js';
+import { apiFetch, estaLogueado, irALogin, manejarErrorHTTP, parsearRespuesta } from './auth.js';
 import { t } from './i18n.js';
 import { alCargarDOM, escapeHtml, mostrarAlerta, formatearPrecio, dorsoCarta } from './utils.js';
 import { abrirLightbox } from './lightbox.js';
@@ -34,7 +34,7 @@ async function cargarDetalle(id) {
         '<div class="skeleton-detalle"></div>';
 
     try {
-        const res = await fetch(`${API_URL}/cartas/${id}`);
+        const res = await apiFetch(`/cartas/${id}`);
 
         if (res.status === 404) { mostrarError(t('carta.noExiste')); return; }
         if (!res.ok) throw new Error(t('comun.errorApi'));
@@ -170,9 +170,8 @@ async function anadirAInventario(carta) {
     btn.textContent = t('carta.anadiendo');
 
     try {
-        const res = await fetch(`${API_URL}/inventario`, {
+        const res = await apiFetch(`/inventario`, {
             method: 'POST',
-            headers: headersAuth(),
             body: JSON.stringify({ carta_id: carta.id, cantidad: 1 })
         });
         const datos = await parsearRespuesta(res);

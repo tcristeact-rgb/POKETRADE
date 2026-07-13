@@ -43,7 +43,7 @@ class TradeoController extends Controller
 
         // Si no existe devolvemos 404
         if (!$tradeo) {
-            return response()->json(['error' => 'Tradeo no encontrado'], 404);
+            return response()->json(['error' => __('mensajes.tradeo_no_encontrado')], 404);
         }
 
         return response()->json($tradeo);
@@ -86,7 +86,7 @@ class TradeoController extends Controller
                 if (!$entrada) {
                     DB::rollBack();
                     return response()->json([
-                        'error' => 'No tienes en tu inventario alguna de las cartas que intentas ofrecer.'
+                        'error' => __('mensajes.no_tienes_ofrecidas')
                     ], 422);
                 }
 
@@ -117,14 +117,14 @@ class TradeoController extends Controller
 
             // Devolvemos 201 con el tradeo completo incluyendo las cartas asociadas
             return response()->json([
-                'mensaje' => 'Tradeo publicado correctamente',
+                'mensaje' => __('mensajes.tradeo_publicado'),
                 'tradeo'  => $tradeo->load(['cartasOfrece', 'cartasBusca'])
             ], 201);
 
         } catch (\Exception $e) {
             // Si algo falla revertimos todos los cambios de la transacción
             DB::rollBack();
-            return response()->json(['error' => 'No se pudo publicar el tradeo.'], 500);
+            return response()->json(['error' => __('mensajes.tradeo_no_publicado')], 500);
         }
     }
 
@@ -139,13 +139,13 @@ class TradeoController extends Controller
 
         // Si no existe devolvemos 404
         if (!$tradeo) {
-            return response()->json(['error' => 'Tradeo no encontrado'], 404);
+            return response()->json(['error' => __('mensajes.tradeo_no_encontrado')], 404);
         }
 
         // Comprobamos que el tradeo pertenece al usuario autenticado
         // Si no es el propietario devolvemos 403 (prohibido)
         if ($tradeo->user_id !== auth()->id()) {
-            return response()->json(['error' => 'No tienes permiso para modificar este tradeo'], 403);
+            return response()->json(['error' => __('mensajes.tradeo_sin_permiso_editar')], 403);
         }
 
         // Validamos que el estado recibido sea uno de los permitidos
@@ -159,7 +159,7 @@ class TradeoController extends Controller
         // Actualizamos el estado del tradeo ('cerrado' o 'cancelado')
         $tradeo->update(['estado' => $request->estado]);
 
-        return response()->json(['mensaje' => 'Tradeo actualizado correctamente']);
+        return response()->json(['mensaje' => __('mensajes.tradeo_actualizado')]);
     }
 
     // --- Eliminar un tradeo ---
@@ -174,12 +174,12 @@ class TradeoController extends Controller
 
         // Si no existe devolvemos 404
         if (!$tradeo) {
-            return response()->json(['error' => 'Tradeo no encontrado'], 404);
+            return response()->json(['error' => __('mensajes.tradeo_no_encontrado')], 404);
         }
 
         // Comprobamos que el tradeo pertenece al usuario autenticado
         if ($tradeo->user_id !== auth()->id()) {
-            return response()->json(['error' => 'No tienes permiso para eliminar este tradeo'], 403);
+            return response()->json(['error' => __('mensajes.tradeo_sin_permiso_borrar')], 403);
         }
 
         try {
@@ -197,12 +197,12 @@ class TradeoController extends Controller
             // Confirmamos la transacción
             DB::commit();
 
-            return response()->json(['mensaje' => 'Tradeo eliminado correctamente']);
+            return response()->json(['mensaje' => __('mensajes.tradeo_eliminado')]);
 
         } catch (\Exception $e) {
             // Si algo falla revertimos todos los cambios
             DB::rollBack();
-            return response()->json(['error' => 'Error al eliminar el tradeo'], 500);
+            return response()->json(['error' => __('mensajes.tradeo_error_eliminar')], 500);
         }
     }
 
@@ -231,13 +231,13 @@ class TradeoController extends Controller
         $tradeo = Tradeo::with(['cartasOfrece', 'cartasBusca'])->find($id);
 
         if (!$tradeo) {
-            return response()->json(['error' => 'Tradeo no encontrado'], 404);
+            return response()->json(['error' => __('mensajes.tradeo_no_encontrado')], 404);
         }
         if ($tradeo->estado !== 'activo') {
-            return response()->json(['error' => 'Este tradeo ya no está disponible'], 409);
+            return response()->json(['error' => __('mensajes.tradeo_no_disponible')], 409);
         }
         if ($tradeo->user_id === auth()->id()) {
-            return response()->json(['error' => 'No puedes aceptar tu propio tradeo'], 403);
+            return response()->json(['error' => __('mensajes.tradeo_propio')], 403);
         }
 
         try {
@@ -254,7 +254,7 @@ class TradeoController extends Controller
 
             if (!$tradeo || $tradeo->estado !== 'activo') {
                 DB::rollBack();
-                return response()->json(['error' => 'Este tradeo ya no está disponible'], 409);
+                return response()->json(['error' => __('mensajes.tradeo_no_disponible')], 409);
             }
 
             $aceptanteId = auth()->id();
@@ -269,7 +269,12 @@ class TradeoController extends Controller
                     ->first();
                 if (!$entrada) {
                     DB::rollBack();
-                    return response()->json(['error' => "No tienes la carta requerida: {$carta->nombre}"], 422);
+                    // El nombre de la carta viaja como parámetro: es un dato,
+                    // no texto traducible (hasta la fase 4 la BD solo lo tiene
+                    // en un idioma)
+                    return response()->json([
+                        'error' => __('mensajes.no_tienes_carta', ['carta' => $carta->nombre]),
+                    ], 422);
                 }
                 if ($entrada->cantidad > 1) {
                     $entrada->decrement('cantidad');
@@ -305,11 +310,11 @@ class TradeoController extends Controller
 
             DB::commit();
 
-            return response()->json(['mensaje' => 'Intercambio completado correctamente']);
+            return response()->json(['mensaje' => __('mensajes.intercambio_completado')]);
 
         } catch (\Exception $e) {
             DB::rollBack();
-            return response()->json(['error' => 'No se pudo completar el intercambio.'], 500);
+            return response()->json(['error' => __('mensajes.intercambio_fallido')], 500);
         }
     }
 }

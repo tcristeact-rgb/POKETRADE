@@ -12,8 +12,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // EstablecerIdioma va en TODAS las rutas de la API y lo antes posible:
+        // fija el locale a partir de Accept-Language, y de él dependen tanto
+        // __() como los mensajes de validación. Si se ejecutase después de un
+        // controlador o de un validador, ya sería tarde.
         $middleware->api(prepend: [
             \Illuminate\Http\Middleware\HandleCors::class,
+            \App\Http\Middleware\EstablecerIdioma::class,
         ]);
 
         // En Render (y en general detrás de un proxy/load balancer) la app

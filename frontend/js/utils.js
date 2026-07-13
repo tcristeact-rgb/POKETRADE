@@ -1,7 +1,7 @@
 // utils.js – Funciones compartidas entre todas las páginas
 // Módulo ES6: importa paginaUrl de auth.js y exporta utilidades.
 
-import { API_URL, paginaUrl } from './auth.js';
+import { apiFetch, paginaUrl } from './auth.js';
 import { t, fecha, precio } from './i18n.js';
 
 // ─── Placeholders propios de PokeTrade para assets ausentes ──
@@ -79,7 +79,7 @@ export async function buscarCartasCatalogo(texto = '', limite = 60) {
     const params = new URLSearchParams({ por_pagina: limite });
     if (texto) params.set('nombre', texto);
 
-    const res = await fetch(`${API_URL}/cartas?${params}`);
+    const res = await apiFetch(`/cartas?${params}`);
     if (!res.ok) throw new Error(t('comun.errorApi'));
     const datos = await res.json();
 

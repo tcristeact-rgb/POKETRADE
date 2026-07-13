@@ -78,9 +78,17 @@ return [
     |
     */
 
-    'locale' => env('APP_LOCALE', 'en'),
+    // El idioma por defecto de PokeTrade es el español: es el que se sirve
+    // cuando el cliente no pide otro (o pide uno que no hablamos), y coincide
+    // con el POR_DEFECTO del i18n del frontend. El valor por defecto va aquí y
+    // no solo en el .env: así los tests y cualquier entorno sin configurar
+    // arrancan ya en el idioma correcto.
+    'locale' => env('APP_LOCALE', 'es'),
 
-    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'en'),
+    // Idioma al que se cae si a una clave le falta la traducción. Es el
+    // español porque es el idioma FUENTE del proyecto: los mensajes se
+    // escribieron primero ahí, y lang/es está completo.
+    'fallback_locale' => env('APP_FALLBACK_LOCALE', 'es'),
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 

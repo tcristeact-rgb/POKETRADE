@@ -49,7 +49,7 @@ class AuthController extends Controller
 
         // Devolvemos 201 (creado) con mensaje de éxito e ID del nuevo usuario
         return response()->json([
-            'mensaje' => 'Usuario registrado correctamente',
+            'mensaje' => __('mensajes.registrado'),
             'id'      => $usuario->id
         ], 201);
     }
@@ -68,7 +68,7 @@ class AuthController extends Controller
         // Si son incorrectas devuelve false
         if (!$token = Auth::attempt($credenciales)) {
             return response()->json([
-                'error' => 'Email o contraseña incorrectos'
+                'error' => __('mensajes.credenciales')
             ], 401);
         }
 
@@ -95,6 +95,6 @@ class AuthController extends Controller
     public function logout()
     {
         Auth::logout(); // Invalida el token JWT del usuario autenticado
-        return response()->json(['mensaje' => 'Sesión cerrada correctamente']);
+        return response()->json(['mensaje' => __('mensajes.sesion_cerrada')]);
     }
 }

@@ -12,7 +12,7 @@
 // fuera, busca en TODO el catálogo (GET /api/cartas/buscar). La tabla
 // local completa (GET /api/cartas) ya no se usa aquí.
 
-import { API_URL } from './auth.js';
+import { apiFetch } from './auth.js';
 import { t } from './i18n.js';
 import { alCargarDOM, activarPlaceholderImagenes, escapeHtml, tarjetaCarta, placeholderLogo } from './utils.js';
 import { crearPaginacion } from './paginacion.js';
@@ -87,7 +87,7 @@ async function vistaSeries() {
     grid.className = 'grid-sets';
 
     try {
-        const res = await fetch(`${API_URL}/series`);
+        const res = await apiFetch(`/series`);
         if (!res.ok) throw new Error(t('comun.errorApi'));
         const series = await res.json();
 
@@ -147,7 +147,7 @@ async function vistaSets(serieId) {
     grid.className = 'grid-sets';
 
     try {
-        const res = await fetch(`${API_URL}/series/${encodeURIComponent(serieId)}`);
+        const res = await apiFetch(`/series/${encodeURIComponent(serieId)}`);
         if (res.status === 404) { mostrarError(t('catalogo.serieNoExiste')); return; }
         if (!res.ok) throw new Error(t('comun.errorApi'));
         const serie = await res.json();
@@ -226,7 +226,7 @@ async function vistaSet(setId, pagina) {
         if (tipo)   params.set('tipo', tipo);
         if (rareza) params.set('rareza', rareza);
 
-        const res = await fetch(`${API_URL}/sets/${encodeURIComponent(setId)}/cartas?${params}`);
+        const res = await apiFetch(`/sets/${encodeURIComponent(setId)}/cartas?${params}`);
         cancelarAvisoLento();
 
         if (res.status === 404) { mostrarError(t('catalogo.setNoExiste')); return; }
@@ -255,7 +255,7 @@ async function vistaSet(setId, pagina) {
 // las cartas: sale del índice y no depende del cacheo)
 async function cargarCabeceraSet(setId) {
     try {
-        const res = await fetch(`${API_URL}/sets/${encodeURIComponent(setId)}`);
+        const res = await apiFetch(`/sets/${encodeURIComponent(setId)}`);
         if (!res.ok) return;
         const set = await res.json();
 
@@ -315,7 +315,7 @@ async function vistaBusquedaGlobal() {
         if (tipo)   params.set('tipo', tipo);
         if (rareza) params.set('rareza', rareza);
 
-        const res = await fetch(`${API_URL}/cartas/buscar?${params}`);
+        const res = await apiFetch(`/cartas/buscar?${params}`);
 
         if (res.status === 503) {
             const datos = await res.json().catch(() => ({}));

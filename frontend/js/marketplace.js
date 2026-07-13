@@ -1,6 +1,6 @@
 // marketplace.js — Listado público de tradeos activos
 
-import { API_URL, estaLogueado, obtenerUsuario, headersAuth, irALogin, accionPendiente, parsearRespuesta } from './auth.js';
+import { apiFetch, estaLogueado, obtenerUsuario, irALogin, accionPendiente, parsearRespuesta } from './auth.js';
 import { t } from './i18n.js';
 import { alCargarDOM, formatearFecha, formatearPrecio, escapeHtml, dorsoCarta, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
 import { abrirLightbox, cerrarLightbox } from './lightbox.js';
@@ -80,7 +80,7 @@ async function cargarTradeos() {
         '<div class="skeleton-block skeleton-block-footer"></div>' +
         '</div>').join('');
     try {
-        const res = await fetch(`${API_URL}/tradeos`);
+        const res = await apiFetch(`/tradeos`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         todosLosTradeos = await res.json();
         filtrar();
@@ -110,7 +110,7 @@ async function abrirDesdeUrl() {
     // cerrado. El endpoint de detalle sí lo devuelve, y el modal lo enseña
     // en su estado real, sin CTA. Si tampoco existe, se limpia el parámetro.
     try {
-        const res = await fetch(`${API_URL}/tradeos/${id}`);
+        const res = await apiFetch(`/tradeos/${id}`);
         if (!res.ok) throw new Error();
         mostrarModalDetalle(await res.json(), { empujarUrl: false });
     } catch (_) {
@@ -536,7 +536,7 @@ async function abrirModalAceptar(tradeoId) {
     abrirModalAccesible(document.getElementById('modal-aceptar'), cerrarModal);
 
     try {
-        const res = await fetch(`${API_URL}/inventario`, { headers: headersAuth() });
+        const res = await apiFetch(`/inventario`);
         if (!res.ok) throw new Error();
         inventarioUsuario = await res.json();
     } catch (_) {
@@ -615,9 +615,8 @@ async function confirmarAceptar() {
     btnConfirmar.textContent = t('mkt.procesando');
 
     try {
-        const res = await fetch(`${API_URL}/tradeos/${tradeoEnCurso.id}/aceptar`, {
+        const res = await apiFetch(`/tradeos/${tradeoEnCurso.id}/aceptar`, {
             method: 'POST',
-            headers: headersAuth()
         });
         const datos = await parsearRespuesta(res);
         if (!res.ok) throw new Error(datos.error || t('error.inesperado', { status: String(res.status) }));

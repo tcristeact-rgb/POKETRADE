@@ -106,9 +106,15 @@ class CartaController extends Controller
     // ventana no da 4, se completa con las más caras de toda la BD:
     // no es un caso raro, es el camino habitual.
     // Caché de 1 h: congela la selección y ahorra las consultas.
+    //
+    // El idioma va DENTRO de la clave. Hoy la respuesta es igual en los dos
+    // (los nombres de carta aún no están traducidos), pero en cuanto la fase 4
+    // sirva nombre_es/nombre_en, una clave sin idioma haría que el primer
+    // visitante del home fijase SU idioma para todos los demás durante una
+    // hora. Se arregla ahora, que es gratis, y no cuando ya esté roto.
     public function destacadas()
     {
-        $cartas = Cache::remember('cartas.destacadas', 3600, function () {
+        $cartas = Cache::remember('cartas.destacadas.' . app()->getLocale(), 3600, function () {
             $ventana = Carta::orderByDesc('id')->limit(200)->pluck('id');
 
             // Recientes con precio, de mayor a menor
@@ -153,10 +159,10 @@ class CartaController extends Controller
         $rareza = trim((string) $request->query('rareza'));
 
         if ($q === '' && $tipo === '' && $rareza === '') {
-            return response()->json(['error' => 'Indica al menos un filtro: q, tipo o rareza'], 422);
+            return response()->json(['error' => __('mensajes.busqueda_sin_filtro')], 422);
         }
         if ($q !== '' && mb_strlen($q) < 2) {
-            return response()->json(['error' => 'La búsqueda necesita al menos 2 caracteres'], 422);
+            return response()->json(['error' => __('mensajes.busqueda_corta')], 422);
         }
 
         $resultados = $tcgdex->buscarCartas(array_filter([
@@ -167,7 +173,7 @@ class CartaController extends Controller
 
         if ($resultados === null) {
             return response()->json([
-                'error' => 'El catálogo externo (TCGdex) no responde ahora mismo. Inténtalo de nuevo en unos minutos.',
+                'error' => __('mensajes.tcgdex_caido'),
             ], 503);
         }
 
@@ -215,7 +221,7 @@ class CartaController extends Controller
 
         // Si no existe devolvemos 404
         if (!$carta) {
-            return response()->json(['error' => 'Carta no encontrada'], 404);
+            return response()->json(['error' => __('mensajes.carta_no_encontrada')], 404);
         }
 
         // Hidratación perezosa: las cartas cacheadas desde el resumen de
@@ -355,7 +361,7 @@ class CartaController extends Controller
 
         // Si no existe devolvemos 404
         if (!$carta) {
-            return response()->json(['error' => 'Carta no encontrada'], 404);
+            return response()->json(['error' => __('mensajes.carta_no_encontrada')], 404);
         }
 
         // Actualizamos solo los campos que vengan en el request
@@ -377,12 +383,12 @@ class CartaController extends Controller
 
         // Si no existe devolvemos 404
         if (!$carta) {
-            return response()->json(['error' => 'Carta no encontrada'], 404);
+            return response()->json(['error' => __('mensajes.carta_no_encontrada')], 404);
         }
 
         // Eliminamos la carta de la base de datos
         $carta->delete();
 
-        return response()->json(['mensaje' => 'Carta eliminada correctamente']);
+        return response()->json(['mensaje' => __('mensajes.carta_eliminada')]);
     }
 }

@@ -28,7 +28,7 @@ class SetController extends Controller
             $serie = $this->buscarSerie($request->serie);
 
             if (!$serie) {
-                return response()->json(['error' => 'Serie no encontrada'], 404);
+                return response()->json(['error' => __('mensajes.serie_no_encontrada')], 404);
             }
 
             $query->where('serie_id', $serie->id);
@@ -54,7 +54,7 @@ class SetController extends Controller
             ->first();
 
         if (!$set) {
-            return response()->json(['error' => 'Set no encontrado'], 404);
+            return response()->json(['error' => __('mensajes.set_no_encontrado')], 404);
         }
 
         return response()->json($set);
@@ -82,7 +82,7 @@ class SetController extends Controller
             ->first();
 
         if (!$set) {
-            return response()->json(['error' => 'Set no encontrado'], 404);
+            return response()->json(['error' => __('mensajes.set_no_encontrado')], 404);
         }
 
         if (!$set->synced_at) {
@@ -90,7 +90,7 @@ class SetController extends Controller
 
             if (!$datos || empty($datos['cards'])) {
                 return response()->json([
-                    'error' => 'El catálogo externo (TCGdex) no responde ahora mismo. Inténtalo de nuevo en unos minutos.',
+                    'error' => __('mensajes.tcgdex_caido'),
                 ], 503);
             }
 

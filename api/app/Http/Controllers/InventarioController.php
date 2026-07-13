@@ -94,12 +94,12 @@ class InventarioController extends Controller
 
         // Si no se encuentra devolvemos 404
         if (!$entrada) {
-            return response()->json(['error' => 'Carta no encontrada en tu inventario'], 404);
+            return response()->json(['error' => __('mensajes.inventario_carta_no_encontrada')], 404);
         }
 
         // Eliminamos la entrada del inventario
         $entrada->delete();
 
-        return response()->json(['mensaje' => 'Carta eliminada del inventario']);
+        return response()->json(['mensaje' => __('mensajes.inventario_carta_eliminada')]);
     }
 }

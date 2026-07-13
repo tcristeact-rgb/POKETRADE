@@ -1,6 +1,6 @@
 // novedades.js — Cartas más recientes del catálogo (módulo ES6)
 
-import { API_URL } from './auth.js';
+import { apiFetch } from './auth.js';
 import { t } from './i18n.js';
 import { alCargarDOM, tarjetaCarta, escapeHtml } from './utils.js';
 
@@ -20,7 +20,7 @@ async function cargarNovedades() {
 
     try {
         // Últimas cartas añadidas al catálogo, desde nuestra API
-        const res = await fetch(`${API_URL}/cartas?orden=recientes&por_pagina=20`);
+        const res = await apiFetch(`/cartas?orden=recientes&por_pagina=20`);
         if (!res.ok) throw new Error(t('comun.errorApi'));
         const datos = await res.json();
 

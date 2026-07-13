@@ -58,7 +58,7 @@ class UsuarioController extends Controller
 
         // Devolvemos mensaje de éxito y los datos actualizados del usuario
         return response()->json([
-            'mensaje' => 'Perfil actualizado correctamente',
+            'mensaje' => __('mensajes.perfil_actualizado'),
             'usuario' => $usuario,
         ]);
     }
@@ -86,7 +86,7 @@ class UsuarioController extends Controller
         // Hash::check() compara el texto plano con el hash bcrypt de la BD
         // Si no coincide devolvemos error 422
         if (!Hash::check($request->password_actual, $usuario->password)) {
-            return response()->json(['error' => 'La contraseña actual no es correcta'], 422);
+            return response()->json(['error' => __('mensajes.password_incorrecta')], 422);
         }
 
         // Actualizamos la contraseña encriptándola con bcrypt
@@ -95,7 +95,7 @@ class UsuarioController extends Controller
             'password' => Hash::make($request->password_nuevo),
         ]);
 
-        return response()->json(['mensaje' => 'Contraseña actualizada correctamente']);
+        return response()->json(['mensaje' => __('mensajes.password_actualizada')]);
     }
 
     // --- Listar todos los usuarios ---
@@ -125,7 +125,7 @@ class UsuarioController extends Controller
 
         // Si no existe devolvemos 404
         if (!$usuario) {
-            return response()->json(['error' => 'Usuario no encontrado'], 404);
+            return response()->json(['error' => __('mensajes.usuario_no_encontrado')], 404);
         }
 
         // Eliminamos el usuario
@@ -133,6 +133,6 @@ class UsuarioController extends Controller
         // automáticamente su inventario y sus tradeos
         $usuario->delete();
 
-        return response()->json(['mensaje' => 'Usuario eliminado correctamente']);
+        return response()->json(['mensaje' => __('mensajes.usuario_eliminado')]);
     }
 }

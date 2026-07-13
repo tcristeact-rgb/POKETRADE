@@ -115,6 +115,24 @@ class DestacadasTest extends TestCase
 
         $res->assertJsonCount(1, 'data')
             ->assertJsonPath('data.0.nombre', 'Primera');
-        $this->assertTrue(Cache::has('cartas.destacadas'));
+
+        // La clave lleva el idioma: cada uno cachea su propia respuesta y
+        // el primer visitante no le fija el idioma a todos los demás
+        $this->assertTrue(Cache::has('cartas.destacadas.es'));
+    }
+
+    public function test_la_cache_de_destacadas_es_independiente_por_idioma(): void
+    {
+        Carta::create(['nombre' => 'Primera', 'precio_cardmarket' => 10]);
+
+        $this->withHeader('Accept-Language', 'es')->getJson('/api/cartas/destacadas');
+
+        // El inglés todavía no ha pasado por aquí: su hueco está vacío
+        $this->assertTrue(Cache::has('cartas.destacadas.es'));
+        $this->assertFalse(Cache::has('cartas.destacadas.en'));
+
+        $this->withHeader('Accept-Language', 'en')->getJson('/api/cartas/destacadas');
+
+        $this->assertTrue(Cache::has('cartas.destacadas.en'));
     }
 }

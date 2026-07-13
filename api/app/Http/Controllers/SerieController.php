@@ -59,7 +59,7 @@ class SerieController extends Controller
             ->first();
 
         if (!$serie) {
-            return response()->json(['error' => 'Serie no encontrada'], 404);
+            return response()->json(['error' => __('mensajes.serie_no_encontrada')], 404);
         }
 
         return response()->json($serie);

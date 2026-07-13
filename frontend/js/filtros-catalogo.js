@@ -8,7 +8,7 @@
 // Los desplegables se pueblan con los tipos y rarezas oficiales del
 // TCG (GET /api/cartas/filtros, que los proxea desde TCGdex).
 
-import { API_URL } from './auth.js';
+import { apiFetch } from './auth.js';
 import { debounce } from './utils.js';
 
 // Debounce del input de nombre: la búsqueda global golpea a TCGdex,
@@ -117,7 +117,7 @@ export function iniciarFiltros({ alCambiar }) {
     // pasa nada: quedan solo con "Todos" y el filtro de nombre funciona
     async function cargarOpciones() {
         try {
-            const res = await fetch(`${API_URL}/cartas/filtros`);
+            const res = await apiFetch(`/cartas/filtros`);
             if (!res.ok) return;
             const filtros = await res.json();
             rellenarSelect(selectTipo,   filtros.tipos);

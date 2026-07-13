@@ -1,6 +1,6 @@
 // tradeos.js — Gestión de los tradeos del usuario
 
-import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
+import { apiFetch, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
 import { t } from './i18n.js';
 import { alCargarDOM, formatearFecha, miniaturas, mostrarAlerta, escapeHtml } from './utils.js';
 
@@ -32,7 +32,7 @@ async function cargarMisTradeos() {
     lista.innerHTML = Array(3)
         .fill('<div class="mistradeo-card skeleton" aria-hidden="true"></div>').join('');
     try {
-        const res = await fetch(`${API_URL}/mis-tradeos`, { headers: headersAuth() });
+        const res = await apiFetch(`/mis-tradeos`);
         if (!res.ok) throw new Error(manejarErrorHTTP(res.status));
         todosMisTradeos = await res.json();
 
@@ -125,9 +125,8 @@ async function cambiarEstado(id, nuevoEstado) {
     if (!clave || !confirm(t(clave))) return;
 
     try {
-        const res = await fetch(`${API_URL}/tradeos/${id}`, {
+        const res = await apiFetch(`/tradeos/${id}`, {
             method: 'PUT',
-            headers: headersAuth(),
             body: JSON.stringify({ estado: nuevoEstado })
         });
         const datos = await parsearRespuesta(res);
@@ -143,9 +142,8 @@ async function eliminarTradeo(id) {
     if (!confirm(t('tradeos.confirmarEliminar'))) return;
 
     try {
-        const res = await fetch(`${API_URL}/tradeos/${id}`, {
+        const res = await apiFetch(`/tradeos/${id}`, {
             method: 'DELETE',
-            headers: headersAuth()
         });
         if (!res.ok) throw new Error(manejarErrorHTTP(res.status));
         mostrarAlerta(t('tradeos.eliminado'), 'exito');

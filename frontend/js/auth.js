@@ -4,7 +4,7 @@
 // ===================================================
 
 import { API_URL } from './config.js';
-import { t } from './i18n.js';
+import { t, idioma } from './i18n.js';
 
 export { API_URL };
 
@@ -44,14 +44,35 @@ export function eliminarSesion() {
   localStorage.removeItem('usuario');
 }
 
-// Devuelve los headers con JWT para rutas protegidas
-// Uso: fetch(url, { headers: headersAuth() })
-export function headersAuth() {
-  return {
-    'Content-Type': 'application/json',
+// ─────────────────────────────────────────────────
+// PETICIONES A LA API
+// ─────────────────────────────────────────────────
+
+// Único punto por el que salen TODAS las peticiones a la API.
+//
+// Existe para que el idioma activo viaje siempre en Accept-Language sin que
+// haya que acordarse en cada llamada: antes había 32 fetch() sueltos, y el
+// día que alguien añada el 33 la cabecera se le habría olvidado. De paso, la
+// ruta se escribe relativa ('/cartas') en vez de repetir la plantilla
+// `${API_URL}/...` en cada sitio.
+//
+// El token se añade cuando lo hay: las rutas públicas lo ignoran, así que no
+// hace falta distinguir entre peticiones autenticadas y anónimas.
+//
+// Devuelve la Response tal cual, sin tocarla: quien llama sigue mirando .ok,
+// .status y .json() exactamente igual que antes.
+export function apiFetch(ruta, opciones = {}) {
+  const cabeceras = {
     'Accept': 'application/json',
-    'Authorization': `Bearer ${obtenerToken()}`
+    'Accept-Language': idioma,
+    ...(opciones.body ? { 'Content-Type': 'application/json' } : {}),
+    ...opciones.headers,
   };
+
+  const token = obtenerToken();
+  if (token) cabeceras['Authorization'] = `Bearer ${token}`;
+
+  return fetch(`${API_URL}${ruta}`, { ...opciones, headers: cabeceras });
 }
 
 // ─────────────────────────────────────────────────
@@ -193,9 +214,8 @@ export async function login(email, password) {
   let respuesta;
 
   try {
-    respuesta = await fetch(`${API_URL}/auth/login`, {
+    respuesta = await apiFetch('/auth/login', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
     });
   } catch (_) {
@@ -236,9 +256,8 @@ export async function registro(campos) {
   let respuesta;
 
   try {
-    respuesta = await fetch(`${API_URL}/auth/registro`, {
+    respuesta = await apiFetch('/auth/registro', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(campos)
     });
   } catch (_) {
@@ -263,10 +282,7 @@ export async function cerrarSesion() {
 
   if (token) {
     try {
-      await fetch(`${API_URL}/auth/logout`, {
-        method: 'POST',
-        headers: headersAuth()
-      });
+      await apiFetch('/auth/logout', { method: 'POST' });
     } catch (_) {
     }
   }

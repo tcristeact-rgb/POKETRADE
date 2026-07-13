@@ -1,6 +1,6 @@
 // mas-vendido.js — Ranking de cartas más demandadas en tradeos
 
-import { API_URL, paginaUrl } from './auth.js';
+import { apiFetch, paginaUrl } from './auth.js';
 import { t } from './i18n.js';
 import { alCargarDOM, escapeHtml, dorsoCarta } from './utils.js';
 
@@ -20,7 +20,7 @@ async function cargarMasVendido() {
 
     try {
         // Pedimos los tradeos activos a nuestra API
-        const res = await fetch(`${API_URL}/tradeos`);
+        const res = await apiFetch(`/tradeos`);
         if (!res.ok) throw new Error(`HTTP_${res.status}`);
         const tradeos = await res.json();
 
@@ -63,7 +63,7 @@ async function cargarMasVendido() {
 // Fallback: muestra las 8 cartas con mayor precio de Cardmarket
 // cuando todavía no hay tradeos publicados
 async function cargarDestacadas(grid) {
-    const res = await fetch(`${API_URL}/cartas?orden=precio&por_pagina=8`);
+    const res = await apiFetch(`/cartas?orden=precio&por_pagina=8`);
     if (!res.ok) throw new Error(t('comun.errorApi'));
     const datos = await res.json();
 

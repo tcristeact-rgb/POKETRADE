@@ -1,6 +1,6 @@
 // inicio.js — Lógica de la página principal (módulo ES6)
 
-import { API_URL, estaLogueado } from './auth.js';
+import { apiFetch, estaLogueado } from './auth.js';
 import { t } from './i18n.js';
 import { alCargarDOM, tarjetaCarta, escapeHtml, formatearPrecio } from './utils.js';
 
@@ -31,7 +31,7 @@ async function cargarNovedades() {
 
     try {
         // Últimas cartas añadidas al catálogo, desde nuestra API
-        const res = await fetch(`${API_URL}/cartas?orden=recientes&por_pagina=8`);
+        const res = await apiFetch(`/cartas?orden=recientes&por_pagina=8`);
         if (!res.ok) throw new Error(t('comun.errorApi'));
         const datos = await res.json();
 
@@ -68,7 +68,7 @@ async function cargarDestacadas() {
     if (!escaparate) return;
 
     try {
-        const res = await fetch(`${API_URL}/cartas/destacadas`);
+        const res = await apiFetch(`/cartas/destacadas`);
         if (!res.ok) throw new Error();
         const { data } = await res.json();
         destacadas = (data || []).filter(c => c.id && (c.imagen_high || c.imagen_low));

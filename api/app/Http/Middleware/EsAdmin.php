@@ -11,7 +11,7 @@ class EsAdmin
     {
         if (!auth()->check() || auth()->user()->rol !== 'admin') {
             return response()->json([
-                'error' => 'Acceso denegado. Se requieren permisos de administrador.'
+                'error' => __('mensajes.acceso_denegado')
             ], 403);
         }
 

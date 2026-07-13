@@ -1,6 +1,6 @@
 // perfil.js — Edición de perfil y cambio de contraseña
 
-import { API_URL, headersAuth, protegerRuta, obtenerUsuario, manejarErrorHTTP, parsearRespuesta, renderizarMenu, paginaUrl } from './auth.js';
+import { apiFetch, protegerRuta, obtenerUsuario, manejarErrorHTTP, parsearRespuesta, renderizarMenu, paginaUrl } from './auth.js';
 import { t } from './i18n.js';
 import { alCargarDOM, mostrarAlerta } from './utils.js';
 
@@ -16,7 +16,7 @@ alCargarDOM(() => {
 
 async function cargarPerfil() {
     try {
-        const res = await fetch(`${API_URL}/usuario/perfil`, { headers: headersAuth() });
+        const res = await apiFetch(`/usuario/perfil`);
         if (!res.ok) throw new Error(manejarErrorHTTP(res.status));
         const datos = await res.json();
         rellenarFormulario(datos);
@@ -72,9 +72,8 @@ async function guardarPerfil() {
     }
 
     try {
-        const res = await fetch(`${API_URL}/usuario/perfil`, {
-            method: 'PUT',
-            headers: headersAuth(),
+        const res = await apiFetch(`/usuario/perfil`, {
+            method: 'PUT',
             body: JSON.stringify(campos)
         });
         const datos = await parsearRespuesta(res);
@@ -112,9 +111,8 @@ async function cambiarPassword() {
     }
 
     try {
-        const res = await fetch(`${API_URL}/usuario/password`, {
-            method: 'PUT',
-            headers: headersAuth(),
+        const res = await apiFetch(`/usuario/password`, {
+            method: 'PUT',
             body: JSON.stringify({ password_actual: actual, password_nuevo: nueva })
         });
         const datos = await parsearRespuesta(res);

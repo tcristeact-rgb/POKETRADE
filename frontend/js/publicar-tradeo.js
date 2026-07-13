@@ -1,6 +1,6 @@
 // publicar-tradeo.js — Crear y publicar un tradeo (módulo ES6)
 
-import { API_URL, headersAuth, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
+import { apiFetch, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
 import { t } from './i18n.js';
 import { alCargarDOM, buscarCartasCatalogo, debounce, escapeHtml, mostrarAlerta, dorsoCarta } from './utils.js';
 
@@ -60,7 +60,7 @@ function enlazarSeleccion(gridId, toggleFn) {
 async function cargarInventarioOfrece() {
     const grid = document.getElementById('grid-ofrece');
     try {
-        const res = await fetch(`${API_URL}/inventario`, { headers: headersAuth() });
+        const res = await apiFetch(`/inventario`);
         if (!res.ok) throw new Error(manejarErrorHTTP(res.status));
         inventario = await res.json();
         renderizarOfrece(inventario);
@@ -216,9 +216,8 @@ async function publicarTradeo() {
     };
 
     try {
-        const res = await fetch(`${API_URL}/tradeos`, {
-            method: 'POST',
-            headers: headersAuth(),
+        const res = await apiFetch(`/tradeos`, {
+            method: 'POST',
             body: JSON.stringify(payload)
         });
         const datos = await parsearRespuesta(res);
