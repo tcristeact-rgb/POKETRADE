@@ -39,6 +39,28 @@ export function prefijoDe(codigo) {
     return codigo === POR_DEFECTO ? '' : `/${codigo}`;
 }
 
+function primerTramo() {
+    return window.location.pathname.split('/')[1] ?? '';
+}
+
+// ¿Vale aquí el esquema de prefijos?
+//
+// /en/... solo existe si alguien lo reescribe a /... — lo hace Vercel en
+// producción y tools/servidor.mjs en local. Un estático a secas apuntando a la
+// raíz del repo sirve la web desde /frontend/..., y ahí el prefijo daría un 404.
+//
+// Las páginas de PokeTrade cuelgan de la raíz del sitio: /index.html,
+// /pages/*.html y sus versiones con prefijo. Si el primer tramo de la ruta es
+// otra cosa, la web está en un subdirectorio y el prefijo no puede funcionar.
+// En ese caso el idioma vuelve a ser puro estado, como antes de la fase 5: se
+// pierde la URL compartible, pero se sigue pudiendo cambiar de idioma — que es
+// infinitamente mejor que un 404 del que no se sale.
+export const prefijosDisponibles = (() => {
+    const tramo = primerTramo();
+
+    return tramo === '' || tramo === 'pages' || tramo.endsWith('.html') || CODIGOS.includes(tramo);
+})();
+
 // La ruta actual sin su prefijo de idioma
 function rutaBase() {
     const partes = window.location.pathname.split('/');
@@ -47,9 +69,9 @@ function rutaBase() {
 }
 
 function idiomaDelPrefijo() {
-    const primerTramo = window.location.pathname.split('/')[1];
+    const tramo = primerTramo();
 
-    return CODIGOS.includes(primerTramo) && primerTramo !== POR_DEFECTO ? primerTramo : null;
+    return CODIGOS.includes(tramo) && tramo !== POR_DEFECTO ? tramo : null;
 }
 
 // La MISMA página en otro idioma, con la ruta y los filtros intactos
@@ -211,5 +233,13 @@ export function aplicarTraducciones(raiz = document) {
 export function cambiarIdioma(nuevo) {
     if (!CODIGOS.includes(nuevo) || nuevo === idioma) return;
     try { localStorage.setItem(CLAVE, nuevo); } catch (_) { /* sin persistencia, pero cambia */ }
+
+    // Servido desde un subdirectorio: nadie va a reescribir el prefijo y el
+    // enlace daría un 404. Recargar, que es lo que hacía la fase 1.
+    if (!prefijosDisponibles) {
+        window.location.reload();
+        return;
+    }
+
     window.location.assign(urlEnIdioma(nuevo));
 }

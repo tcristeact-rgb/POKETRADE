@@ -12,12 +12,17 @@
 // Google acepta los dos canales; el sitemap es el que no puede fallar.
 // ===================================================
 
-import { IDIOMAS, idioma, urlEnIdioma } from './i18n.js';
+import { IDIOMAS, idioma, prefijosDisponibles, urlEnIdioma } from './i18n.js';
 
 // Las páginas marcadas como noindex (404, y los antiguos expansiones/set, que
 // solo redirigen) no entran a competir por posicionarse: ni canonical ni
 // alternates, que solo servirían para confundir al rastreador.
+//
+// Y si la web se está sirviendo desde un subdirectorio (un estático de desarrollo
+// apuntando a la raíz del repo), estas etiquetas apuntarían a URLs que no existen.
+// Nada que firmar: ahí no hay nada que indexar.
 export function sellarCabecera() {
+    if (!prefijosDisponibles) return;
     if (document.querySelector('meta[name="robots"][content*="noindex"]')) return;
 
     // Canonical apuntándose a sí misma, CON sus parámetros: ?set=sv03.5 no es la

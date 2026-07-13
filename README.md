@@ -128,8 +128,12 @@ php artisan serve            # http://localhost:8000
 
 Frontend (must be served over HTTP, not `file://`)
 ```bash
-npx serve frontend          # or use VS Code Live Server
+node tools/servidor.mjs     # http://localhost:5500 · and /en/ for the English version
 ```
+
+Use this one rather than Live Server or `npx serve`: it reproduces the two things `vercel.json` does and a plain static server does not — the `/en/:path*` → `/:path*` rewrite (without it the English URLs are a 404, because there is no second copy of the HTML to serve) and no clean-URL redirects (`npx serve`'s 301 drops the query string, so `?set=sv03.5` reaches the app empty). No dependencies, just Node.
+
+If you do serve the site some other way and it ends up under a subdirectory, the language still works — it just falls back to being state rather than living in the URL.
 
 Running `php artisan migrate --seed` populates your local database with a starter card catalog (two curated sets fetched once from TCGdex) plus sample users, inventories and trades so you can explore the app right away during development. `php artisan tcgdex:sync-sets` adds the series/sets index so the expansions browser works; the cards of any other set are cached automatically the first time you open it. In production only the catalog is set up (`php artisan db:seed --class=CartasSeeder --force` plus `php artisan tcgdex:sync-sets`, which needs no `--force` because it has no environment guard); no demo users are created, so on the live demo you can simply sign up to try it.
 
