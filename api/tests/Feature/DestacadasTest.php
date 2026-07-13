@@ -6,6 +6,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase; // Resetea la BD entre cada t
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 use App\Models\Carta;
+use App\Models\Serie;
+use App\Models\Set;
 
 class DestacadasTest extends TestCase
 {
@@ -21,11 +23,13 @@ class DestacadasTest extends TestCase
     }
 
     // Inserta $n cartas de relleno sin precio (engordan la ventana de
-    // recientes igual que las cacheadas desde el resumen de un set)
+    // recientes igual que las cacheadas desde el resumen de un set).
+    // insert() va directo a la BD sin pasar por el modelo, así que aquí hay
+    // que nombrar la columna del idioma: no hay mutador que lo resuelva.
     private function crearRelleno(int $n): void
     {
         Carta::insert(array_map(fn ($i) => [
-            'nombre'     => "Relleno {$i}",
+            'nombre_es'  => "Relleno {$i}",
             'created_at' => now(),
             'updated_at' => now(),
         ], range(1, $n)));
@@ -88,9 +92,14 @@ class DestacadasTest extends TestCase
 
     public function test_incluye_los_campos_que_necesita_el_hero(): void
     {
+        // set_expansion ya no es una columna copiada en la carta: sale de la
+        // relación con el set, que es donde vive el nombre de verdad
+        $serie = Serie::create(['tcgdex_id' => 'sv', 'nombre' => 'Escarlata y Púrpura']);
+        Set::create(['tcgdex_id' => 'sv03.5', 'serie_id' => $serie->id, 'nombre' => '151']);
+
         Carta::create([
             'nombre'            => 'Charizard ex',
-            'set_expansion'     => '151',
+            'set_id'            => 'sv03.5',
             'precio_cardmarket' => 416.53,
             'imagen_url'        => 'https://assets.tcgdex.net/es/sv/sv03.5/199',
         ]);

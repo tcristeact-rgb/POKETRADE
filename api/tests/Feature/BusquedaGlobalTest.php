@@ -130,6 +130,9 @@ class BusquedaGlobalTest extends TestCase
     // crearla ya hidratada y responder con el detalle completo
     public function test_detalle_por_tcgdex_id_crea_la_fila_bajo_demanda()
     {
+        $serie = Serie::create(['tcgdex_id' => 'sm', 'nombre' => 'Sol y Luna']);
+        Set::create(['tcgdex_id' => 'sm7.5', 'serie_id' => $serie->id, 'nombre' => 'Dragones Majestuosos']);
+
         Http::fake(['api.tcgdex.net/v2/es/cards/sm7.5-1' => Http::response([
             'id'      => 'sm7.5-1',
             'localId' => '1',
@@ -144,14 +147,23 @@ class BusquedaGlobalTest extends TestCase
 
         $respuesta->assertStatus(200)
                   ->assertJsonFragment(['nombre' => 'Charmander'])
-                  ->assertJsonFragment(['rareza' => 'Común']);
+                  ->assertJsonFragment(['rareza' => 'Común'])
+                  // El nombre del set ya no se copia en la carta: sale de la
+                  // relación, y por eso llega traducido
+                  ->assertJsonFragment(['set_expansion' => 'Dragones Majestuosos']);
 
+        // Nace con el texto en la columna del catálogo del que salió, y con el
+        // idioma anotado para no volver a pedir ese detalle
         $this->assertDatabaseHas('cartas', [
-            'tcgdex_id'     => 'sm7.5-1',
-            'set_id'        => 'sm7.5',
-            'set_expansion' => 'Dragones Majestuosos',
+            'tcgdex_id' => 'sm7.5-1',
+            'set_id'    => 'sm7.5',
+            'nombre_es' => 'Charmander',
+            'nombre_en' => null,
         ]);
-        $this->assertNotNull(Carta::firstWhere('tcgdex_id', 'sm7.5-1')->detalle_synced_at);
+
+        $carta = Carta::firstWhere('tcgdex_id', 'sm7.5-1');
+        $this->assertNotNull($carta->detalle_synced_at);
+        $this->assertTrue($carta->detalladoEn('es'));
     }
 
     // --- Test 6: tcgdex_id inexistente → 404 sin crear nada ---
@@ -169,7 +181,8 @@ class BusquedaGlobalTest extends TestCase
     public function test_filtro_por_tipo_en_set_interseca_con_tcgdex()
     {
         $serie = Serie::create(['tcgdex_id' => 'sv', 'nombre' => 'Escarlata y Púrpura']);
-        Set::create(['tcgdex_id' => 'sv03.5', 'serie_id' => $serie->id, 'nombre' => '151', 'synced_at' => now()]);
+        Set::create(['tcgdex_id' => 'sv03.5', 'serie_id' => $serie->id, 'nombre' => '151',
+                     'synced_at' => now(), 'idiomas_sincronizados' => ['es']]);
         Carta::create(['nombre' => 'Charmander', 'tcgdex_id' => 'sv03.5-004', 'set_id' => 'sv03.5', 'numero' => '004']);
         Carta::create(['nombre' => 'Squirtle',   'tcgdex_id' => 'sv03.5-007', 'set_id' => 'sv03.5', 'numero' => '007']);
 
@@ -190,7 +203,8 @@ class BusquedaGlobalTest extends TestCase
     public function test_filtro_por_nombre_en_set_no_llama_a_tcgdex()
     {
         $serie = Serie::create(['tcgdex_id' => 'sv', 'nombre' => 'Escarlata y Púrpura']);
-        Set::create(['tcgdex_id' => 'sv03.5', 'serie_id' => $serie->id, 'nombre' => '151', 'synced_at' => now()]);
+        Set::create(['tcgdex_id' => 'sv03.5', 'serie_id' => $serie->id, 'nombre' => '151',
+                     'synced_at' => now(), 'idiomas_sincronizados' => ['es']]);
         Carta::create(['nombre' => 'Charmander', 'tcgdex_id' => 'sv03.5-004', 'set_id' => 'sv03.5']);
         Carta::create(['nombre' => 'Squirtle',   'tcgdex_id' => 'sv03.5-007', 'set_id' => 'sv03.5']);
 

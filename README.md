@@ -66,11 +66,15 @@ Browser (Vercel)  --HTTP/JSON-->  Laravel REST API (Render)  -->  PostgreSQL (Su
 
 The full TCG catalog is ~130k cards, so it is **not** stored upfront. Instead:
 
-1. **Series/sets index** — `php artisan tcgdex:sync-sets` seeds a lightweight index (~21 series, ~214 sets: name, logo, release date, card count). It is idempotent and merges the Spanish TCGdex catalog with the English one to fill gaps (some old sets were never translated). Run it once after deploying and re-run whenever new sets are released.
-2. **Cards on demand (cache-aside)** — the first time anyone opens a set, `GET /api/sets/{id}/cartas` fetches its card list from TCGdex (a single request), persists it inside a DB transaction and marks the set with `synced_at`; every later visit is served straight from the database. The DB only grows with the sets people actually visit. If TCGdex is down, the endpoint returns a clear 503 and the set is never left half-cached.
-3. **Lazy detail hydration** — cards enter the DB with just name, number and image; the first time a card's detail page is opened, `GET /api/cartas/{id}` completes rarity, type, price and description from TCGdex and persists them (`detalle_synced_at`).
+1. **Series/sets index** — `php artisan tcgdex:sync-sets` seeds a lightweight index (~21 series, ~214 sets: name, logo, release date, card count). It is idempotent and walks **every** TCGdex catalog: each pass writes its own name column (`nombre_es`, `nombre_en`) and adds whatever that catalog has and the previous one lacked (some old sets were never translated). Run it once after deploying and re-run whenever new sets are released.
+2. **Cards on demand, one language at a time (cache-aside)** — the first time anyone opens a set **in a given language**, `GET /api/sets/{id}/cartas` fetches that catalog from TCGdex (a single request), persists it inside a DB transaction and records the language in `idiomas_sincronizados`; every later visit in that language is served straight from the database. A set nobody has opened in English never spends a request getting translated. If TCGdex is down, the endpoint returns a clear 503 and the set is never left half-cached.
+3. **Lazy detail hydration, also per language** — cards enter the DB with just name, number and image; the first time a card's detail page is opened in a language, `GET /api/cartas/{id}` completes rarity, type, price and description from that catalog and persists them.
 
-The browser never talks to TCGdex directly, and all external responses are cached server-side for 24 h. `cartas:sincronizar-tcgdex` still refreshes prices/data of already-stored cards on demand.
+What gets stored per language is only what actually differs: `nombre`, `descripcion` and the illustration (the TCGdex asset carries the language in its path, because the artwork contains the card's printed text). Types and rarities are a **closed set**, so they are stored as a canonical key and translated from a dictionary (`lang/{es,en}/tcg.php`) — zero DB growth. Everything else (price, HP, illustrator, card number) is language-neutral.
+
+TCGdex's answers are distinguished three ways, which is what makes the per-language cache work: the data, `404` (*this catalog does not have it, and never will* — cached, so we stop asking for the Spanish version of Base Set) and *no answer at all* (a 5xx or a timeout — not cached, so it is retried).
+
+The browser never talks to TCGdex directly, and all external responses are cached server-side for 24 h. `cartas:sincronizar-tcgdex [--idioma=en]` still refreshes prices/data of already-stored cards on demand.
 
 **Excluded catalogs** — `config/tcgdex.php` holds a `series_excluidas` list (currently `tcgp` Pokémon Pocket, `mc` McDonald's, `tk` Trainer Kits: non-physical or asset-less catalogs). Adding a serie id there requires no code changes: the sync skips it, the global search filters its cards out, and `php artisan tcgdex:purgar-excluidos` (dry-run by default, `--force` to apply) removes anything already imported, including inventories and trades that reference those cards.
 
@@ -87,8 +91,9 @@ The browser never talks to TCGdex directly, and all external responses are cache
 
 ## Technical Highlights
 
+- Bilingual (Spanish/English), no i18n library — the UI runs on a hand-rolled dictionary with `Intl.PluralRules` and `Intl.NumberFormat` (so `12,50 €` and `€12.50` are the same number, and a third language's plural rules will not silently break); the API negotiates `Accept-Language` and answers with `Content-Language` + `Vary`; and the card data lives in per-language columns filled lazily. Adding a language means editing one dictionary.
 - Atomic trades with race-condition protection — accepting a trade runs inside a database transaction and uses `lockForUpdate()` to prevent two users from accepting the same trade simultaneously (double-spend).
-- N+1 prevention — eager loading of relationships on listing endpoints.
+- N+1 prevention — eager loading of relationships on listing endpoints (a card always travels with its set, which is where its translated expansion name comes from).
 - XSS-safe rendering — systematic HTML escaping and `textContent` for all user-provided data on the client.
 - Cross-database compatibility — driver-aware query operators so the same code runs on SQLite (local) and PostgreSQL (production).
 - Accessibility-first — keyboard-navigable modals with focus management, not just visual styling.
@@ -114,11 +119,13 @@ npx serve frontend          # or use VS Code Live Server
 
 Running `php artisan migrate --seed` populates your local database with a starter card catalog (two curated sets fetched once from TCGdex) plus sample users, inventories and trades so you can explore the app right away during development. `php artisan tcgdex:sync-sets` adds the series/sets index so the expansions browser works; the cards of any other set are cached automatically the first time you open it. In production only the catalog is set up (`php artisan db:seed --class=CartasSeeder --force` plus `php artisan tcgdex:sync-sets`, which needs no `--force` because it has no environment guard); no demo users are created, so on the live demo you can simply sign up to try it.
 
+After a deploy that changes the schema, run `php artisan cache:clear`: the `cache` table survives deploys, and anything cached from the old schema would be served for up to an hour.
+
 ## Testing
 
 ```bash
 cd api
-php artisan test            # 31 tests, in-memory SQLite (TCGdex mocked with Http::fake)
+php artisan test            # 90 tests, in-memory SQLite (TCGdex mocked with Http::fake)
 ```
 
 ## License

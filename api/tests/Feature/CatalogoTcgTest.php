@@ -25,8 +25,8 @@ class CatalogoTcgTest extends TestCase
         Carta::create(['nombre' => 'Clefable',  'rareza_key' => CatalogoTcg::claveRareza('Common')]);
 
         // Las dos acaban en la misma clave
-        $this->assertSame('common', Carta::where('nombre', 'Bulbasaur')->value('rareza_key'));
-        $this->assertSame('common', Carta::where('nombre', 'Clefable')->value('rareza_key'));
+        $this->assertSame('common', Carta::where('nombre_es', 'Bulbasaur')->value('rareza_key'));
+        $this->assertSame('common', Carta::where('nombre_es', 'Clefable')->value('rareza_key'));
 
         // Y un solo filtro las encuentra a las dos. Antes devolvía una.
         $this->getJson('/api/cartas?rareza=common')

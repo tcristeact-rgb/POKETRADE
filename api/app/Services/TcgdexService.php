@@ -3,20 +3,25 @@
 namespace App\Services;
 
 use App\Support\CatalogoTcg;
+use App\Support\Idiomas;
+use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 
 // --- Cliente de la API pública TCGdex ---
 // Documentación: https://tcgdex.dev · Base: https://api.tcgdex.net/v2
 //
-// Idioma principal "es" con fallback campo a campo a "en" cuando la
-// traducción española viene vacía (nombre, rareza, imagen...).
+// TCGdex sirve un catálogo por idioma: /es/cards y /en/cards devuelven las
+// MISMAS cartas con el nombre, el tipo, la rareza y la ilustración traducidos.
+// Este servicio habla siempre de UN catálogo concreto: quien llama dice cuál.
+// El fallback es→en ya no vive aquí — vive en las columnas por idioma de la BD,
+// donde un hueco se puede rellenar más tarde en vez de tener que adivinarlo
+// ahora. Aquí solo queda el fallback de los assets neutros (logo y símbolo del
+// set), que no llevan texto y valen igual en cualquier idioma.
 //
-// Todas las respuestas se cachean (tabla cache ya migrada) para hacer
-// un uso considerado de la API externa y evitar latencia añadida al
-// cold start de Render: el seeder y el comando de sincronización son
-// los únicos consumidores; las peticiones del frontend nunca llegan
-// hasta TCGdex, se sirven siempre desde nuestra BD.
+// Todas las respuestas se cachean (tabla cache ya migrada) para hacer un uso
+// considerado de la API externa y evitar latencia añadida al cold start de
+// Render. El caché es por idioma: la clave lo lleva dentro.
 class TcgdexService
 {
     private const BASE_URL  = 'https://api.tcgdex.net/v2';
@@ -27,12 +32,9 @@ class TcgdexService
     // pero no tiene sentido retenerlas un día entero
     private const CACHE_TTL_BUSQUEDA = 600; // 10 minutos
 
-    // Campos que se completan desde "en" si "es" los trae vacíos.
-    // Solo los tres primeros disparan la petición de fallback: los
-    // demás pueden faltar legítimamente (Entrenador/Energía sin tipos,
-    // cartas sin descripción) y no justifican una petición extra.
-    private const CAMPOS_FALLBACK  = ['name', 'rarity', 'image', 'illustrator', 'description'];
-    private const CAMPOS_CRITICOS  = ['name', 'rarity', 'image'];
+    // El catálogo inglés es el completo: tiene todos los sets, incluidos los
+    // clásicos que nunca se tradujeron. Es el respaldo de todo lo demás.
+    public const COMPLETO = 'en';
 
     // --- Búsqueda de cartas por filtros en todo el catálogo ---
     // GET /v2/{lang}/cards?name=&types=&rarity=&set.id=&pagination:...
@@ -41,34 +43,30 @@ class TcgdexService
     // rareza_key) y aquí se traducen al texto que entiende cada catálogo de
     // TCGdex, que es distinto en cada idioma ("Fuego" / "Fire").
     //
-    // Se consulta español primero y, si no llena el límite, se complementa con
-    // inglés deduplicando por id (los sets antiguos solo existen ahí).
-    //
-    // Antes, con el filtro de rareza activo NO se hacía el complemento inglés
-    // ("la rareza no tiene traducción fiable"). Ahora sí la tiene: el catálogo
-    // sabe cómo se llama cada rareza en cada idioma, así que la búsqueda por
-    // rareza también alcanza los sets clásicos. Y si una rareza solo existe en
-    // el catálogo inglés (las de los sets clásicos), la consulta española se
-    // salta directamente en vez de preguntar por un valor que no existe.
+    // Se consulta el catálogo del idioma activo y, si no llena el límite, se
+    // complementa con el inglés deduplicando por id: los sets clásicos solo
+    // existen ahí, y quien busca "Charizard" quiere ver también el de Base Set.
     //
     // Devuelve null solo si TCGdex no responde en ninguno de los dos idiomas.
     public function buscarCartas(array $filtros, int $limite = 60): ?array
     {
-        $es = $this->consultarCartas('es', $filtros, $limite);
+        $idioma = Idiomas::activo();
 
-        $en = null;
-        if ($es === null || count($es) < $limite) {
-            $en = $this->consultarCartas('en', $filtros, $limite);
+        $propios = $this->consultarCartas($idioma, $filtros, $limite);
+
+        $complemento = null;
+        if ($idioma !== self::COMPLETO && ($propios === null || count($propios) < $limite)) {
+            $complemento = $this->consultarCartas(self::COMPLETO, $filtros, $limite);
         }
 
-        if ($es === null && $en === null) {
+        if ($propios === null && $complemento === null) {
             return null;
         }
 
-        $cartas    = collect($es ?? []);
+        $cartas    = collect($propios ?? []);
         $conocidas = $cartas->pluck('id')->flip();
 
-        foreach ($en ?? [] as $carta) {
+        foreach ($complemento ?? [] as $carta) {
             if (!isset($conocidas[$carta['id']])) {
                 $cartas->push($carta);
             }
@@ -160,29 +158,30 @@ class TcgdexService
     // GET /v2/{lang}/sets/{id} → { id, name, logo, symbol, releaseDate,
     //   cardCount, cards: [{id, localId, name, image}] }
     //
-    // Ojo: en el catálogo español algunos sets existen solo como
-    // metadatos, con la lista de cartas vacía o incompleta (p. ej. neo1
-    // declara 111 cartas y no trae ninguna). Si la lista española no
-    // alcanza el total declarado, usamos la versión inglesa; y si esa
-    // tampoco responde, devolvemos la española (los metadatos siguen
-    // sirviendo para el índice de sets).
-    public function obtenerSet(string $setId): ?array
+    // Un solo catálogo, el que se pida. Que la lista de cartas venga vacía es
+    // una respuesta legítima y no un error: en el catálogo español muchos sets
+    // clásicos existen solo como metadatos (neo1 declara 111 cartas y no trae
+    // ninguna). Quien llama decide qué hacer con eso; aquí no se disimula.
+    //
+    // Excepción: el logo y el símbolo sí se completan desde el inglés. Son
+    // assets sin texto — el mismo dibujo vale en cualquier idioma — y el
+    // catálogo español muchas veces no los trae aunque existan.
+    public function obtenerSet(string $setId, string $idioma = 'es'): ?array
     {
-        $set = $this->get('es', "sets/{$setId}");
+        $set = $this->get($idioma, "sets/{$setId}");
 
-        $total = $set['cardCount']['total'] ?? 0;
-        if (!$set || count($set['cards'] ?? []) < $total) {
-            return $this->get('en', "sets/{$setId}") ?? $set;
+        // null (no contestó) y [] (no lo tiene) salen tal cual: quien llama
+        // necesita distinguirlos para saber si merece la pena reintentar
+        if (empty($set)) {
+            return $set;
         }
 
-        // Fallback por campo: el detalle español muchas veces no trae
-        // logo ni símbolo aunque el inglés sí (mismo patrón que en las
-        // cartas). La petición extra queda en el caché de 24 h
-        if (empty($set['logo']) || empty($set['symbol'])) {
-            $en = $this->get('en', "sets/{$setId}");
+        if ($idioma !== self::COMPLETO && (empty($set['logo']) || empty($set['symbol']))) {
+            $completo = $this->get(self::COMPLETO, "sets/{$setId}");
+
             foreach (['logo', 'symbol'] as $campo) {
-                if (empty($set[$campo]) && !empty($en[$campo])) {
-                    $set[$campo] = $en[$campo];
+                if (empty($set[$campo]) && !empty($completo[$campo])) {
+                    $set[$campo] = $completo[$campo];
                 }
             }
         }
@@ -190,42 +189,44 @@ class TcgdexService
         return $set;
     }
 
-    // --- Detalle completo de una carta, con fallback es→en ---
+    // --- Detalle completo de una carta en un catálogo ---
     // GET /v2/{lang}/cards/{id}
-    public function obtenerCarta(string $cartaId): ?array
+    // Devuelve null si esa carta no existe en ese idioma, que es justo lo que
+    // hay que saber para no volver a pedirla.
+    public function obtenerCarta(string $cartaId, string $idioma = 'es'): ?array
     {
-        $carta = $this->get('es', "cards/{$cartaId}");
-
-        if (!$carta) {
-            return $this->get('en', "cards/{$cartaId}");
-        }
-
-        // Si falta algún campo crítico en español, pedimos la versión
-        // inglesa y completamos solo los huecos
-        $faltanCriticos = collect(self::CAMPOS_CRITICOS)
-            ->contains(fn ($campo) => empty($carta[$campo]));
-
-        if ($faltanCriticos) {
-            $en = $this->get('en', "cards/{$cartaId}");
-            foreach (self::CAMPOS_FALLBACK as $campo) {
-                if (empty($carta[$campo]) && !empty($en[$campo])) {
-                    $carta[$campo] = $en[$campo];
-                }
-            }
-        }
-
-        return $carta;
+        return $this->get($idioma, "cards/{$cartaId}");
     }
 
     // --- Listado de todos los sets disponibles ---
-    public function listarSets(): ?array
+    public function listarSets(string $idioma = 'es'): ?array
     {
-        return $this->get('es', 'sets') ?? $this->get('en', 'sets');
+        return $this->get($idioma, 'sets') ?? $this->get(self::COMPLETO, 'sets');
     }
 
-    // Petición GET con reintentos, timeout y caché. Devuelve null si la
-    // API no responde o da error: los errores no se cachean, así el
-    // siguiente intento vuelve a preguntar.
+    // ¿Merece la pena reintentar este fallo? Solo si es pasajero: una conexión
+    // que se cae o un 5xx pueden ir bien al segundo intento. Un 404 no — pedir
+    // tres veces algo que no existe es que te digan tres veces que no existe, y
+    // con el catálogo español eso pasa constantemente (de los sets clásicos no
+    // hay versión española).
+    private function reintentable(\Throwable $e): bool
+    {
+        return !($e instanceof RequestException) || $e->response->serverError();
+    }
+
+    // Petición GET con reintentos, timeout y caché. Tres respuestas posibles, y
+    // la diferencia entre las dos últimas es la que sostiene el cache-aside por
+    // idioma:
+    //
+    //   array  → el recurso, tal cual
+    //   []     → ese catálogo NO tiene este recurso (404), y no lo va a tener.
+    //            Es una respuesta, no un fallo: se cachea, y así dejamos de
+    //            preguntar por los sets clásicos que en español no existen.
+    //   null   → TCGdex no contestó (5xx, timeout). Eso sí es un fallo, y no se
+    //            cachea: el siguiente intento vuelve a preguntar.
+    //
+    // (Cache::remember no distingue un null guardado de una clave ausente, así
+    // que devolver null es, de hecho, no cachear.)
     private function get(string $idioma, string $ruta, int $ttl = self::CACHE_TTL): ?array
     {
         return Cache::remember(
@@ -233,11 +234,15 @@ class TcgdexService
             $ttl,
             function () use ($idioma, $ruta) {
                 try {
-                    $res = Http::retry(3, 300, throw: false)
+                    $res = Http::retry(3, 300, $this->reintentable(...), throw: false)
                         ->timeout(15)
                         ->get(self::BASE_URL . "/{$idioma}/{$ruta}");
 
-                    return $res->successful() ? $res->json() : null;
+                    if ($res->successful()) {
+                        return $res->json();
+                    }
+
+                    return $res->status() === 404 ? [] : null;
                 } catch (\Throwable) {
                     return null;
                 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Support\Idiomas;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -15,10 +16,6 @@ use Symfony\Component\HttpFoundation\Response;
 // A partir de aquí, __() y los mensajes de validación salen en ese idioma.
 class EstablecerIdioma
 {
-    // Los idiomas que tenemos traducidos (lang/es, lang/en). Un idioma nuevo
-    // se añade aquí y creando su carpeta en lang/.
-    private const SOPORTADOS = ['es', 'en'];
-
     public function handle(Request $request, Closure $next): Response
     {
         $idioma = $this->negociar($request->header('Accept-Language', ''));
@@ -72,7 +69,7 @@ class EstablecerIdioma
         arsort($preferencias);
 
         foreach (array_keys($preferencias) as $idioma) {
-            if (in_array($idioma, self::SOPORTADOS, true)) {
+            if (Idiomas::soportado($idioma)) {
                 return $idioma;
             }
         }

@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use App\Models\Serie;
 use App\Models\Set;
 use App\Services\TcgdexService;
+use App\Support\Idiomas;
 use Illuminate\Console\Command;
 
 class SincronizarSetsTcgdex extends Command
@@ -14,21 +15,31 @@ class SincronizarSetsTcgdex extends Command
     protected $signature = 'tcgdex:sync-sets';
 
     // Descripción que aparece al hacer php artisan list
-    protected $description = 'Sincroniza el índice de series y sets de expansión desde TCGdex (idempotente). Las cartas NO se descargan aquí: se cachean bajo demanda al abrir cada set.';
+    protected $description = 'Sincroniza el índice de series y sets de expansión desde TCGdex, en todos los idiomas (idempotente). Las cartas NO se descargan aquí: se cachean bajo demanda al abrir cada set.';
 
     public function handle(TcgdexService $tcgdex)
     {
-        // Dos pasadas: español primero (nombres localizados y refresco de
-        // lo existente) e inglés después, que SOLO añade las series y sets
-        // que el catálogo "es" de TCGdex omite por no haberse traducido
-        // nunca (Gym, e-Card, Wizards Promos, Base 4 y 5...)
-        if (!$this->sincronizarIdioma($tcgdex, 'es')) {
-            $this->error('No se pudo obtener la lista de series de TCGdex. ¿Hay conexión?');
-            return self::FAILURE;
-        }
+        // Una pasada por catálogo. La primera monta el índice; las siguientes
+        // rellenan el nombre en su idioma y añaden lo que ese catálogo tenga y
+        // el anterior no: el español de TCGdex omite las series y los sets que
+        // nunca se tradujeron (Gym, e-Card, Wizards Promos, Base 4 y 5...).
+        //
+        // Son 185 filas entre series y sets: recorrerlas en los dos idiomas es
+        // barato, y es lo que hace que un inglés vea "Silver Tempest" donde un
+        // español ve "Tempestad Plateada".
+        foreach (Idiomas::SOPORTADOS as $posicion => $idioma) {
+            $principal = $posicion === 0;
 
-        if (!$this->sincronizarIdioma($tcgdex, 'en')) {
-            $this->warn('El catálogo inglés no respondió: índice sincronizado solo con el catálogo español.');
+            if ($this->sincronizarIdioma($tcgdex, $idioma, $principal)) {
+                continue;
+            }
+
+            if ($principal) {
+                $this->error("No se pudo obtener la lista de series del catálogo \"{$idioma}\" de TCGdex. ¿Hay conexión?");
+                return self::FAILURE;
+            }
+
+            $this->warn("El catálogo \"{$idioma}\" no respondió: sus nombres quedan sin actualizar.");
         }
 
         $this->info('Índice sincronizado: ' . Serie::count() . ' series y ' . Set::count() . ' sets en la BD.');
@@ -36,10 +47,11 @@ class SincronizarSetsTcgdex extends Command
         return self::SUCCESS;
     }
 
-    // Sincroniza el índice de un idioma. En "es" refresca todo; en los
-    // demás solo crea lo que falte, sin pisar los nombres en español.
-    // Devuelve false si la lista de series no se pudo obtener.
-    private function sincronizarIdioma(TcgdexService $tcgdex, string $idioma): bool
+    // Sincroniza el índice desde un catálogo. Cada pasada escribe SU columna de
+    // nombre (nombre_es, nombre_en...); los campos neutros —logo, símbolo,
+    // fecha, nº de cartas— los rellena la pasada principal, o la primera que
+    // vea el set si es nuevo. Devuelve false si la lista de series no llegó.
+    private function sincronizarIdioma(TcgdexService $tcgdex, string $idioma, bool $principal): bool
     {
         $series = $tcgdex->listarSeries($idioma);
 
@@ -47,8 +59,7 @@ class SincronizarSetsTcgdex extends Command
             return false;
         }
 
-        $soloFaltantes = $idioma !== 'es';
-        $excluidas     = config('tcgdex.series_excluidas', []);
+        $excluidas = config('tcgdex.series_excluidas', []);
         $this->info('Sincronizando ' . count($series) . " series del catálogo \"{$idioma}\"...");
 
         foreach ($series as $resumen) {
@@ -59,82 +70,81 @@ class SincronizarSetsTcgdex extends Command
                 continue;
             }
 
-            // El detalle de la serie añade el logo y la lista de sets
+            // El detalle de la serie añade el logo y la lista de sets, con el
+            // nombre de cada uno YA en este idioma: rellenar nombre_en no
+            // cuesta ni una petición extra.
             $detalle = $tcgdex->obtenerSerie($resumen['id'], $idioma);
 
-            if (!$detalle) {
+            if (empty($detalle)) {
                 $this->warn("Sin datos, omitida la serie: {$resumen['id']}");
                 continue;
             }
 
-            // Cascada de logo de serie (1º y 2º eslabón): el catálogo
-            // español no trae logo para la mayoría de series antiguas
-            // aunque el inglés sí; el 3º eslabón (logo del set más
-            // reciente) se aplica tras sincronizar sus sets
-            $logo = $detalle['logo'] ?? null;
-            if (!$logo && $idioma !== 'en') {
-                $logo = $tcgdex->obtenerSerie($detalle['id'], 'en')['logo'] ?? null;
+            $serie = Serie::firstOrNew(['tcgdex_id' => $detalle['id']]);
+            $serie->{"nombre_{$idioma}"} = $detalle['name'];
+
+            // Cascada de logo de serie (1º y 2º eslabón): el catálogo español no
+            // trae logo para la mayoría de series antiguas aunque el inglés sí.
+            // El 3º eslabón (heredar el del set más reciente) se aplica al final
+            $logo = $detalle['logo']
+                ?? ($idioma !== TcgdexService::COMPLETO
+                    ? $tcgdex->obtenerSerie($detalle['id'], TcgdexService::COMPLETO)['logo'] ?? null
+                    : null);
+
+            if ($logo && ($principal || !$serie->logo_url)) {
+                $serie->logo_url = $logo;
             }
 
-            $datosSerie = [
-                'nombre'   => $detalle['name'],
-                'logo_url' => $logo,
-            ];
-
-            // updateOrCreate por tcgdex_id → re-ejecutable sin duplicar;
-            // firstOrCreate en la pasada inglesa → no pisa el español
-            $serie = $soloFaltantes
-                ? Serie::firstOrCreate(['tcgdex_id' => $detalle['id']], $datosSerie)
-                : Serie::updateOrCreate(['tcgdex_id' => $detalle['id']], $datosSerie);
+            $serie->save();
 
             $sets   = $detalle['sets'] ?? [];
             $nuevos = 0;
 
-            if (!$soloFaltantes) {
+            if ($principal) {
                 $this->info("Serie \"{$serie->nombre}\" (" . count($sets) . ' sets)...');
             }
 
             foreach ($sets as $resumenSet) {
-                // En la pasada de complemento, los sets ya sincronizados
-                // se saltan antes de pedir su detalle: cero peticiones
-                if ($soloFaltantes && Set::where('tcgdex_id', $resumenSet['id'])->exists()) {
-                    continue;
+                $set = Set::firstOrNew(['tcgdex_id' => $resumenSet['id']]);
+
+                $set->{"nombre_{$idioma}"} = $resumenSet['name'];
+                $set->serie_id             = $serie->id;
+
+                // El detalle del set (logo, símbolo, fecha, nº de cartas) es una
+                // petición POR SET, y esos campos no dependen del idioma: solo
+                // se pide si el set es nuevo o si es la pasada principal. Antes
+                // la pasada de complemento se saltaba entero cualquier set que
+                // ya existiera, y por eso el índice nunca tuvo nombres ingleses.
+                if (!$set->exists || $principal) {
+                    $detalleSet = $tcgdex->obtenerSet($resumenSet['id'], $idioma) ?: [];
+
+                    $set->logo_url          = $detalleSet['logo'] ?? $resumenSet['logo'] ?? $set->logo_url;
+                    $set->simbolo_url       = $detalleSet['symbol'] ?? $resumenSet['symbol'] ?? $set->simbolo_url;
+                    $set->numero_cartas     = $detalleSet['cardCount']['total'] ?? $resumenSet['cardCount']['total'] ?? $set->numero_cartas ?? 0;
+                    $set->fecha_lanzamiento = $detalleSet['releaseDate'] ?? $set->fecha_lanzamiento;
+
+                    if (!$set->exists) {
+                        $nuevos++;
+                    }
+
+                    // Pausa breve entre peticiones: uso considerado de la API
+                    // (en re-ejecuciones el caché evita las peticiones HTTP)
+                    usleep(100_000);
                 }
 
-                // El resumen del set no trae la fecha de lanzamiento; solo
-                // el detalle. La petición extra queda en el caché de 24 h
-                // del servicio, que además adelanta trabajo al cache-aside
-                // de cartas (GET /api/sets/{id}/cartas usa esta respuesta)
-                $detalleSet = $tcgdex->obtenerSet($resumenSet['id']);
-
-                // Nota: synced_at NO se toca aquí — esa marca pertenece al
-                // cacheo de cartas y debe sobrevivir a re-sincronizaciones
-                Set::updateOrCreate(
-                    ['tcgdex_id' => $resumenSet['id']],
-                    [
-                        'serie_id'          => $serie->id,
-                        'nombre'            => $detalleSet['name'] ?? $resumenSet['name'],
-                        'logo_url'          => $detalleSet['logo'] ?? $resumenSet['logo'] ?? null,
-                        'simbolo_url'       => $detalleSet['symbol'] ?? $resumenSet['symbol'] ?? null,
-                        'numero_cartas'     => $detalleSet['cardCount']['total'] ?? $resumenSet['cardCount']['total'] ?? 0,
-                        'fecha_lanzamiento' => $detalleSet['releaseDate'] ?? null,
-                    ]
-                );
-
-                $nuevos++;
-
-                // Pausa breve entre peticiones: uso considerado de la API
-                // (en re-ejecuciones el caché evita las peticiones HTTP)
-                usleep(100_000);
+                // Nota: synced_at e idiomas_sincronizados NO se tocan aquí — esas
+                // marcas pertenecen al cacheo de cartas y deben sobrevivir a las
+                // re-sincronizaciones del índice
+                $set->save();
             }
 
-            if ($soloFaltantes && $nuevos > 0) {
+            if (!$principal && $nuevos > 0) {
                 $this->info("Serie \"{$serie->nombre}\": +{$nuevos} sets del catálogo \"{$idioma}\"");
             }
 
-            // Cascada de logo de serie (3º eslabón): si sigue sin logo
-            // en ambos idiomas, hereda el del set más reciente que
-            // tenga; si ninguno tiene, queda null → placeholder
+            // Cascada de logo de serie (3º eslabón): si sigue sin logo en ningún
+            // idioma, hereda el del set más reciente que tenga; si ninguno
+            // tiene, queda null → placeholder
             if (!$serie->logo_url) {
                 $setConLogo = $serie->sets()
                     ->whereNotNull('logo_url')

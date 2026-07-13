@@ -120,9 +120,11 @@ class CartaTest extends TestCase
         $respuesta->assertStatus(201)
                   ->assertJsonFragment(['nombre' => 'Mewtwo']);
 
-        // Y lo que se guarda es la clave, no el texto
+        // Y lo que se guarda es la clave, no el texto. El nombre va a la columna
+        // del idioma en el que el admin lo escribió: una carta dada de alta a
+        // mano tiene un solo nombre, no dos.
         $this->assertDatabaseHas('cartas', [
-            'nombre'     => 'Mewtwo',
+            'nombre_es'  => 'Mewtwo',
             'tipo_key'   => 'psychic',
             'rareza_key' => 'ultra-rare',
         ]);

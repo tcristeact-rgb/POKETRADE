@@ -64,7 +64,9 @@ class CacheAsideTest extends TestCase
     // Comprueba que un set con synced_at no vuelve a llamar a TCGdex
     public function test_set_cacheado_se_sirve_sin_llamar_a_tcgdex()
     {
-        $set = $this->crearSet(['synced_at' => now()]);
+        // Cacheado EN ESPAÑOL, que es el idioma de esta petición: por eso no
+        // hace falta preguntarle nada a TCGdex
+        $set = $this->crearSet(['synced_at' => now(), 'idiomas_sincronizados' => ['es']]);
         Carta::create(['nombre' => 'Pikachu', 'tcgdex_id' => 'sv03.5-025', 'set_id' => 'sv03.5']);
 
         Http::fake();

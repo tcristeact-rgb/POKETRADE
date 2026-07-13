@@ -7,6 +7,7 @@ use App\Models\Serie;
 use App\Models\Set;
 use App\Services\TcgdexService;
 use App\Support\CatalogoTcg;
+use App\Support\Idiomas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -61,7 +62,7 @@ class SetController extends Controller
         return response()->json($set);
     }
 
-    // --- Cartas de un set, con cacheo bajo demanda (cache-aside) ---
+    // --- Cartas de un set, con cacheo bajo demanda y por idioma ---
     // Endpoint: GET /api/sets/{id}/cartas
     // Acceso: público (sin token)
     // Query params opcionales:
@@ -69,13 +70,14 @@ class SetController extends Controller
     //   ?tipo=X&rareza=X     → filtros exactos (ver filtrarPorTipoYRareza)
     //   ?page=N&por_pagina=M → paginación (24 por defecto, máx. 100)
     //
-    // La primera visita al set descarga su lista de cartas de TCGdex (una
-    // sola petición) y la persiste en la tabla cartas dentro de una
-    // transacción; synced_at se marca solo al final, así el set nunca
-    // queda a medio cachear. Las visitas siguientes sirven desde la BD
-    // sin tocar la API externa. Las cartas entran solo con nombre, número
-    // e imagen: el resto lo completa CartaController::show al abrir cada
-    // carta (hidratación perezosa).
+    // El cache-aside es por idioma: la primera visita al set EN CADA IDIOMA
+    // descarga ese catálogo de TCGdex (una petición) y lo vuelca a la tabla
+    // cartas, cada uno en sus columnas. Las siguientes visitas en ese idioma
+    // ya no salen de la BD. No hay backfill: un set que nadie ha abierto en
+    // inglés no gasta ni una petición en traducirse.
+    //
+    // Las cartas entran solo con nombre, número e imagen: el resto lo completa
+    // CartaController::show al abrir cada carta.
     public function cartas(Request $request, TcgdexService $tcgdex, $id)
     {
         $set = Set::where('tcgdex_id', $id)
@@ -86,25 +88,20 @@ class SetController extends Controller
             return response()->json(['error' => __('mensajes.set_no_encontrado')], 404);
         }
 
+        $this->cachearSetSiHaceFalta($set, $tcgdex);
+
         if (!$set->synced_at) {
-            $datos = $tcgdex->obtenerSet($set->tcgdex_id);
-
-            if (!$datos || empty($datos['cards'])) {
-                return response()->json([
-                    'error' => __('mensajes.tcgdex_caido'),
-                ], 503);
-            }
-
-            $this->cachearCartas($set, $datos['cards']);
+            return response()->json([
+                'error' => __('mensajes.tcgdex_caido'),
+            ], 503);
         }
 
         $query = $set->cartas();
 
-        // Filtro por nombre — en SQL, parcial e insensible a mayúsculas
-        // (ILIKE en PostgreSQL; LIKE ya es insensible en SQLite/MySQL)
+        // Filtro por nombre — en SQL, parcial e insensible a mayúsculas, y
+        // buscando en los nombres de todos los idiomas (ver el scope)
         if ($request->filled('nombre')) {
-            $operadorLike = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
-            $query->where('nombre', $operadorLike, '%' . $request->nombre . '%');
+            $query->nombreParecidoA($request->nombre);
         }
 
         $this->filtrarPorTipoYRareza($query, $set, $tcgdex,
@@ -162,39 +159,79 @@ class SetController extends Controller
         }
     }
 
-    // Persiste la lista de cartas del set en una transacción: o entran
-    // todas y el set queda marcado como sincronizado, o no entra ninguna.
-    // El upsert por tcgdex_id (índice único) hace la operación idempotente
-    // y solo toca los campos del resumen: si una carta ya estaba en la BD
-    // con detalle completo (seeder o hidratación), su rareza, precio y
-    // descripción se conservan.
-    private function cachearCartas(Set $set, array $cartas): void
+    // Se asegura de que el set esté cacheado en el idioma de la petición.
+    private function cachearSetSiHaceFalta(Set $set, TcgdexService $tcgdex): void
     {
-        $filas = collect($cartas)->map(fn ($carta) => [
-            'tcgdex_id'     => $carta['id'],
-            'nombre'        => $carta['name'],
-            'numero'        => $carta['localId'] ?? null,
-            'imagen_url'    => $carta['image'] ?? null,
-            'set_id'        => $set->tcgdex_id,
-            'set_expansion' => $set->nombre,
-            'created_at'    => now(),
-            'updated_at'    => now(),
+        $idioma = Idiomas::activo();
+
+        $declaradas = $set->cacheadoEn($idioma)
+            ? null
+            : $this->cachearSet($set, $tcgdex, $idioma);
+
+        // Los catálogos que no son el inglés van incompletos: hay sets que en
+        // español existen solo como metadatos, sin una sola carta (neo1 declara
+        // 111 y no trae ninguna). Si después de cachear siguen faltando filas,
+        // las trae el inglés, que es el catálogo completo — y esas cartas se
+        // quedan con su nombre inglés, que es mejor que no estar.
+        $total = max($declaradas ?? 0, $set->numero_cartas);
+
+        if (!$set->cacheadoEn(TcgdexService::COMPLETO) && $set->cartas()->count() < $total) {
+            $this->cachearSet($set, $tcgdex, TcgdexService::COMPLETO);
+        }
+    }
+
+    // Vuelca el catálogo de UN idioma a la tabla cartas y devuelve cuántas
+    // cartas dice TCGdex que tiene el set (que no siempre son las que trae).
+    //
+    // El upsert por tcgdex_id (índice único) es idempotente y solo toca las
+    // columnas de ese idioma: cachear "151" en inglés rellena nombre_en e
+    // imagen_en de sus 207 cartas sin rozar el español, ni la rareza, ni el
+    // precio, ni la descripción que ya tuvieran.
+    private function cachearSet(Set $set, TcgdexService $tcgdex, string $idioma): ?int
+    {
+        $datos = $tcgdex->obtenerSet($set->tcgdex_id, $idioma);
+
+        // null = TCGdex no contestó. Ni se persiste ni se marca el intento: el
+        // set queda sin cachear y la próxima visita vuelve a probar.
+        if ($datos === null) {
+            return null;
+        }
+
+        // Cualquier otra cosa es una respuesta, aunque sea para decir que ese
+        // catálogo no tiene el set ([]) o que lo tiene sin cartas: el intento
+        // queda anotado y no se repite nunca más.
+        $set->marcarCacheadoEn($idioma);
+
+        if (empty($datos['cards'])) {
+            return $datos['cardCount']['total'] ?? null;
+        }
+
+        $filas = collect($datos['cards'])->map(fn ($carta) => [
+            'tcgdex_id'       => $carta['id'],
+            "nombre_{$idioma}" => $carta['name'],
+            "imagen_{$idioma}" => $carta['image'] ?? null,
+            'numero'          => $carta['localId'] ?? null,
+            'set_id'          => $set->tcgdex_id,
+            'created_at'      => now(),
+            'updated_at'      => now(),
         ]);
 
-        DB::transaction(function () use ($set, $filas) {
+        DB::transaction(function () use ($set, $filas, $idioma) {
             // En bloques de 200 para no exceder el límite de parámetros
             // por consulta de PostgreSQL con los sets más grandes
             $filas->chunk(200)->each(fn ($bloque) => Carta::upsert(
                 $bloque->all(),
                 ['tcgdex_id'],
-                ['nombre', 'numero', 'imagen_url', 'set_id', 'set_expansion', 'updated_at']
+                ["nombre_{$idioma}", "imagen_{$idioma}", 'numero', 'set_id', 'updated_at']
             ));
 
             $set->update([
                 'synced_at'     => now(),
-                'numero_cartas' => $filas->count(),
+                'numero_cartas' => $set->cartas()->count(),
             ]);
         });
+
+        return $datos['cardCount']['total'] ?? null;
     }
 
     // Resuelve una serie por su ID de TCGdex o su ID interno numérico

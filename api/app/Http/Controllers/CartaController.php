@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Models\Carta;
+use App\Models\Set;
 use App\Rules\ClaveTcgValida;
 use App\Services\TcgdexService;
 use App\Support\CatalogoTcg;
+use App\Support\Idiomas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Validator; // Para validar los datos recibidos
@@ -19,7 +21,7 @@ class CartaController extends Controller
     //   ?nombre=X       → búsqueda parcial insensible a mayúsculas
     //   ?tipo=X         → clave canónica del tipo (ej: "fire")
     //   ?rareza=X       → clave canónica de la rareza (ej: "double-rare")
-    //   ?set=X          → filtro exacto por nombre de set (ej: "151")
+    //   ?set=X          → ID del set en TCGdex (ej: "sv03.5")
     //   ?orden=recientes→ más nuevas primero (para novedades del home)
     //   ?page=N&por_pagina=M → paginación (24 por defecto, máx. 100)
     // Respuesta: paginador estándar de Laravel
@@ -30,14 +32,11 @@ class CartaController extends Controller
         // Iremos añadiendo filtros dinámicamente según los parámetros recibidos
         $query = Carta::query();
 
-        // Filtro por nombre — búsqueda parcial e insensible a mayúsculas
-        // Ejemplo: ?nombre=char → devuelve Charizard
-        // PostgreSQL distingue mayúsculas con LIKE, por eso en ese motor
-        // usamos ILIKE (insensible). SQLite/MySQL ya son insensibles con
-        // LIKE y no soportan ILIKE, así que ahí mantenemos LIKE.
-        if ($request->has('nombre')) {
-            $operadorLike = $query->getConnection()->getDriverName() === 'pgsql' ? 'ilike' : 'like';
-            $query->where('nombre', $operadorLike, '%' . $request->nombre . '%');
+        // Filtro por nombre — parcial, insensible a mayúsculas y en los nombres
+        // de TODOS los idiomas (ver el scope en el modelo): quien navega en
+        // inglés también encuentra una carta que solo se ha cacheado en español
+        if ($request->filled('nombre')) {
+            $query->nombreParecidoA($request->nombre);
         }
 
         // Filtro por tipo y rareza — por CLAVE canónica, no por el texto
@@ -53,10 +52,11 @@ class CartaController extends Controller
             $query->where('rareza_key', CatalogoTcg::claveRareza($request->rareza));
         }
 
-        // Filtro por set de expansión — búsqueda exacta
-        // Ejemplo: ?set=151 → devuelve solo cartas del set "151"
-        if ($request->has('set')) {
-            $query->where('set_expansion', $request->set);
+        // Filtro por set — por su ID de TCGdex, no por su nombre: el nombre
+        // depende del idioma ("151" da igual, pero "Cénit Supremo" no es
+        // "Silver Tempest"), y el ID vale en cualquiera. Ejemplo: ?set=sv03.5
+        if ($request->filled('set')) {
+            $query->where('set_id', $request->set);
         }
 
         // Orden: por defecto el orden natural del catálogo (id ascendente);
@@ -92,13 +92,19 @@ class CartaController extends Controller
     // que es lo que TCGdex devuelve en su propio catálogo español.
     //
     // Cada entrada es {clave, etiqueta}: la clave viaja en la URL (?tipo=fire)
-    // y la etiqueta es lo que se lee en el desplegable.
+    // y la etiqueta es lo que se lee en el desplegable. Los sets siguen la
+    // misma forma — su clave es el ID de TCGdex, que tampoco depende del idioma.
     public function filtros()
     {
+        $sets = Set::whereHas('cartas')->get()
+            ->map(fn (Set $set) => ['clave' => $set->tcgdex_id, 'etiqueta' => $set->nombre])
+            ->sortBy('etiqueta', SORT_LOCALE_STRING)
+            ->values();
+
         return response()->json([
             'tipos'   => CatalogoTcg::tipos(),
             'rarezas' => CatalogoTcg::rarezas(),
-            'sets'    => Carta::whereNotNull('set_expansion')->distinct()->orderBy('set_expansion')->pluck('set_expansion'),
+            'sets'    => $sets,
         ]);
     }
 
@@ -114,11 +120,14 @@ class CartaController extends Controller
     // no es un caso raro, es el camino habitual.
     // Caché de 1 h: congela la selección y ahorra las consultas.
     //
-    // El idioma va DENTRO de la clave. Hoy la respuesta es igual en los dos
-    // (los nombres de carta aún no están traducidos), pero en cuanto la fase 4
-    // sirva nombre_es/nombre_en, una clave sin idioma haría que el primer
-    // visitante del home fijase SU idioma para todos los demás durante una
-    // hora. Se arregla ahora, que es gratis, y no cuando ya esté roto.
+    // El idioma va DENTRO de la clave: si no, el primer visitante del home le
+    // fijaría SU idioma a todos los demás durante una hora.
+    //
+    // Y lo que se guarda son los datos ya resueltos (toArray), no los modelos:
+    // un modelo serializado arrastra las columnas que tenía el día que se
+    // guardó, así que el primer cambio de esquema deja el hero en blanco
+    // durante una hora, en producción y sin avisar. Los datos planos no
+    // envejecen así.
     public function destacadas()
     {
         $cartas = Cache::remember('cartas.destacadas.' . app()->getLocale(), 3600, function () {
@@ -144,7 +153,7 @@ class CartaController extends Controller
                 );
             }
 
-            return $destacadas->values();
+            return $destacadas->values()->toArray();
         });
 
         return response()->json(['data' => $cartas]);
@@ -233,11 +242,11 @@ class CartaController extends Controller
             return response()->json(['error' => __('mensajes.carta_no_encontrada')], 404);
         }
 
-        // Hidratación perezosa: las cartas cacheadas desde el resumen de
-        // un set (cache-aside) solo traen nombre, número e imagen; la
-        // primera vez que alguien abre la carta completamos su detalle
-        // desde TCGdex y lo persistimos para las visitas siguientes
-        if ($carta->tcgdex_id && !$carta->detalle_synced_at) {
+        // Hidratación perezosa, y por idioma: las cartas cacheadas desde el
+        // resumen de un set solo traen nombre, número e imagen; la primera vez
+        // que alguien abre la carta EN UN IDIOMA completamos su detalle desde
+        // ese catálogo de TCGdex y lo persistimos para las visitas siguientes
+        if ($carta->tcgdex_id && !$carta->detalladoEn(Idiomas::activo())) {
             $this->hidratarDetalle($carta);
         }
 
@@ -272,9 +281,19 @@ class CartaController extends Controller
     // completo viene en la misma petición que valida que existe.
     private function crearDesdeTcgdex(string $tcgdexId): ?Carta
     {
-        $datos = app(TcgdexService::class)->obtenerCarta($tcgdexId);
+        $tcgdex = app(TcgdexService::class);
+        $idioma = Idiomas::activo();
 
-        if (!$datos || empty($datos['name'])) {
+        $datos = $tcgdex->obtenerCarta($tcgdexId, $idioma);
+
+        // Que el catálogo del idioma activo no la tenga no significa que la
+        // carta no exista: las de los sets clásicos solo están en inglés
+        if (empty($datos) && $idioma !== TcgdexService::COMPLETO) {
+            $idioma = TcgdexService::COMPLETO;
+            $datos  = $tcgdex->obtenerCarta($tcgdexId, $idioma);
+        }
+
+        if (empty($datos['name'])) {
             return null;
         }
 
@@ -282,54 +301,83 @@ class CartaController extends Controller
         // (tcgdex_id tiene índice único)
         return Carta::firstOrCreate(
             ['tcgdex_id' => $datos['id'] ?? $tcgdexId],
-            [
-                'nombre'            => $datos['name'],
-                'tipo_key'          => CatalogoTcg::claveTipo($datos['types'][0] ?? null),
-                'rareza_key'        => CatalogoTcg::claveRareza($datos['rarity'] ?? null),
+            $this->camposNeutros($datos) + [
+                "nombre_{$idioma}"      => $datos['name'],
+                "descripcion_{$idioma}" => $datos['description'] ?? null,
+                "imagen_{$idioma}"      => $datos['image'] ?? null,
                 // El id de TCGdex es "{set}-{numero}": si el detalle no
                 // trae el set, se deriva del prefijo
-                'set_id'            => $datos['set']['id'] ?? strtok($tcgdexId, '-'),
-                'set_expansion'     => $datos['set']['name'] ?? null,
-                'numero'            => $datos['localId'] ?? null,
-                'imagen_url'        => $datos['image'] ?? null,
-                'descripcion'       => $datos['description'] ?? null,
-                'ilustrador'        => $datos['illustrator'] ?? null,
-                'hp'                => $datos['hp'] ?? null,
-                'precio_cardmarket' => $datos['pricing']['cardmarket']['avg']
-                                        ?? $datos['pricing']['cardmarket']['trend']
-                                        ?? null,
-                'detalle_synced_at' => now(),
+                'set_id'                => $datos['set']['id'] ?? strtok($tcgdexId, '-'),
+                'idiomas_detallados'    => [$idioma],
             ]
         );
     }
 
     // Completa el detalle de la carta desde TCGdex (rareza, tipo, precio,
-    // descripción...). Si la API externa no responde, no pasa nada: se
-    // sirve lo que haya en la BD y la marca queda a null para reintentar
-    // en la próxima visita. Mismo mapeo de campos que el comando
-    // cartas:sincronizar-tcgdex.
+    // descripción...) en el idioma de la petición. Si la API externa no
+    // responde, no pasa nada: se sirve lo que haya en la BD y no se marca
+    // nada, así la próxima visita vuelve a intentarlo.
     private function hidratarDetalle(Carta $carta): void
     {
-        $datos = app(TcgdexService::class)->obtenerCarta($carta->tcgdex_id);
+        $tcgdex = app(TcgdexService::class);
+        $idioma = Idiomas::activo();
 
-        if (!$datos) {
-            return;
+        $catalogos = [$idioma => $tcgdex->obtenerCarta($carta->tcgdex_id, $idioma)];
+
+        // Si el catálogo del idioma activo no tiene la carta, se pide al inglés:
+        // los campos neutros (tipo, rareza, hp, precio, ilustrador) los da
+        // igual de bien cualquiera de los dos, y de paso nos quedamos sus
+        // textos ingleses, que ya están pagados.
+        if ($catalogos[$idioma] === [] && $idioma !== TcgdexService::COMPLETO) {
+            $catalogos[TcgdexService::COMPLETO] = $tcgdex->obtenerCarta($carta->tcgdex_id, TcgdexService::COMPLETO);
         }
 
-        $carta->update([
-            'nombre'            => $datos['name'] ?? $carta->nombre,
-            'tipo_key'          => CatalogoTcg::claveTipo($datos['types'][0] ?? null) ?? $carta->tipo_key,
-            'rareza_key'        => CatalogoTcg::claveRareza($datos['rarity'] ?? null) ?? $carta->rareza_key,
-            'numero'            => $datos['localId'] ?? $carta->numero,
-            'imagen_url'        => $datos['image'] ?? $carta->imagen_url,
-            'descripcion'       => $datos['description'] ?? $carta->descripcion,
-            'ilustrador'        => $datos['illustrator'] ?? $carta->ilustrador,
-            'hp'                => $datos['hp'] ?? $carta->hp,
+        foreach ($catalogos as $codigo => $datos) {
+            // null = no contestó. Ni se guarda ni se marca: se reintentará.
+            if ($datos === null) {
+                continue;
+            }
+
+            // Cualquier otra cosa es una respuesta, aunque sea para decir que
+            // ese catálogo no tiene la carta. El intento queda anotado y no se
+            // repite: de un set clásico no va a salir una versión española por
+            // mucho que la pidamos.
+            $carta->idiomas_detallados = array_values(array_unique([
+                ...($carta->idiomas_detallados ?? []),
+                $codigo,
+            ]));
+
+            if ($datos === []) {
+                continue;
+            }
+
+            $carta->fill($this->camposNeutros($datos, $carta) + [
+                "nombre_{$codigo}"      => $datos['name'] ?? $carta->{"nombre_{$codigo}"},
+                "descripcion_{$codigo}" => $datos['description'] ?? $carta->{"descripcion_{$codigo}"},
+                "imagen_{$codigo}"      => $datos['image'] ?? $carta->{"imagen_{$codigo}"},
+            ]);
+        }
+
+        $carta->save();
+    }
+
+    // Los campos que NO dependen del idioma: los da igual de bien cualquier
+    // catálogo de TCGdex. El tipo y la rareza llegan como texto ya traducido
+    // ("Fire" / "Fuego") y se normalizan a la clave canónica, que es lo único
+    // que guarda la BD.
+    private function camposNeutros(array $datos, ?Carta $carta = null): array
+    {
+        return [
+            'tipo_key'          => CatalogoTcg::claveTipo($datos['types'][0] ?? null) ?? $carta?->tipo_key,
+            'rareza_key'        => CatalogoTcg::claveRareza($datos['rarity'] ?? null) ?? $carta?->rareza_key,
+            'numero'            => $datos['localId'] ?? $carta?->numero,
+            'ilustrador'        => $datos['illustrator'] ?? $carta?->ilustrador,
+            'hp'                => $datos['hp'] ?? $carta?->hp,
             'precio_cardmarket' => $datos['pricing']['cardmarket']['avg']
                                     ?? $datos['pricing']['cardmarket']['trend']
-                                    ?? $carta->precio_cardmarket,
+                                    ?? $carta?->precio_cardmarket,
             'detalle_synced_at' => now(),
-        ]);
+        ];
     }
 
     // --- Crear una nueva carta ---
