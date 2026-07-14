@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'paths' => ['api/*', 'sanctum/csrf-cookie'],
+    'paths' => ['api/*'],   // la API y nada más: aquí no hay Sanctum ni cookies de sesión
     'allowed_methods' => ['*'],
 
     // Orígenes permitidos. Se toman de FRONTEND_URL (lista separada por comas)
