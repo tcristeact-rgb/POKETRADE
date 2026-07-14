@@ -70,6 +70,20 @@ COPY . /app
 #   --optimize-autoloader → genera un mapa de clases más rápido de cargar
 RUN composer install --no-dev --optimize-autoloader
 
+# Cachés que NO dependen del entorno, generadas AQUÍ y no al arrancar.
+#
+# Las rutas, los eventos y las vistas son las mismas con cualquier configuración,
+# así que no hay ninguna razón para recomponerlas en cada despertar de Render. Se
+# compilan una vez, al construir la imagen, y viajan dentro de ella.
+#
+# Que funcionen sin .env es justamente la prueba de que no dependen del entorno
+# (aquí no hay ninguno: .env no se versiona). config:cache es el caso contrario y
+# por eso no está: congelaría las credenciales a null. Ese se hace al arrancar,
+# junto con las migraciones y en el mismo proceso (ver app:arrancar).
+RUN php artisan route:cache \
+    && php artisan event:cache \
+    && php artisan view:cache
+
 # Render asigna el puerto mediante la variable de entorno $PORT. Exponemos
 # 8000 de forma informativa (Render gestiona el mapeo real automáticamente).
 EXPOSE 8000
@@ -83,21 +97,17 @@ EXPOSE 8000
 # consola y arranca un solo proceso). Por eso el CMD lo lleva.
 ENV PHP_CLI_SERVER_WORKERS=4
 
-# Comando de arranque del contenedor:
-#   1) Las cachés de Laravel. Sin ellas, cada petición vuelve a leer y montar
-#      TODOS los ficheros de config/ y a registrar TODAS las rutas. Se generan al
-#      arrancar el contenedor y no al construirlo a propósito: config:cache
-#      congela las variables de entorno, y en Render solo existen en tiempo de
-#      ejecución. (route:cache exige que ninguna ruta sea una closure: ver
-#      routes/web.php.)
-#   2) `migrate --force` aplica las migraciones pendientes contra Supabase.
-#      Es idempotente: si ya están aplicadas no hace nada, así que es seguro
-#      que se ejecute en cada arranque (incluido el "despertar" de Render
-#      tras dormirse). --force es obligatorio porque el entorno no es
-#      interactivo y Laravel, si no, pediría confirmación.
-#   3) `artisan serve` levanta el servidor PHP embebido escuchando en todas
-#      las interfaces (0.0.0.0) y en el puerto que indique Render. El valor
-#      por defecto 8000 permite probar la imagen también en local. --no-reload
-#      quita el vigilante de ficheros (aquí no cambia ninguno) y es lo que
-#      habilita los workers de arriba.
-CMD php artisan config:cache && php artisan route:cache && php artisan event:cache && php artisan migrate --force && php artisan serve --no-reload --host 0.0.0.0 --port ${PORT:-8000}
+# Comando de arranque del contenedor. Render duerme el servicio tras 15 minutos
+# sin tráfico, así que ESTO se ejecuta entero en cada despertar, y el puerto no se
+# abre hasta que termina: todo lo que sobre aquí se lo come el visitante.
+#
+#   1) app:arrancar → cachea la configuración y aplica las migraciones pendientes
+#      en UN SOLO arranque de Laravel. Antes eran cuatro `artisan` encadenados, y
+#      cada uno arranca el framework entero: ~450 ms en una CPU normal, ~5 s con
+#      los 0,1 CPU del plan free. Las otras tres cachés se han ido al build.
+#   2) `artisan serve` levanta el servidor PHP embebido escuchando en todas las
+#      interfaces (0.0.0.0) y en el puerto que indique Render. El valor por defecto
+#      8000 permite probar la imagen también en local. --no-reload quita el
+#      vigilante de ficheros (aquí no cambia ninguno) y es lo que habilita los
+#      workers de arriba.
+CMD php artisan app:arrancar && php artisan serve --no-reload --host 0.0.0.0 --port ${PORT:-8000}
