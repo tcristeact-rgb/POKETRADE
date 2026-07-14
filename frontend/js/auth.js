@@ -4,6 +4,7 @@
 // ===================================================
 
 import { API_URL } from './config.js';
+import { conEspera } from './espera.js';
 import { t, idioma } from './i18n.js';
 
 export { API_URL };
@@ -61,6 +62,10 @@ export function eliminarSesion() {
 //
 // Devuelve la Response tal cual, sin tocarla: quien llama sigue mirando .ok,
 // .status y .json() exactamente igual que antes.
+//
+// Y por aquí pasa también la espera (ver espera.js): timeout, aviso de "servidor
+// despertando" y reintento. Ponerlo aquí y no en cada vista es lo que hace que lo
+// tengan las 32 llamadas, incluidas las que se escriban mañana.
 export function apiFetch(ruta, opciones = {}) {
   const cabeceras = {
     'Accept': 'application/json',
@@ -72,7 +77,19 @@ export function apiFetch(ruta, opciones = {}) {
   const token = obtenerToken();
   if (token) cabeceras['Authorization'] = `Bearer ${token}`;
 
-  return fetch(`${API_URL}${ruta}`, { ...opciones, headers: cabeceras });
+  // Solo se reintentan las peticiones que no cambian nada. Repetir un POST de
+  // /tradeos porque la respuesta se perdió por el camino podría publicar el
+  // tradeo dos veces: el servidor pudo haberlo creado y morir al contestar.
+  const metodo = (opciones.method ?? 'GET').toUpperCase();
+
+  return conEspera(
+    (signal) => fetch(`${API_URL}${ruta}`, {
+      ...opciones,
+      headers: cabeceras,
+      signal: opciones.signal ?? signal,
+    }),
+    { reintentable: metodo === 'GET' || metodo === 'HEAD' },
+  );
 }
 
 // ─────────────────────────────────────────────────

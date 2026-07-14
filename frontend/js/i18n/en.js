@@ -27,6 +27,11 @@ export default {
     'estado.cerrado':   'Closed',
     'estado.cancelado': 'Cancelled',
 
+    // ── Server waking up ───────────────────────────
+    'espera.titulo':   'Waking the server up…',
+    'espera.texto':    'The API is hosted on Render\'s free tier, which shuts the service down after a while with no visitors. This first start can take up to a minute; everything is instant from then on.',
+    'espera.segundos': '{n}s',
+
 
     // ── HTTP and network errors ────────────────────
     'error.401':          'Your session has expired. Please log in again.',

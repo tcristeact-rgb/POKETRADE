@@ -27,6 +27,15 @@ export default {
     'estado.cerrado':   'Cerrado',
     'estado.cancelado': 'Cancelado',
 
+    // ── Servidor despertando ───────────────────────
+    // La API está en el plan gratuito de Render, que apaga el servicio tras 15
+    // minutos sin visitas. El primer arranque puede irse a un minuto. No se
+    // disimula: se explica. Un reclutador que lea esto ve a alguien que conoce
+    // los límites de su infraestructura, no una web rota.
+    'espera.titulo':   'Despertando el servidor…',
+    'espera.texto':    'La API está alojada en el plan gratuito de Render, que apaga el servicio cuando pasa un rato sin visitas. Este primer arranque puede tardar hasta un minuto; a partir de ahí, todo va al instante.',
+    'espera.segundos': '{n} s',
+
 
     // ── Errores HTTP y de red ──────────────────────
     'error.401':          'Sesión expirada. Por favor, inicia sesión de nuevo.',

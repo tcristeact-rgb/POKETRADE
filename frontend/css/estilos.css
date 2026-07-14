@@ -1118,6 +1118,83 @@ footer a:hover { color: white; }
   margin-bottom: 1rem;
 }
 
+/* ── Servidor despertando ──
+   La API vive en el plan gratuito de Render, que apaga el servicio tras un rato
+   sin visitas: el primer arranque puede irse a un minuto. Eso no se arregla con
+   código — pero dejar al visitante mirando un esqueleto mudo durante ese minuto
+   sí es un problema, y se arregla contándoselo (ver espera.js).
+
+   Va fijo abajo y no empotrado en la página: aparece a los 3 segundos, y si
+   empujara el contenido a esas alturas sería peor el remedio. */
+.aviso-despertar {
+  position: fixed;
+  left: 50%;
+  bottom: 1.25rem;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  width: min(30rem, calc(100vw - 2rem));
+  padding: 0.9rem 1.1rem;
+  background: var(--fondo-card);
+  border: 1px solid var(--borde);
+  border-left: 3px solid var(--primario);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 30px rgb(0 0 0 / 0.18);
+  animation: aviso-despertar-entra 0.25s ease-out;
+}
+.aviso-despertar[hidden] { display: none; }
+
+.aviso-despertar-texto strong {
+  display: block;
+  font-size: var(--text-sm);
+  margin-bottom: 0.15rem;
+}
+.aviso-despertar-texto p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+/* El reloj no es decoración: un spinner girando es indistinguible de una web
+   colgada. Con los segundos a la vista se ve que aquello avanza. */
+.aviso-despertar-reloj {
+  flex-shrink: 0;
+  min-width: 2.6rem;
+  text-align: right;
+  color: var(--muted);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;   /* que no bailen los dígitos al contar */
+}
+
+.aviso-despertar-rueda {
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--borde);
+  border-top-color: var(--primario);
+  border-radius: 50%;
+  animation: aviso-despertar-gira 0.8s linear infinite;
+}
+
+@keyframes aviso-despertar-gira { to { transform: rotate(360deg); } }
+@keyframes aviso-despertar-entra {
+  from { opacity: 0; transform: translate(-50%, 0.75rem); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aviso-despertar { animation: none; }
+  .aviso-despertar-rueda { animation-duration: 2.4s; }
+}
+
+/* Mientras el servidor despierta, callan los avisos de carga de cada página (el
+   del catálogo, por ejemplo): dos mensajes de espera a la vez no informan el
+   doble, confunden el doble. */
+html.servidor-despertando .aviso-carga { display: none; }
+
 /* Por qué se pide la sesión ("Inicia sesión para aceptar este
    tradeo"): lo muestra el propio login, no una pantalla previa */
 .aviso-motivo {
