@@ -1,7 +1,11 @@
 /* ===================================================
-   estilos.css – Sistema de diseño PokeTrade (v2)
-   Todas las páginas internas cargan únicamente este archivo.
-   index.html carga además index.css para el home.
+   estilos.css – Sistema de diseño PokeTrade
+   La hoja ÚNICA: todas las páginas cargan esta y solo esta.
+
+   Los colores, espaciados, radios y transiciones viven en variables (:root), y
+   el tema oscuro las redefine en [data-tema="oscuro"] — ni una regla duplicada.
+   Los ratios de contraste están anotados junto a cada par de colores: no son
+   decorativos, son la prueba de que cumplen WCAG AA (4.5:1 para texto normal).
    =================================================== */
 
 /* ── Tipografía: DM Sans, servida desde nuestro propio dominio ──

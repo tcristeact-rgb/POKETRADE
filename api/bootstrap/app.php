@@ -1,15 +1,29 @@
 <?php
 
+use App\Http\Controllers\IndiceController;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Support\Facades\Route;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
         api: __DIR__.'/../routes/api.php',
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
+
+        // La raíz devuelve un índice de endpoints (antes: la página de bienvenida
+        // de Laravel). Se registra aquí, en `then`, y NO en un routes/web.php:
+        //
+        // el grupo de middleware "web" arranca una SESIÓN y monta CSRF, y esto es
+        // una API sin estado que autentica con un JWT en la cabecera. No hay tabla
+        // `sessions` —ninguna migración la crea— así que una sola ruta en ese grupo
+        // revienta con "no such table: sessions" en cuanto el driver de sesión no
+        // sea 'array'. Era una mina esperando a que alguien tocara el .env.
+        //
+        // Sin routes/web.php, la aplicación no tiene grupo web en absoluto. Que es
+        // lo correcto: aquí no hay nada web que servir.
+        then: fn () => Route::get('/', IndiceController::class),
     )
     ->withMiddleware(function (Middleware $middleware): void {
         // EstablecerIdioma va en TODAS las rutas de la API y lo antes posible:

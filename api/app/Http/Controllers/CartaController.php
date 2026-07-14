@@ -412,10 +412,13 @@ class CartaController extends Controller
         return response()->json($carta, 201);
     }
 
-    //NO IMPLEMENTADO EN LA VERSION FINAL
     // --- Actualizar una carta existente ---
     // Endpoint: PUT /api/cartas/{id}
     // Acceso: protegido — solo administradores (middleware EsAdmin)
+    //
+    // La API lo expone, pero el frontend NO tiene panel de administración: el
+    // catálogo lo alimenta TCGdex, no un humano. Esta ruta existe para el rol de
+    // admin y para poder corregir una carta a mano si hiciera falta.
     public function update(Request $request, $id)
     {
         // Buscamos la carta por su ID
@@ -437,10 +440,10 @@ class CartaController extends Controller
         return response()->json($carta);
     }
 
-    //NO IMPLEMENTADO EN LA VERSION FINAL
     // --- Eliminar una carta ---
     // Endpoint: DELETE /api/cartas/{id}
     // Acceso: protegido — solo administradores (middleware EsAdmin)
+    // Sin panel en el frontend, igual que update(): existe para el rol de admin.
     public function destroy($id)
     {
         // Buscamos la carta por su ID

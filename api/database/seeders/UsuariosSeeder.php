@@ -6,12 +6,16 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash; // Para encriptar contraseñas
 use App\Models\User;
 
+// Usuarios de prueba para desarrollar en local, con contraseñas fijas.
+//
+// SOLO en local: DatabaseSeeder no los llama fuera de ese entorno (comprueba
+// app()->environment('local') y sale sin insertar nada). En producción se siembra
+// únicamente el catálogo, y quien quiera probar la demo se registra.
 class UsuariosSeeder extends Seeder
 {
     public function run(): void
     {
-        //NO IMPLEMENTADO EN LA VERSION FINAL
-        // --- Usuario administrador --- 
+        // --- Usuario administrador ---
         // Tiene rol 'admin' para poder acceder a las rutas protegidas por EsAdmin
         User::create([
             'nombre'       => 'Admin',
