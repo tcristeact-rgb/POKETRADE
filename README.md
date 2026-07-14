@@ -103,6 +103,18 @@ Both URLs serve **the same HTML file** — a Vercel rewrite (`/en/:path*` → `/
 | `GET /api/sets/{id}/cartas` | Paginated cards of a set — triggers the on-demand caching |
 | `GET /api/cartas/{id}` | Card detail — triggers lazy hydration from TCGdex |
 
+### Cold starts, and being honest about them
+
+The API runs on Render's free tier, which shuts the service down after a while with no traffic. The next visitor waits for the whole container to come back up — up to a minute. No amount of code fixes that; it is what a free plan buys you. Two things follow.
+
+**Make the boot as short as it can be.** The container's start command runs on *every* wake, and the port does not open until it finishes, so everything in there is paid for by a visitor. It used to chain four `artisan` calls, and each one boots the whole framework (~450 ms on a normal CPU; Render's free tier gives **0.1 CPU**). Now `route:cache`, `event:cache` and `view:cache` happen at **build** time — they don't depend on the environment, which is exactly why they work with no `.env`, and there is none inside the image — and `config:cache` (which *does* bake the environment, so it cannot move to build) shares a single process with the migrations via `php artisan app:arrancar`. **Four Laravel boots down to one: 1,710 ms → 524 ms.**
+
+**And tell the visitor what is happening.** A muted skeleton for sixty seconds looks like a broken site. After 3 seconds a notice explains the situation, with a clock so it's visibly making progress rather than visibly hung. It lives inside `apiFetch`, so every call in the app has it, along with a 90 s timeout and an automatic retry on the `502/503/504` Render's proxy returns while the container is still coming up (GET and HEAD only — retrying a `POST /tradeos` could publish the trade twice).
+
+**`GET /api/health`** is the cheapest endpoint there is: no database, no TCGdex, no cache. A 200 means PHP booted, Laravel booted and the routes are mounted — and *only* that. Checking the database here would make a Supabase outage look like an API outage, and they are not the same thing. (Laravel's own `/up` exists but sits outside the API group, so no CORS: a browser can't call it.)
+
+**Keeping it awake — proposed, not enabled.** A cron ping against `/api/health` every 10 minutes would keep the service up (10 and not 14, because GitHub Actions' scheduler runs late by 5–15 minutes under load, and Render sleeps at 15). The catch is the free-hour budget: Render gives **750 instance-hours a month**. Awake 24/7 is ~730 h — it eats essentially all of them and leaves nothing for anything else. A bounded window (say 08:00–22:00) is **~426 h**, which fits with room to spare. Worth doing only if the demo is being actively shown; it is off by default.
+
 ### Load performance
 
 Measured in a real browser on throttled slow-4G (150 ms RTT, 4× CPU slowdown), which is where round trips actually cost something. Three things were wrong, and none of them were "too many bytes" — brotli takes the 123 KB stylesheet down to 20 KB.
@@ -159,7 +171,7 @@ After a deploy that changes the schema, run `php artisan cache:clear`: the `cach
 
 ```bash
 cd api
-php artisan test            # 90 tests, in-memory SQLite (TCGdex mocked with Http::fake)
+php artisan test            # 92 tests, in-memory SQLite (TCGdex mocked with Http::fake)
 ```
 
 ## License

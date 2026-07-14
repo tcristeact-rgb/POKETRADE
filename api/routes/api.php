@@ -7,6 +7,7 @@ use App\Http\Controllers\SerieController;
 use App\Http\Controllers\SetController;
 use App\Http\Controllers\TradeoController;
 use App\Http\Controllers\InventarioController;
+use App\Http\Controllers\SaludController;
 use App\Http\Controllers\UsuarioController;
 
 /*
@@ -14,6 +15,11 @@ use App\Http\Controllers\UsuarioController;
 | Rutas públicas — sin autenticación
 |--------------------------------------------------------------------------
 */
+
+// Salud del servicio. Sin base de datos, sin TCGdex, sin caché: si esto responde,
+// el contenedor está en pie. Sirve para monitorizar y para despertar a Render
+// (plan free) por el coste más bajo posible — ver SaludController.
+Route::get('/health', SaludController::class);
 
 // Auth
 Route::post('/auth/registro', [AuthController::class, 'registro']);
