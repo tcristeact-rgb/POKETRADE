@@ -97,8 +97,13 @@
 
   /* Estado — semánticos: NO siguen a la marca. La advertencia va
      oscurecida (#92400E) para no confundirse con el ámbar primario */
-  --exito:           #16a34a;
-  --exito-hover:     #15803d;
+  /* --exito es TEXTO y bordes (5,02:1 sobre blanco); --exito-fondo es el
+     fondo de botones y toasts con texto blanco (5,02:1). Eran un solo token
+     a #16a34a, que daba 3,30:1 en los dos papeles (WCAG 1.4.3). No pueden ser
+     el mismo valor en oscuro: lo que sube uno baja el otro, ver [data-tema]. */
+  --exito:           #15803d;
+  --exito-fondo:     #15803d;
+  --exito-fondo-hover: #166534;   /* 7,13:1 con blanco */
   --exito-soft:      #f0fdf4;
   --exito-borde:     #bbf7d0;
   --error:           #dc2626;
@@ -217,6 +222,7 @@
   --borde:           #333333;
   --borde-hover:     #4D4D4D;
   --borde-input:     #757575;   /* 4,07:1 sobre --fondo, 3,58 sobre --fondo-card */
+  --exito:           #16a34a;   /* texto: 5,00:1 sobre --fondo-card; #15803d daría 3,29 */
   --exito-soft:      rgba(22, 163, 74, 0.16);
   --exito-borde:     rgba(22, 163, 74, 0.40);
   --error-soft:      rgba(220, 38, 38, 0.16);
@@ -1473,7 +1479,7 @@ html.servidor-despertando .aviso-carga { display: none; }
 }
 .toast.visible { opacity: 1; transform: translateY(0); }
 .toast.toast-error { background: var(--error); }
-.toast.toast-ok    { background: var(--exito); }
+.toast.toast-ok    { background: var(--exito-fondo); }
 .toast.toast-info  { background: var(--info); }
 
 /* ══════════════════════════════════════════════════
@@ -2771,7 +2777,7 @@ html.modal-abierto {
   flex-wrap: wrap;
 }
 .btn-inventario {
-  background: var(--exito);
+  background: var(--exito-fondo);
   color: white;
   border: none;
   padding: 0.7rem 1.5rem;
@@ -2783,7 +2789,7 @@ html.modal-abierto {
   transition: background var(--trans), transform var(--trans), box-shadow var(--trans);
 }
 .btn-inventario:hover {
-  background: var(--exito-hover);
+  background: var(--exito-fondo-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
 }
@@ -3218,7 +3224,7 @@ html.modal-abierto {
   bottom: 1.5rem;
   left: 50%;
   transform: translateX(-50%);
-  background: var(--exito);
+  background: var(--exito-fondo);
   color: white;
   padding: 0.85rem 1.5rem;
   border-radius: var(--radius-lg);
@@ -3545,7 +3551,7 @@ html.modal-abierto {
 }
 .btn-cancelar-modal:hover { background: var(--fondo); border-color: var(--borde-hover); }
 .btn-confirmar-modal {
-  background: var(--exito);
+  background: var(--exito-fondo);
   color: white;
   border: none;
   padding: 0.6rem 1.5rem;
@@ -3556,7 +3562,7 @@ html.modal-abierto {
   cursor: pointer;
   transition: background var(--trans), transform var(--trans);
 }
-.btn-confirmar-modal:hover:not(:disabled) { background: var(--exito-hover); transform: translateY(-1px); }
+.btn-confirmar-modal:hover:not(:disabled) { background: var(--exito-fondo-hover); transform: translateY(-1px); }
 .btn-confirmar-modal:disabled { background: var(--deshabilitado); cursor: not-allowed; }
 
 /* ══════════════════════════════════════════════════
