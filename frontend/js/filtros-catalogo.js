@@ -9,7 +9,7 @@
 // TCG (GET /api/cartas/filtros, que los proxea desde TCGdex).
 
 import { apiFetch } from './auth.js';
-import { debounce } from './utils.js';
+import { debounce, glifosRareza } from './utils.js';
 import { activarAutocompletado } from './header.js';
 
 // Debounce del input de nombre: la búsqueda global golpea a TCGdex,
@@ -132,10 +132,18 @@ export function iniciarFiltros({ alCambiar }) {
     // traducida y se ENVÍA la clave canónica. Por eso ?tipo=fire vale igual
     // en los dos idiomas y un enlace con filtros se puede compartir entre
     // usuarios que no hablan el mismo.
+    //
+    // Las rarezas llegan en el orden de la taxonomía (de menor a mayor) y
+    // con su símbolo; se respeta ese orden. Un <option> no admite HTML ni
+    // color fiable, así que el símbolo va como texto delante del nombre y
+    // el color se queda para las tarjetas y el detalle.
     function rellenarSelect(select, opciones) {
         if (!select || !Array.isArray(opciones)) return;
         select.length = 1; // conserva la primera opción ("Todos los ...")
-        opciones.forEach(o => select.add(new Option(o.etiqueta, o.clave)));
+        opciones.forEach(o => {
+            const glifos = glifosRareza(o.simbolo);
+            select.add(new Option(glifos ? `${glifos} ${o.etiqueta}` : o.etiqueta, o.clave));
+        });
     }
 
     return { actuales, hayFiltros, aplicarSobre, limpiar };

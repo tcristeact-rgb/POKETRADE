@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Carta;
 use App\Support\CatalogoTcg;
+use App\Support\Rarezas;
 
 // El único sitio que sabe convertir lo que devuelve TCGdex en columnas de la
 // tabla cartas. Antes vivía dos veces: en CartaController (detalle de una
@@ -146,12 +147,14 @@ class HidratadorDeCartas
     // Los campos que NO dependen del idioma: los da igual de bien cualquier
     // catálogo de TCGdex. El tipo y la rareza llegan como texto ya traducido
     // ("Fire" / "Fuego") y se normalizan a la clave canónica, que es lo único
-    // que guarda la BD.
+    // que guarda la BD. Una rareza que TCGdex se haya inventado después de
+    // esta versión no se pierde: Rarezas la guarda como slug y la clasifica
+    // como excepción.
     private function camposNeutros(array $datos, ?Carta $carta = null): array
     {
         return [
             'tipo_key'          => CatalogoTcg::claveTipo($datos['types'][0] ?? null) ?? $carta?->tipo_key,
-            'rareza_key'        => CatalogoTcg::claveRareza($datos['rarity'] ?? null) ?? $carta?->rareza_key,
+            'rareza_key'        => Rarezas::claveDesdeTcgdex($datos['rarity'] ?? null) ?? $carta?->rareza_key,
             'numero'            => $datos['localId'] ?? $carta?->numero,
             'ilustrador'        => $datos['illustrator'] ?? $carta?->ilustrador,
             'hp'                => $datos['hp'] ?? $carta?->hp,

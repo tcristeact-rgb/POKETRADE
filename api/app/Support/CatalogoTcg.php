@@ -17,7 +17,8 @@ namespace App\Support;
 // A partir de aquí la BD guarda una CLAVE neutra ('fire', 'holo-rare') y el
 // texto que ve el usuario sale del diccionario (lang/{es,en}/tcg.php). Un
 // idioma nuevo se añade creando su lang/{idioma}/tcg.php: ni una carta que
-// tocar, ni un re-sync.
+// tocar, ni un re-sync. Las 40 claves de rareza no se enseñan una a una:
+// App\Support\Rarezas las agrupa en las diez categorías del TCG real.
 //
 // Aquí NO hay traducciones: hay PROTOCOLO. Los valores de abajo son los que
 // TCGdex devuelve y acepta en cada catálogo, y sirven para dos cosas:
@@ -144,20 +145,18 @@ class CatalogoTcg
         return self::RAREZAS[$clave][$idioma] ?? null;
     }
 
-    // --- Listas para los desplegables de filtros, ya traducidas ---
+    // --- Lista de tipos para el desplegable de filtros, ya traducida ---
     // [['clave' => 'fire', 'etiqueta' => 'Fuego'], ...]
     // La clave es lo que viaja en la URL (?tipo=fire): neutra al idioma, así
     // que un enlace filtrado se puede compartir entre usuarios de idiomas
     // distintos y cada uno lo ve en el suyo.
+    //
+    // Las rarezas no se listan desde aquí: el desplegable enseña las diez
+    // categorías de App\Support\Rarezas, no las 40 claves de TCGdex.
 
     public static function tipos(): array
     {
         return self::listar(array_keys(self::TIPOS), 'tcg.tipos');
-    }
-
-    public static function rarezas(): array
-    {
-        return self::listar(array_keys(self::RAREZAS), 'tcg.rarezas');
     }
 
     // --- Interno ---

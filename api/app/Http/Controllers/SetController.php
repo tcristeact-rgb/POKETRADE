@@ -9,6 +9,7 @@ use App\Services\HidratadorDeCartas;
 use App\Services\TcgdexService;
 use App\Support\CatalogoTcg;
 use App\Support\Idiomas;
+use App\Support\Rarezas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -140,17 +141,17 @@ class SetController extends Controller
     private function filtrarPorTipoYRareza($query, Set $set, string $tipo, string $rareza): void
     {
         $tipoKey   = CatalogoTcg::claveTipo($tipo);
-        $rarezaKey = CatalogoTcg::claveRareza($rareza);
+        $categoria = Rarezas::normalizar($rareza);
 
-        if ($tipoKey === null && $rarezaKey === null) {
+        if ($tipoKey === null && $categoria === null) {
             return;
         }
 
         // 500 cubre de sobra el set más grande (~450 cartas)
         $coincidentes = $this->tcgdex->buscarCartas(array_filter([
-            'set.id'     => $set->tcgdex_id,
-            'tipo_key'   => $tipoKey,
-            'rareza_key' => $rarezaKey,
+            'set.id'   => $set->tcgdex_id,
+            'tipo_key' => $tipoKey,
+            'rareza'   => $categoria,
         ]), 500);
 
         if ($coincidentes !== null) {
@@ -161,8 +162,8 @@ class SetController extends Controller
         if ($tipoKey !== null) {
             $query->where('tipo_key', $tipoKey);
         }
-        if ($rarezaKey !== null) {
-            $query->where('rareza_key', $rarezaKey);
+        if ($categoria !== null) {
+            $query->deRareza($categoria);
         }
     }
 

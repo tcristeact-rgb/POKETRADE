@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\TraduceCampos;
 use App\Support\Idiomas;
+use App\Support\Rarezas;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -77,6 +78,8 @@ class Carta extends Model
         'imagen_high',
         'tipo',
         'rareza',
+        'rareza_categoria',
+        'rareza_simbolo',
     ];
 
     // Set al que pertenece la carta. La relación va por el ID de TCGdex:
@@ -135,9 +138,26 @@ class Carta extends Model
         return $this->tipo_key ? __("tcg.tipos.{$this->tipo_key}") : null;
     }
 
+    // --- Rareza: la CATEGORÍA de la taxonomía cerrada, no la fina de TCGdex ---
+    // rareza_key guarda la clave fina ('holo-rare-v'); lo que se enseña es
+    // su categoría ("Rara") con su símbolo. Ver App\Support\Rarezas.
+    public function getRarezaCategoriaAttribute(): ?string
+    {
+        return Rarezas::categoria($this->rareza_key);
+    }
+
     public function getRarezaAttribute(): ?string
     {
-        return $this->rareza_key ? __("tcg.rarezas.{$this->rareza_key}") : null;
+        $categoria = $this->rareza_categoria;
+
+        return $categoria ? Rarezas::nombre($categoria) : null;
+    }
+
+    public function getRarezaSimboloAttribute(): ?array
+    {
+        $categoria = $this->rareza_categoria;
+
+        return $categoria ? Rarezas::SIMBOLOS[$categoria] : null;
     }
 
     public function getImagenLowAttribute(): ?string
@@ -165,6 +185,22 @@ class Carta extends Model
                 $q->orWhereNotNull("imagen_{$idioma}");
             }
         });
+    }
+
+    // Cartas de una categoría de rareza (?rareza=ultra_rara). Va por el
+    // índice de rareza_key con la lista de claves finas de esa categoría.
+    // "excepciones" es el complemento: todo lo hidratado que NO tiene una
+    // categoría propia, incluidas las claves que TCGdex haya inventado y no
+    // se pueden enumerar. Sin categoría (null) no devuelve nada: un
+    // ?rareza=loquesea no debe listar las cartas sin hidratar.
+    public function scopeDeRareza(Builder $query, ?string $categoria): Builder
+    {
+        if ($categoria === Rarezas::EXCEPCIONES) {
+            return $query->whereNotNull('rareza_key')
+                         ->whereNotIn('rareza_key', Rarezas::clavesClasificadas());
+        }
+
+        return $query->whereIn('rareza_key', $categoria ? Rarezas::clavesTcgdex($categoria) : []);
     }
 
     public function scopeNombreParecidoA(Builder $query, string $texto): Builder

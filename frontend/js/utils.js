@@ -114,6 +114,25 @@ export function formatearPrecio(valor) {
     return precio(valor);
 }
 
+// ─── Símbolo de rareza ──
+// La API manda {forma, color, cantidad} (App\Support\Rarezas); aquí se
+// convierte en caracteres + una clase de color, sin imágenes. Este es el
+// ÚNICO sitio que dibuja símbolos. Va aria-hidden porque siempre acompaña
+// al nombre de la rareza, que es quien carga el significado: tres de las
+// categorías comparten glifo y solo cambian de color.
+const GLIFOS_RAREZA = { circulo: '\u25CF', rombo: '\u25C6', estrella: '\u2605' };
+
+export function glifosRareza(simbolo) {
+    const glifo = simbolo && GLIFOS_RAREZA[simbolo.forma];
+    return glifo ? glifo.repeat(simbolo.cantidad || 1) : '';
+}
+
+export function simboloRareza(simbolo) {
+    const glifos = glifosRareza(simbolo);
+    if (!glifos) return '';
+    return `<span class="rareza-simbolo rareza-simbolo--${escapeHtml(simbolo.color)}" aria-hidden="true">${glifos}</span>`;
+}
+
 export function mostrarAlerta(msg, tipo, elementoId = 'alerta') {
     const el = document.getElementById(elementoId);
     if (!el) return;

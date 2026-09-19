@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Support\CatalogoTcg;
 use App\Support\Idiomas;
+use App\Support\Rarezas;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
@@ -44,9 +45,9 @@ class TcgdexService
     // --- Búsqueda de cartas por filtros en todo el catálogo ---
     // GET /v2/{lang}/cards?name=&types=&rarity=&set.id=&pagination:...
     //
-    // Los filtros llegan con las claves canónicas de PokeTrade (tipo_key,
-    // rareza_key) y aquí se traducen al texto que entiende cada catálogo de
-    // TCGdex, que es distinto en cada idioma ("Fuego" / "Fire").
+    // Los filtros llegan con las claves canónicas de PokeTrade (tipo_key y
+    // la categoría de rareza) y aquí se traducen al texto que entiende cada
+    // catálogo de TCGdex, que es distinto en cada idioma ("Fuego" / "Fire").
     //
     // Se consulta el catálogo del idioma activo y, si no llena el límite, se
     // complementa con el inglés deduplicando por id: los sets clásicos solo
@@ -127,12 +128,19 @@ class TcgdexService
             $params['types'] = $tipo;
         }
 
-        if (!empty($filtros['rareza_key'])) {
-            $rareza = CatalogoTcg::rarezaTcgdex($filtros['rareza_key'], $idioma);
-            if ($rareza === null) {
+        // Una categoría agrupa varias rarezas de TCGdex: se piden todas en
+        // una sola consulta con OR ("eq:Ultra Rare|Full Art Trainer"). El
+        // "eq:" importa: sin él TCGdex compara por subcadena y "Rare"
+        // también devolvía "Double rare", "Rare Holo"...
+        if (!empty($filtros['rareza'])) {
+            $textos = array_filter(array_map(
+                fn ($clave) => CatalogoTcg::rarezaTcgdex($clave, $idioma),
+                Rarezas::clavesTcgdex($filtros['rareza'])
+            ));
+            if ($textos === []) {
                 return null;
             }
-            $params['rarity'] = $rareza;
+            $params['rarity'] = 'eq:' . implode('|', $textos);
         }
 
         $params += [

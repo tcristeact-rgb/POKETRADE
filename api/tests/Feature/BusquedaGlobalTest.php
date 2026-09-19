@@ -222,16 +222,20 @@ class BusquedaGlobalTest extends TestCase
     // --- Test 9: Los desplegables salen de TCGdex ---
     // Los tipos y rarezas ya NO vienen de TCGdex: son un conjunto cerrado y
     // salen de nuestro catálogo, ya traducidos. Así el desplegable de filtros
-    // deja de depender de que una API de terceros responda.
+    // deja de depender de que una API de terceros responda. Las rarezas son
+    // las categorías presentes en el catálogo (ver RarezasTest para el orden).
     public function test_los_filtros_no_dependen_de_tcgdex()
     {
         Http::fake();   // cualquier petición saliente haría fallar el test
+
+        Carta::create(['nombre' => 'Pikachu', 'rareza_key' => 'common']);
+        Carta::create(['nombre' => 'Raichu',  'rareza_key' => 'holo-rare']);
 
         $respuesta = $this->getJson('/api/cartas/filtros');
 
         $respuesta->assertStatus(200)
                   ->assertJsonCount(11, 'tipos')     // los 11 tipos del TCG
-                  ->assertJsonCount(40, 'rarezas');
+                  ->assertJsonCount(2, 'rarezas');   // solo las categorías con cartas
 
         Http::assertNothingSent();
     }
@@ -242,16 +246,17 @@ class BusquedaGlobalTest extends TestCase
     {
         Http::fake();
 
+        // TCGdex deja "Uncommon" sin traducir en su catálogo español; aquí
+        // la categoría tiene nombre propio en cada idioma
+        Carta::create(['nombre' => 'Pikachu', 'rareza_key' => 'uncommon']);
+
         $es = $this->withHeader('Accept-Language', 'es')->getJson('/api/cartas/filtros');
         $es->assertJsonFragment(['clave' => 'fire', 'etiqueta' => 'Fuego']);
-
-        // "Poco Común" es una MEJORA sobre TCGdex, cuyo catálogo español
-        // devuelve esta rareza sin traducir ("Uncommon"), y son 92 de
-        // nuestras cartas
-        $es->assertJsonFragment(['clave' => 'uncommon', 'etiqueta' => 'Poco Común']);
+        $es->assertJsonPath('rarezas.0.clave', 'infrecuente')
+           ->assertJsonPath('rarezas.0.etiqueta', 'Infrecuente');
 
         $en = $this->withHeader('Accept-Language', 'en')->getJson('/api/cartas/filtros');
         $en->assertJsonFragment(['clave' => 'fire', 'etiqueta' => 'Fire']);
-        $en->assertJsonFragment(['clave' => 'uncommon', 'etiqueta' => 'Uncommon']);
+        $en->assertJsonPath('rarezas.0.etiqueta', 'Uncommon');
     }
 }

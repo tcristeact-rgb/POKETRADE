@@ -5,7 +5,7 @@
 
 import { apiFetch, estaLogueado, irALogin, manejarErrorHTTP, parsearRespuesta } from './auth.js';
 import { t } from './i18n.js';
-import { alCargarDOM, escapeHtml, mostrarAlerta, formatearPrecio, dorsoCarta } from './utils.js';
+import { alCargarDOM, escapeHtml, mostrarAlerta, formatearPrecio, dorsoCarta, simboloRareza } from './utils.js';
 import { abrirLightbox } from './lightbox.js';
 
 let cartaActual = null;
@@ -110,7 +110,6 @@ function renderizarDetalle(carta) {
                 <h1>${nombreSeguro}</h1>
                 <div class="atributos">
                     ${filaAtributo(t('carta.tipo'),   carta.tipo   ? `<span class="badge-tipo">${escapeHtml(carta.tipo)}</span>`     : '')}
-                    ${filaAtributo(t('carta.rareza'), carta.rareza ? `<span class="badge-rareza">${escapeHtml(carta.rareza)}</span>` : '')}
                     ${filaAtributo(t('carta.set'),    setHTML)}
                     ${filaAtributo(t('carta.ps'),     carta.hp ? `<span>${escapeHtml(t('carta.psValor', { n: carta.hp }))}</span>` : '')}
                     ${filaAtributo(t('carta.ilustracion'), carta.ilustrador ? `<span>${escapeHtml(carta.ilustrador)}</span>` : '')}
@@ -122,6 +121,11 @@ function renderizarDetalle(carta) {
                 <div class="acciones-carta">
                     ${botonInventario}
                 </div>
+                ${carta.rareza ? `
+                <p class="detalle-rareza">
+                    <span class="atributo-label">${escapeHtml(t('carta.rareza'))}</span>
+                    <span class="badge-rareza">${simboloRareza(carta.rareza_simbolo)}<span>${escapeHtml(carta.rareza)}</span></span>
+                </p>` : ''}
             </div>
         </div>
         <button class="detalle-flecha" id="detalle-flecha-next" type="button" aria-label="${escapeHtml(t('carta.verSiguiente'))}" ${carta.siguiente_id ? '' : 'disabled'}>❯</button>

@@ -112,6 +112,15 @@
   --advertencia:     #92400E;
   --info:            #2563eb;
 
+  /* Símbolos de rareza (App\Support\Rarezas). Los nombres son los del TCG
+     ("estrella negra", "dorada"...), no del pixel: en oscuro el "negro" es
+     claro. Son gráficos decorativos (aria-hidden, siempre con el nombre al
+     lado), pero se mantienen ≥ 3:1 sobre --fondo-card por si acaso. */
+  --simbolo-negro:    #1A1A1A;
+  --simbolo-rosa:     #BE185D;   /* 5,9:1 sobre blanco */
+  --simbolo-dorado:   #A16207;   /* 4,6:1 */
+  --simbolo-plateado: #6B7280;   /* 4,8:1 */
+
   /* Elevación */
   --radius-sm:       6px;
   --radius:          10px;
@@ -226,6 +235,10 @@
   --exito-soft:      rgba(22, 163, 74, 0.16);
   --exito-borde:     rgba(22, 163, 74, 0.40);
   --error-soft:      rgba(220, 38, 38, 0.16);
+  --simbolo-negro:    #F2F2F2;
+  --simbolo-rosa:     #F472B6;
+  --simbolo-dorado:   #FBBF24;
+  --simbolo-plateado: #C0C0C0;
   --sombra-sm:       0 1px 3px rgba(0,0,0,0.40);
   --sombra:          0 4px 16px rgba(0,0,0,0.45);
   --sombra-hover:    0 8px 28px rgba(0,0,0,0.55);
@@ -2703,13 +2716,37 @@ html.modal-abierto {
   color: var(--texto-sec);
   border: 1px solid var(--borde);
 }
+/* Rareza en el detalle: símbolo + nombre, siempre juntos (tres categorías
+   comparten glifo y solo cambian de color, así que el nombre es quien carga
+   el significado). El fondo es neutro para que el color del símbolo se lea. */
 .badge-rareza {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
   padding: 0.2rem 0.75rem;
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
-  background: var(--primario-soft);
-  color: var(--primario-texto);
+  background: var(--fondo);
+  color: var(--texto);
+  border: 1px solid var(--borde);
+}
+.rareza-simbolo {
+  font-size: 0.95em;
+  letter-spacing: 0.1em;
+  line-height: 1;
+}
+.rareza-simbolo--negro    { color: var(--simbolo-negro); }
+.rareza-simbolo--rosa     { color: var(--simbolo-rosa); }
+.rareza-simbolo--dorado   { color: var(--simbolo-dorado); }
+.rareza-simbolo--plateado { color: var(--simbolo-plateado); }
+/* Abajo a la izquierda de la información, como en la carta impresa */
+.detalle-rareza {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+  font-size: 0.9rem;
 }
 /* Precio medio de Cardmarket en la vista detalle */
 .precio-cardmarket {

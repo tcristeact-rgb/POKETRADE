@@ -9,6 +9,7 @@ use App\Services\SelectorDeDestacadas;
 use App\Services\TcgdexService;
 use App\Support\CatalogoTcg;
 use App\Support\Idiomas;
+use App\Support\Rarezas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
@@ -55,8 +56,11 @@ class CartaController extends Controller
             $query->where('tipo_key', CatalogoTcg::claveTipo($request->tipo));
         }
 
+        // La rareza se filtra por CATEGORÍA de la taxonomía cerrada
+        // (?rareza=ultra_rara), que agrupa varias claves finas de TCGdex.
+        // Ver el scope en el modelo.
         if ($request->filled('rareza')) {
-            $query->where('rareza_key', CatalogoTcg::claveRareza($request->rareza));
+            $query->deRareza(Rarezas::normalizar($request->rareza));
         }
 
         // Filtro por set — por su ID de TCGdex, no por su nombre: el nombre
@@ -91,16 +95,15 @@ class CartaController extends Controller
     // Endpoint: GET /api/cartas/filtros
     // Acceso: público (sin token)
     //
-    // Tipos y rarezas son un conjunto CERRADO y pequeño (11 y 40), así que
-    // salen de nuestro propio catálogo y ya no de TCGdex. Eso arregla tres
-    // cosas de golpe: la lista deja de depender de que una API de terceros
-    // responda, sale ya traducida al idioma de la petición, y el español
-    // deja de tener rarezas a medio traducir ("Uncommon", "Shiny rare"),
-    // que es lo que TCGdex devuelve en su propio catálogo español.
+    // Tipos y rarezas son un conjunto CERRADO y pequeño (11 tipos, 10
+    // categorías de rareza), así que salen de nuestro propio catálogo y ya
+    // no de TCGdex: la lista no depende de que una API de terceros responda
+    // y sale ya traducida al idioma de la petición.
     //
     // Cada entrada es {clave, etiqueta}: la clave viaja en la URL (?tipo=fire)
-    // y la etiqueta es lo que se lee en el desplegable. Los sets siguen la
-    // misma forma — su clave es el ID de TCGdex, que tampoco depende del idioma.
+    // y la etiqueta es lo que se lee en el desplegable. Las rarezas llevan
+    // además su símbolo, van en el orden canónico de la taxonomía (de menor
+    // a mayor rareza) y solo las que existen en el catálogo, como los sets.
     public function filtros()
     {
         $sets = Set::whereHas('cartas')->get()
@@ -210,9 +213,9 @@ class CartaController extends Controller
         // Los filtros llegan como clave canónica; el servicio se encarga de
         // traducirlos al texto que entiende cada catálogo de TCGdex
         $resultados = $this->tcgdex->buscarCartas(array_filter([
-            'name'       => $q,
-            'tipo_key'   => CatalogoTcg::claveTipo($tipo),
-            'rareza_key' => CatalogoTcg::claveRareza($rareza),
+            'name'     => $q,
+            'tipo_key' => CatalogoTcg::claveTipo($tipo),
+            'rareza'   => Rarezas::normalizar($rareza),
         ]));
 
         if ($resultados === null) {

@@ -297,8 +297,10 @@ class DatosPorIdiomaTest extends TestCase
              ->assertJsonPath('nombre', 'Ampharos')
              ->assertJsonPath('hp', 100)
              // La rareza sí sale en español: es conjunto cerrado, y su nombre
-             // no depende de que TCGdex tenga la carta traducida
-             ->assertJsonPath('rareza', 'Holo Rara (clásica)');
+             // no depende de que TCGdex tenga la carta traducida. "Rare Holo"
+             // (clásica, estrella negra) es una "Rara" de la taxonomía.
+             ->assertJsonPath('rareza', 'Rara')
+             ->assertJsonPath('rareza_categoria', 'rara');
 
         $carta->refresh();
 

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Carta;
 use App\Support\CatalogoTcg;
+use App\Support\Rarezas;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -106,8 +107,10 @@ class CatalogoTcgTest extends TestCase
         $this->assertNull(CatalogoTcg::rarezaTcgdex('rare-holo', 'es'));
         $this->assertSame('Rare Holo', CatalogoTcg::rarezaTcgdex('rare-holo', 'en'));
 
-        // Y aun así el usuario español tiene un nombre para ella
-        $this->assertSame('Holo Rara (clásica)', __('tcg.rarezas.rare-holo'));
+        // Y aun así el usuario español la ve con nombre: las dos llevan una
+        // estrella negra y son "Rara" en la taxonomía cerrada
+        $this->assertSame('rara', Rarezas::categoria('rare-holo'));
+        $this->assertSame('rara', Rarezas::categoria('holo-rare'));
     }
 
     public function test_una_carta_sin_tipo_no_inventa_uno(): void
@@ -123,8 +126,8 @@ class CatalogoTcgTest extends TestCase
 
     public function test_toda_clave_del_catalogo_tiene_traduccion_en_los_dos_idiomas(): void
     {
-        // Sin esto, una rareza sin traducir saldría en pantalla como su clave
-        // en crudo ("holo-rare-vstar"), que es peor que no salir
+        // Sin esto, un tipo o una categoría sin traducir saldría en pantalla
+        // como su clave en crudo ("doble_rara"), que es peor que no salir
         foreach (['es', 'en'] as $idioma) {
             app()->setLocale($idioma);
 
@@ -132,9 +135,9 @@ class CatalogoTcgTest extends TestCase
                 $this->assertNotSame("tcg.tipos.{$clave}", __("tcg.tipos.{$clave}"),
                     "Falta la traducción del tipo '{$clave}' en {$idioma}");
             }
-            foreach (array_keys(CatalogoTcg::RAREZAS) as $clave) {
-                $this->assertNotSame("tcg.rarezas.{$clave}", __("tcg.rarezas.{$clave}"),
-                    "Falta la traducción de la rareza '{$clave}' en {$idioma}");
+            foreach (Rarezas::ORDEN as $clave) {
+                $this->assertNotSame("tcg.categorias.{$clave}", Rarezas::nombre($clave),
+                    "Falta la traducción de la categoría '{$clave}' en {$idioma}");
             }
         }
     }
