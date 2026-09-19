@@ -37,7 +37,9 @@ class UsuarioController extends Controller
             'apellido'         => 'nullable|string|max:100',
             'nacionalidad'     => 'nullable|string|max:100',
             'fecha_nacimiento' => 'nullable|date',
-            'avatar_url'       => 'nullable|string',
+            // Solo http(s): la regla `url` a secas admite cualquier esquema con
+            // `://` (javascript://, data://…). 2048 es el límite práctico de URL.
+            'avatar_url'       => 'nullable|url:http,https|max:2048',
         ]);
 
         // Si la validación falla devolvemos el primer error con código 422
@@ -72,7 +74,7 @@ class UsuarioController extends Controller
         // Validamos que vengan los dos campos requeridos
         $validacion = Validator::make($request->all(), [
             'password_actual' => 'required|string',       // Contraseña actual para verificar
-            'password_nuevo'  => 'required|string|min:6', // Nueva contraseña, mínimo 6 caracteres
+            'password_nuevo'  => 'required|string|min:8', // Nueva contraseña, mínimo 8 caracteres
         ]);
 
         // Si la validación falla devolvemos el primer error con código 422
@@ -95,7 +97,18 @@ class UsuarioController extends Controller
             'password' => Hash::make($request->password_nuevo),
         ]);
 
-        return response()->json(['mensaje' => __('mensajes.password_actualizada')]);
+        // El token con el que se hizo esta petición deja de valer (va a la
+        // blacklist) y se emite uno nuevo para que el frontend siga con la sesión
+        // sin pasar por el login. Solo este token: no se invalidan los de otros
+        // dispositivos, que caducan solos a los 60 min. tokenById() en vez de
+        // login(): solo genera el token, sin cambiar el estado del guard.
+        auth()->invalidate();
+        $token = auth()->tokenById($usuario->id);
+
+        return response()->json([
+            'mensaje' => __('mensajes.password_actualizada'),
+            'token'   => $token,
+        ]);
     }
 
     // --- Listar todos los usuarios ---

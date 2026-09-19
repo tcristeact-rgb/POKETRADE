@@ -10,6 +10,14 @@ use Illuminate\Support\Facades\Validator; // Para validar los datos recibidos
 
 class AuthController extends Controller
 {
+    // Hash bcrypt real (coste 12, el BCRYPT_ROUNDS de .env.example) contra el que
+    // se compara la contraseña cuando el email NO existe. Sin esto, un login con
+    // email desconocido responde en milisegundos y uno con email registrado tarda
+    // lo que tarda bcrypt (~250 ms): la latencia delata qué emails están dados de
+    // alta. El JWTGuard de tymon no usa el Timebox de Laravel, así que se iguala
+    // aquí. Generado una vez con password_hash('…', PASSWORD_BCRYPT, ['cost' => 12]).
+    private const HASH_DUMMY = '$2y$12$CMwcSYzKmRZ1bkY38b6X.eTppLzIq2eV23kr3l205GPB7HVyAnKt.';
+
     // --- Registro de nuevo usuario ---
     // Endpoint: POST /api/auth/registro
     // Acceso: público (sin token)
@@ -21,8 +29,8 @@ class AuthController extends Controller
         $validacion = Validator::make($request->all(), [
             'nombre'           => 'required|string|max:100',  // Obligatorio, máx 100 caracteres
             'apellido'         => 'required|string|max:100',  // Obligatorio, máx 100 caracteres
-            'email'            => 'required|email|unique:users,email', // Obligatorio, formato email y único en la tabla users
-            'password'         => 'required|string|min:6',    // Obligatorio, mínimo 6 caracteres
+            'email'            => 'required|string|email|max:255|unique:users,email', // Obligatorio, formato email, cabe en la columna y único
+            'password'         => 'required|string|min:8',    // Obligatorio, mínimo 8 caracteres
             'fecha_nacimiento' => 'nullable|date',            // Opcional, formato fecha
             'nacionalidad'     => 'nullable|string|max:100',  // Opcional, máx 100 caracteres
         ]);
@@ -60,13 +68,33 @@ class AuthController extends Controller
     // Devuelve un token JWT para usar en las siguientes peticiones protegidas
     public function login(Request $request)
     {
-        // Extraemos solo email y password del body
-        $credenciales = $request->only('email', 'password');
+        // Validamos antes de tocar Auth::attempt(): sin la clave `password`, o con
+        // ella como array, el proveedor de usuarios revienta con un 500. Debe ser
+        // un 422 como en el resto de la API.
+        $validacion = Validator::make($request->all(), [
+            'email'    => 'required|string|email|max:255',
+            'password' => 'required|string',
+        ]);
+
+        if ($validacion->fails()) {
+            return response()->json([
+                'error' => $validacion->errors()->first()
+            ], 422);
+        }
+
+        $credenciales = $validacion->validated();
 
         // Auth::attempt() comprueba las credenciales contra la BD
         // Si son correctas genera y devuelve el token JWT
         // Si son incorrectas devuelve false
         if (!$token = Auth::attempt($credenciales)) {
+            // Si el email no existe, attempt() no ha ejecutado bcrypt. Lo ejecutamos
+            // contra un hash dummy para que la respuesta tarde lo mismo que con un
+            // email registrado y la latencia no revele qué cuentas existen.
+            if (!User::where('email', $credenciales['email'])->exists()) {
+                Hash::check($credenciales['password'], self::HASH_DUMMY);
+            }
+
             return response()->json([
                 'error' => __('mensajes.credenciales')
             ], 401);

@@ -83,6 +83,11 @@
   --muted:           #6E6E6E;
   --borde:           #E4E4E4;
   --borde-hover:     #C6C6C6;
+  /* Solo para el límite de controles de formulario (WCAG 1.4.11 exige 3:1 con
+     el fondo del control). --borde sigue siendo el de las tarjetas, donde un
+     borde tenue es decorativo. #858585: 3,35:1 sobre --fondo y 3,69 sobre
+     --fondo-card. */
+  --borde-input:     #858585;
   --deshabilitado:   #BDBDBD;
   /* Fondo de ilustraciones de carta y skeletons (igual en ambos
      temas: las cartas se muestran sobre superficie clara) */
@@ -211,6 +216,7 @@
   --muted:           #9E9E9E;
   --borde:           #333333;
   --borde-hover:     #4D4D4D;
+  --borde-input:     #757575;   /* 4,07:1 sobre --fondo, 3,58 sobre --fondo-card */
   --exito-soft:      rgba(22, 163, 74, 0.16);
   --exito-borde:     rgba(22, 163, 74, 0.40);
   --error-soft:      rgba(220, 38, 38, 0.16);
@@ -773,7 +779,7 @@ html.i18n-pendiente body { visibility: hidden; }
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  background: white;
+  background: var(--fondo-card);
   color: var(--primario-texto);
   padding: 0.58rem 1.45rem;
   border-radius: var(--radius);
@@ -846,7 +852,7 @@ footer a:hover { color: white; }
 .formulario-grupo textarea {
   width: 100%;
   padding: 0.65rem 0.95rem;
-  border: 1.5px solid var(--borde);
+  border: 1.5px solid var(--borde-input);
   border-radius: var(--radius-sm);
   font-family: var(--font-body);
   font-size: 0.95rem;
@@ -985,7 +991,7 @@ footer a:hover { color: white; }
 .filtros input,
 .filtros select {
   padding: 0.6rem 0.95rem;
-  border: 1.5px solid var(--borde);
+  border: 1.5px solid var(--borde-input);
   border-radius: var(--radius);
   font-family: var(--font-body);
   font-size: 0.9rem;
@@ -2024,6 +2030,27 @@ body.nav-drawer-abierto { overflow: hidden; }
   outline: 2px solid var(--primario);
   outline-offset: -2px;
   border-radius: 50%;
+}
+/* Pausa/reanuda el autoplay (WCAG 2.2.2). Mismo trato que las flechas:
+   44×44 (2.5.8), translúcido sobre el hero y el mismo anillo de foco. */
+.carrusel-pausa {
+  width: 44px;
+  height: 44px;
+  margin-left: 0.5rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  color: #e8edf2;
+  font-size: 0.85rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--trans-fast);
+}
+.carrusel-pausa:hover { background: rgba(255, 255, 255, 0.24); }
+.carrusel-pausa:focus-visible {
+  outline: 3px solid var(--primario);
+  outline-offset: 2px;
 }
 
 /* Breakpoints del escaparate: split 55/45 → 50/50 → apilado con la

@@ -9,12 +9,18 @@ use App\Models\User;
 // Usuarios de prueba para desarrollar en local, con contraseñas fijas.
 //
 // SOLO en local: DatabaseSeeder no los llama fuera de ese entorno (comprueba
-// app()->environment('local') y sale sin insertar nada). En producción se siembra
-// únicamente el catálogo, y quien quiera probar la demo se registra.
+// app()->environment('local') y sale sin insertar nada). En producción no se
+// siembra nada, y quien quiera probar la demo se registra.
 class UsuariosSeeder extends Seeder
 {
     public function run(): void
     {
+        // Mismo guard que DatabaseSeeder, por si algún día se llama a este seeder
+        // directamente (db:seed --class) o se reestructura aquel y pierde el suyo.
+        if (! app()->environment('local')) {
+            return;
+        }
+
         // --- Usuario administrador ---
         // Tiene rol 'admin' para poder acceder a las rutas protegidas por EsAdmin
         User::create([
@@ -32,7 +38,7 @@ class UsuariosSeeder extends Seeder
             'nombre'       => 'Teo',
             'apellido'     => 'Cristea',
             'email'        => 'teo@poketrade.es',
-            'password'     => Hash::make('123456'), // Contraseña encriptada
+            'password'     => Hash::make('12345678'), // Contraseña encriptada
             'rol'          => 'cliente',
             'nacionalidad' => 'Rumana',
         ]);
@@ -43,7 +49,7 @@ class UsuariosSeeder extends Seeder
             'nombre'       => 'María',
             'apellido'     => 'García',
             'email'        => 'maria@poketrade.es',
-            'password'     => Hash::make('123456'), // Contraseña encriptada
+            'password'     => Hash::make('12345678'), // Contraseña encriptada
             'rol'          => 'cliente',
             'nacionalidad' => 'Española',
         ]);

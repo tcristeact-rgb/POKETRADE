@@ -69,7 +69,17 @@
       </a>
       <button class="carrusel-flecha" id="carrusel-next" type="button"
               data-i18n-attr="aria-label:comun.cartaSiguiente" aria-label="Carta siguiente" hidden>❯</button>
-      <div class="carrusel-puntos" id="carrusel-puntos" hidden></div>
+      <div class="carrusel-puntos" id="carrusel-puntos" hidden>
+        <!-- Pausa/reanuda la rotación automática (WCAG 2.2.2: el contenido que
+             se mueve solo necesita un control; pausar con el puntero encima no
+             lo es). inicio.js regenera los puntos y conserva este botón al
+             final de la fila; con prefers-reduced-motion lo oculta, porque
+             entonces nada rota. -->
+        <button class="carrusel-pausa" id="carrusel-pausa" type="button"
+                data-i18n-attr="aria-label:home.pausarCarrusel" aria-label="Pausar el carrusel de cartas">
+          <span aria-hidden="true">❚❚</span>
+        </button>
+      </div>
     </div>
   </section>
 

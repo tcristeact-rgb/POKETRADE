@@ -33,7 +33,7 @@ class SincronizarCartasTcgdex extends Command
         $cartas = Carta::whereNotNull('tcgdex_id')->get();
 
         if ($cartas->isEmpty()) {
-            $this->warn('No hay cartas TCGdex en la BD. Ejecuta antes el seeder: php artisan db:seed --class=CartasSeeder');
+            $this->warn('No hay cartas TCGdex en la BD. Las cartas entran al navegar un set en la app (cache-aside); antes, php artisan tcgdex:sync-sets deja series y sets navegables.');
             return self::FAILURE;
         }
 

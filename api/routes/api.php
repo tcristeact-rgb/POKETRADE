@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\CartaController as AdminCartaController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CartaController;
 use App\Http\Controllers\SerieController;
@@ -21,16 +22,17 @@ use App\Http\Controllers\UsuarioController;
 // (plan free) por el coste más bajo posible — ver SaludController.
 Route::get('/health', SaludController::class);
 
-// Auth
-Route::post('/auth/registro', [AuthController::class, 'registro']);
-Route::post('/auth/login',    [AuthController::class, 'login']);
+// Auth — throttle:login (5/min por email+IP) además del throttle general de la API
+Route::post('/auth/registro', [AuthController::class, 'registro'])->middleware('throttle:login');
+Route::post('/auth/login',    [AuthController::class, 'login'])->middleware('throttle:login');
 
 // Catálogo — lectura pública
 // /cartas/filtros, /cartas/buscar y /cartas/destacadas van antes de
 // /cartas/{id} para que no se interpreten como un ID de carta
 Route::get('/cartas',            [CartaController::class, 'index']);
 Route::get('/cartas/filtros',    [CartaController::class, 'filtros']);
-Route::get('/cartas/buscar',     [CartaController::class, 'buscar']);
+// buscar es un proxy en vivo a TCGdex: lleva su propio límite por IP (throttle:buscar)
+Route::get('/cartas/buscar',     [CartaController::class, 'buscar'])->middleware('throttle:buscar');
 Route::get('/cartas/destacadas', [CartaController::class, 'destacadas']);
 Route::get('/cartas/{id}',       [CartaController::class, 'show']);
 
@@ -77,9 +79,9 @@ Route::middleware('auth:api')->group(function () {
 
     // Admin
     Route::middleware('es.admin')->group(function () {
-        Route::post('/cartas',           [CartaController::class, 'store']);
-        Route::put('/cartas/{id}',       [CartaController::class, 'update']);
-        Route::delete('/cartas/{id}',    [CartaController::class, 'destroy']);
+        Route::post('/cartas',           [AdminCartaController::class, 'store']);
+        Route::put('/cartas/{id}',       [AdminCartaController::class, 'update']);
+        Route::delete('/cartas/{id}',    [AdminCartaController::class, 'destroy']);
 
         Route::get('/admin/usuarios',         [UsuarioController::class, 'index']);
         Route::delete('/admin/usuarios/{id}', [UsuarioController::class, 'destroy']);

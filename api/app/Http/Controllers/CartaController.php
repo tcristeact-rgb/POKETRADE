@@ -4,16 +4,23 @@ namespace App\Http\Controllers;
 
 use App\Models\Carta;
 use App\Models\Set;
-use App\Rules\ClaveTcgValida;
+use App\Services\HidratadorDeCartas;
+use App\Services\SelectorDeDestacadas;
 use App\Services\TcgdexService;
 use App\Support\CatalogoTcg;
 use App\Support\Idiomas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Validator; // Para validar los datos recibidos
 
 class CartaController extends Controller
 {
+    public function __construct(
+        private TcgdexService $tcgdex,
+        private HidratadorDeCartas $hidratador,
+        private SelectorDeDestacadas $selector,
+    ) {
+    }
+
     // --- Listar cartas del catálogo, paginadas y con filtros ---
     // Endpoint: GET /api/cartas
     // Acceso: público (sin token)
@@ -118,7 +125,15 @@ class CartaController extends Controller
     // recientes aún no está hidratada (sin precio), así que si la
     // ventana no da 4, se completa con las más caras de toda la BD:
     // no es un caso raro, es el camino habitual.
-    // Caché de 1 h: congela la selección y ahorra las consultas.
+    // Si ni así hay 4, se completan EN VIVO desde TCGdex (ver
+    // completarDesdeTcgdex): el catálogo no se siembra, así que una BD
+    // recién creada no tiene ni una carta con precio, y la portada es lo
+    // primero que ve quien abre la demo. Un hero en blanco no vale.
+    //
+    // Caché de 1 h: congela la selección y ahorra las consultas. Pero un
+    // resultado VACÍO no se guarda nunca: si TCGdex no contestó, la
+    // siguiente petición vuelve a intentarlo, igual que hace
+    // TcgdexService::get() con sus null. Por eso es get/put y no remember.
     //
     // El idioma va DENTRO de la clave: si no, el primer visitante del home le
     // fijaría SU idioma a todos los demás durante una hora.
@@ -130,31 +145,16 @@ class CartaController extends Controller
     // envejecen así.
     public function destacadas()
     {
-        $cartas = Cache::remember('cartas.destacadas.' . app()->getLocale(), 3600, function () {
-            $ventana = Carta::orderByDesc('id')->limit(200)->pluck('id');
+        $clave  = 'cartas.destacadas.' . app()->getLocale();
+        $cartas = Cache::get($clave);
 
-            // Recientes con precio, de mayor a menor
-            $destacadas = Carta::whereIn('id', $ventana)
-                ->whereNotNull('precio_cardmarket')
-                ->orderByDesc('precio_cardmarket')
-                ->limit(4)
-                ->get();
+        if ($cartas === null) {
+            $cartas = $this->selector->seleccionar(Idiomas::activo());
 
-            // Fallback: completar con las más caras del catálogo entero
-            // (las recientes conservan la primera posición: son la
-            // novedad que el hero quiere enseñar)
-            if ($destacadas->count() < 4) {
-                $destacadas = $destacadas->concat(
-                    Carta::whereNotNull('precio_cardmarket')
-                        ->whereNotIn('id', $destacadas->pluck('id'))
-                        ->orderByDesc('precio_cardmarket')
-                        ->limit(4 - $destacadas->count())
-                        ->get()
-                );
+            if ($cartas !== []) {
+                Cache::put($clave, $cartas, 3600);
             }
-
-            return $destacadas->values()->toArray();
-        });
+        }
 
         return response()->json(['data' => $cartas]);
     }
@@ -168,7 +168,7 @@ class CartaController extends Controller
     // abre el detalle (show acepta el tcgdex_id). Para las cartas que
     // ya están en BD se incluye su id interno, así el frontend enlaza
     // el detalle igual que en cualquier otro grid.
-    public function buscar(Request $request, TcgdexService $tcgdex)
+    public function buscar(Request $request)
     {
         $q      = trim((string) $request->query('q'));
         $tipo   = trim((string) $request->query('tipo'));
@@ -183,7 +183,7 @@ class CartaController extends Controller
 
         // Los filtros llegan como clave canónica; el servicio se encarga de
         // traducirlos al texto que entiende cada catálogo de TCGdex
-        $resultados = $tcgdex->buscarCartas(array_filter([
+        $resultados = $this->tcgdex->buscarCartas(array_filter([
             'name'       => $q,
             'tipo_key'   => CatalogoTcg::claveTipo($tipo),
             'rareza_key' => CatalogoTcg::claveRareza($rareza),
@@ -194,15 +194,6 @@ class CartaController extends Controller
                 'error' => __('mensajes.tcgdex_caido'),
             ], 503);
         }
-
-        // Fuera las cartas de series excluidas por config (Pocket,
-        // McDonald's...): TCGdex las devuelve igualmente porque el
-        // filtrado es nuestro, no suyo
-        $excluidos  = array_flip($tcgdex->setsExcluidos());
-        $resultados = array_values(array_filter(
-            $resultados,
-            fn ($c) => !isset($excluidos[$this->setDeCarta($c)])
-        ));
 
         // IDs internos de las cartas que ya están en la BD (una consulta)
         $locales = Carta::whereIn('tcgdex_id', collect($resultados)->pluck('id'))
@@ -235,7 +226,7 @@ class CartaController extends Controller
         // persiste nada y la BD solo crece con cartas realmente abiertas.
         $carta = ctype_digit((string) $id)
             ? Carta::find($id)
-            : Carta::firstWhere('tcgdex_id', $id) ?? $this->crearDesdeTcgdex($id);
+            : Carta::firstWhere('tcgdex_id', $id) ?? $this->hidratador->crear($id, Idiomas::activo());
 
         // Si no existe devolvemos 404
         if (!$carta) {
@@ -247,7 +238,7 @@ class CartaController extends Controller
         // que alguien abre la carta EN UN IDIOMA completamos su detalle desde
         // ese catálogo de TCGdex y lo persistimos para las visitas siguientes
         if ($carta->tcgdex_id && !$carta->detalladoEn(Idiomas::activo())) {
-            $this->hidratarDetalle($carta);
+            $this->hidratador->hidratar($carta, Idiomas::activo());
         }
 
         // Navegación anterior/siguiente acotada al set de la carta, para
@@ -260,203 +251,5 @@ class CartaController extends Controller
             'anterior_id'  => (clone $vecinas)->where('id', '<', $carta->id)->max('id'),
             'siguiente_id' => (clone $vecinas)->where('id', '>', $carta->id)->min('id'),
         ]));
-    }
-
-    // Deriva el ID del set desde el resumen de una carta. El id es
-    // "{set}-{localId}" y el set puede contener guiones ("tk-xy-su-4"
-    // → set "tk-xy-su"), así que se recorta el sufijo del localId
-    private function setDeCarta(array $carta): string
-    {
-        $localId = (string) ($carta['localId'] ?? '');
-
-        if ($localId !== '' && str_ends_with($carta['id'], "-{$localId}")) {
-            return substr($carta['id'], 0, -strlen("-{$localId}"));
-        }
-
-        return strtok($carta['id'], '-');
-    }
-
-    // Crea la fila de una carta de TCGdex que aún no está en la BD
-    // (abierta desde la búsqueda global). Nace ya hidratada: el detalle
-    // completo viene en la misma petición que valida que existe.
-    private function crearDesdeTcgdex(string $tcgdexId): ?Carta
-    {
-        $tcgdex = app(TcgdexService::class);
-        $idioma = Idiomas::activo();
-
-        $datos = $tcgdex->obtenerCarta($tcgdexId, $idioma);
-
-        // Que el catálogo del idioma activo no la tenga no significa que la
-        // carta no exista: las de los sets clásicos solo están en inglés
-        if (empty($datos) && $idioma !== TcgdexService::COMPLETO) {
-            $idioma = TcgdexService::COMPLETO;
-            $datos  = $tcgdex->obtenerCarta($tcgdexId, $idioma);
-        }
-
-        if (empty($datos['name'])) {
-            return null;
-        }
-
-        // firstOrCreate por si dos usuarios abren la misma carta a la vez
-        // (tcgdex_id tiene índice único)
-        return Carta::firstOrCreate(
-            ['tcgdex_id' => $datos['id'] ?? $tcgdexId],
-            $this->camposNeutros($datos) + [
-                "nombre_{$idioma}"      => $datos['name'],
-                "descripcion_{$idioma}" => $datos['description'] ?? null,
-                "imagen_{$idioma}"      => $datos['image'] ?? null,
-                // El id de TCGdex es "{set}-{numero}": si el detalle no
-                // trae el set, se deriva del prefijo
-                'set_id'                => $datos['set']['id'] ?? strtok($tcgdexId, '-'),
-                'idiomas_detallados'    => [$idioma],
-            ]
-        );
-    }
-
-    // Completa el detalle de la carta desde TCGdex (rareza, tipo, precio,
-    // descripción...) en el idioma de la petición. Si la API externa no
-    // responde, no pasa nada: se sirve lo que haya en la BD y no se marca
-    // nada, así la próxima visita vuelve a intentarlo.
-    private function hidratarDetalle(Carta $carta): void
-    {
-        $tcgdex = app(TcgdexService::class);
-        $idioma = Idiomas::activo();
-
-        $catalogos = [$idioma => $tcgdex->obtenerCarta($carta->tcgdex_id, $idioma)];
-
-        // Si el catálogo del idioma activo no tiene la carta, se pide al inglés:
-        // los campos neutros (tipo, rareza, hp, precio, ilustrador) los da
-        // igual de bien cualquiera de los dos, y de paso nos quedamos sus
-        // textos ingleses, que ya están pagados.
-        if ($catalogos[$idioma] === [] && $idioma !== TcgdexService::COMPLETO) {
-            $catalogos[TcgdexService::COMPLETO] = $tcgdex->obtenerCarta($carta->tcgdex_id, TcgdexService::COMPLETO);
-        }
-
-        foreach ($catalogos as $codigo => $datos) {
-            // null = no contestó. Ni se guarda ni se marca: se reintentará.
-            if ($datos === null) {
-                continue;
-            }
-
-            // Cualquier otra cosa es una respuesta, aunque sea para decir que
-            // ese catálogo no tiene la carta. El intento queda anotado y no se
-            // repite: de un set clásico no va a salir una versión española por
-            // mucho que la pidamos.
-            $carta->idiomas_detallados = array_values(array_unique([
-                ...($carta->idiomas_detallados ?? []),
-                $codigo,
-            ]));
-
-            if ($datos === []) {
-                continue;
-            }
-
-            $carta->fill($this->camposNeutros($datos, $carta) + [
-                "nombre_{$codigo}"      => $datos['name'] ?? $carta->{"nombre_{$codigo}"},
-                "descripcion_{$codigo}" => $datos['description'] ?? $carta->{"descripcion_{$codigo}"},
-                "imagen_{$codigo}"      => $datos['image'] ?? $carta->{"imagen_{$codigo}"},
-            ]);
-        }
-
-        $carta->save();
-    }
-
-    // Los campos que NO dependen del idioma: los da igual de bien cualquier
-    // catálogo de TCGdex. El tipo y la rareza llegan como texto ya traducido
-    // ("Fire" / "Fuego") y se normalizan a la clave canónica, que es lo único
-    // que guarda la BD.
-    private function camposNeutros(array $datos, ?Carta $carta = null): array
-    {
-        return [
-            'tipo_key'          => CatalogoTcg::claveTipo($datos['types'][0] ?? null) ?? $carta?->tipo_key,
-            'rareza_key'        => CatalogoTcg::claveRareza($datos['rarity'] ?? null) ?? $carta?->rareza_key,
-            'numero'            => $datos['localId'] ?? $carta?->numero,
-            'ilustrador'        => $datos['illustrator'] ?? $carta?->ilustrador,
-            'hp'                => $datos['hp'] ?? $carta?->hp,
-            'precio_cardmarket' => $datos['pricing']['cardmarket']['avg']
-                                    ?? $datos['pricing']['cardmarket']['trend']
-                                    ?? $carta?->precio_cardmarket,
-            'detalle_synced_at' => now(),
-        ];
-    }
-
-    // --- Crear una nueva carta ---
-    // Endpoint: POST /api/cartas
-    // Acceso: protegido — solo administradores (middleware EsAdmin)
-    public function store(Request $request)
-    {
-        // Validamos los datos recibidos
-        // Solo el nombre es obligatorio, el resto son opcionales.
-        // tipo y rareza se aceptan como CLAVE ('fire') o como el nombre en
-        // español o inglés: Rule::in acota a lo que el catálogo conoce, así
-        // que una rareza inventada se rechaza en vez de acabar en la BD.
-        $validacion = Validator::make($request->all(), [
-            'nombre'     => 'required|string',
-            'tipo'       => ['nullable', 'string', new ClaveTcgValida('tipo')],
-            'rareza'     => ['nullable', 'string', new ClaveTcgValida('rareza')],
-            'imagen_url' => 'nullable|string',
-        ]);
-
-        // Si la validación falla devolvemos el primer error con código 422
-        if ($validacion->fails()) {
-            return response()->json(['error' => $validacion->errors()->first()], 422);
-        }
-
-        // Los campos que no vengan en el request se quedarán como null
-        $carta = Carta::create($request->except(['tipo', 'rareza']) + [
-            'tipo_key'   => CatalogoTcg::claveTipo($request->tipo),
-            'rareza_key' => CatalogoTcg::claveRareza($request->rareza),
-        ]);
-
-        // Devolvemos 201 (creado) con los datos de la carta creada
-        return response()->json($carta, 201);
-    }
-
-    // --- Actualizar una carta existente ---
-    // Endpoint: PUT /api/cartas/{id}
-    // Acceso: protegido — solo administradores (middleware EsAdmin)
-    //
-    // La API lo expone, pero el frontend NO tiene panel de administración: el
-    // catálogo lo alimenta TCGdex, no un humano. Esta ruta existe para el rol de
-    // admin y para poder corregir una carta a mano si hiciera falta.
-    public function update(Request $request, $id)
-    {
-        // Buscamos la carta por su ID
-        $carta = Carta::find($id);
-
-        // Si no existe devolvemos 404
-        if (!$carta) {
-            return response()->json(['error' => __('mensajes.carta_no_encontrada')], 404);
-        }
-
-        // Actualizamos solo los campos que vengan en el request
-        // Los campos no enviados mantienen su valor actual
-        $carta->update($request->except(['tipo', 'rareza']) + array_filter([
-            'tipo_key'   => CatalogoTcg::claveTipo($request->tipo),
-            'rareza_key' => CatalogoTcg::claveRareza($request->rareza),
-        ]));
-
-        // Devolvemos la carta actualizada
-        return response()->json($carta);
-    }
-
-    // --- Eliminar una carta ---
-    // Endpoint: DELETE /api/cartas/{id}
-    // Acceso: protegido — solo administradores (middleware EsAdmin)
-    // Sin panel en el frontend, igual que update(): existe para el rol de admin.
-    public function destroy($id)
-    {
-        // Buscamos la carta por su ID
-        $carta = Carta::find($id);
-
-        // Si no existe devolvemos 404
-        if (!$carta) {
-            return response()->json(['error' => __('mensajes.carta_no_encontrada')], 404);
-        }
-
-        // Eliminamos la carta de la base de datos
-        $carta->delete();
-
-        return response()->json(['mensaje' => __('mensajes.carta_eliminada')]);
     }
 }

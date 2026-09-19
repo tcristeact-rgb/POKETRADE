@@ -157,8 +157,10 @@ class CartaTest extends TestCase
     // haya cartas de otros sets con IDs intermedios
     public function test_navegacion_del_detalle_se_limita_al_set()
     {
-        // detalle_synced_at evita que el detalle intente hidratarse
-        // contra TCGdex durante el test
+        // El detalle sí intenta hidratarse (detalladoEn mira idiomas_detallados,
+        // no detalle_synced_at); con TCGdex caído se queda como está, que es
+        // lo que este test necesita
+        $this->conTcgdexCaido();
         $primera = Carta::create(['nombre' => 'Bulbasaur', 'tcgdex_id' => 'sv03.5-001', 'set_id' => 'sv03.5', 'detalle_synced_at' => now()]);
         Carta::create(['nombre' => 'Ampharos', 'tcgdex_id' => 'neo1-1', 'set_id' => 'neo1', 'detalle_synced_at' => now()]);
         $tercera = Carta::create(['nombre' => 'Ivysaur', 'tcgdex_id' => 'sv03.5-002', 'set_id' => 'sv03.5', 'detalle_synced_at' => now()]);

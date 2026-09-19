@@ -1,0 +1,44 @@
+# Contexto de build de la imagen (Render: Root Directory = api). El Dockerfile
+# hace `COPY . /app` y después `composer install --no-dev` + route/event/view:cache;
+# al arrancar, `app:arrancar` migra y hace config:cache. Nada de lo de abajo
+# participa en esos pasos ni en el runtime.
+
+# Secretos y configuración de entorno. Render inyecta las variables; nunca deben
+# viajar dentro de una capa de la imagen.
+.env
+.env.*
+!.env.example
+
+# Control de versiones (el repo vive un nivel arriba, pero por si se construye
+# con otro contexto).
+.git
+.gitignore
+.gitattributes
+.editorconfig
+
+# Dependencias: composer install las regenera dentro de la imagen.
+vendor/
+node_modules/
+
+# Tests y su tooling: --no-dev no instala PHPUnit, así que aquí no sirven.
+tests/
+phpunit.xml
+.phpunit.cache
+.phpunit.result.cache
+
+# Estado local que no debe entrar en la imagen: BD de desarrollo, logs, caches
+# compilados (config:cache local congelaría credenciales; los demás se regeneran).
+database/*.sqlite*
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/testing/*
+storage/framework/views/*
+bootstrap/cache/*.php
+# ...pero los .gitignore placeholder sí: son lo que garantiza que esos
+# directorios existan en la imagen (view:cache y el logger los necesitan).
+!storage/**/.gitignore
+
+# Los propios archivos de build.
+Dockerfile
+.dockerignore

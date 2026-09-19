@@ -48,7 +48,7 @@ function validarCampo(id) {
         !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(valor) ? t('auth.emailInvalido') : ''
       );
     case 'password':
-      return marcarCampo(id, valor.length < 6 ? t('auth.min6') : '');
+      return marcarCampo(id, valor.length < 8 ? t('auth.min8') : '');
     case 'confirmar': {
       const pass = (document.getElementById('password')?.value || '').trim();
       return marcarCampo(id, valor !== pass ? t('auth.noCoinciden') : '');

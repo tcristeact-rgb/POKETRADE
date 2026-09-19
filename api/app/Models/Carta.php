@@ -156,6 +156,17 @@ class Carta extends Model
     // "Professor's Research"), y una carta que aún no se ha hidratado en inglés
     // solo tiene el nombre español. Buscar únicamente en la columna activa la
     // dejaría invisible para quien navega en inglés.
+    // Cartas que el hero puede enseñar: con imagen en algún idioma (el
+    // accessor imagen_url ya cae al otro idioma si falta el activo)
+    public function scopeConImagen(Builder $query): Builder
+    {
+        return $query->where(function (Builder $q) {
+            foreach (Idiomas::SOPORTADOS as $idioma) {
+                $q->orWhereNotNull("imagen_{$idioma}");
+            }
+        });
+    }
+
     public function scopeNombreParecidoA(Builder $query, string $texto): Builder
     {
         // PostgreSQL distingue mayúsculas con LIKE, por eso ahí usamos ILIKE.

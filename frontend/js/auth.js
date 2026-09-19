@@ -291,6 +291,36 @@ export async function registro(campos) {
 }
 
 // ─────────────────────────────────────────────────
+// CAMBIO DE CONTRASEÑA
+// El backend invalida el token con el que se hizo la petición y devuelve
+// uno nuevo. Si no se guardara aquí, la siguiente llamada sería un 401 y
+// el usuario acabaría en el login con un "sesión expirada" que es falso.
+// ─────────────────────────────────────────────────
+
+export async function cambiarPassword(passwordActual, passwordNueva) {
+  let respuesta;
+
+  try {
+    respuesta = await apiFetch('/usuario/password', {
+      method: 'PUT',
+      body: JSON.stringify({ password_actual: passwordActual, password_nuevo: passwordNueva })
+    });
+  } catch (_) {
+    throw new Error(t('error.sinConexion'));
+  }
+
+  const datos = await parsearRespuesta(respuesta);
+
+  if (!respuesta.ok) {
+    throw new Error(datos.error || manejarErrorHTTP(respuesta.status));
+  }
+
+  if (datos.token) guardarSesion(datos.token, obtenerUsuario());
+
+  return datos;
+}
+
+// ─────────────────────────────────────────────────
 // LOGOUT
 // ─────────────────────────────────────────────────
 

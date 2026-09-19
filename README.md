@@ -6,7 +6,7 @@
 ![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-4169E1?logo=postgresql&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-92%20passing-4c1)
+![Tests](https://img.shields.io/badge/tests-96%20passing-4c1)
 
 ### ▶︎ [poketrade-beryl.vercel.app](https://poketrade-beryl.vercel.app)
 
@@ -40,7 +40,7 @@ The card catalog is real: it comes from [TCGdex](https://tcgdex.dev), a public A
 | Frontend | Vanilla JavaScript (ES modules) · HTML5 · CSS3 — **no framework, no build step** |
 | Database | PostgreSQL / Supabase (production) · SQLite (local) |
 | Card data | TCGdex v2, cached on demand |
-| Tests | PHPUnit — 92 tests, in-memory SQLite, TCGdex mocked |
+| Tests | PHPUnit — 96 tests, in-memory SQLite, TCGdex mocked |
 | Deployment | Render (API, Docker) · Vercel (frontend) · Supabase (database) |
 
 ```
@@ -75,6 +75,8 @@ Seeding the whole TCG would mean ~20,000 requests to a public API, a database of
 1. **A light index up front.** `php artisan tcgdex:sync-sets` stores series and sets — name, logo, release date, card count. 185 rows. No cards.
 2. **Cards on demand (cache-aside).** The first time anyone opens a set, `GET /api/sets/{id}/cartas` fetches its card list in **one** request, persists it in a transaction and marks the set. Every later visit is served from the database. Right now 13 of 167 sets have ever been opened: the table holds 2,265 cards, 11% of the catalog. The other 89% costs nothing.
 3. **Lazy detail hydration.** Cards enter with just name, number and image. Rarity, type, HP, illustrator and price arrive the first time someone actually opens that card.
+
+That is the **only** way cards get into the database — there is no seeder and no curated starter set. The one place that would suffer from an empty database is the home hero, which shows the four priciest recent cards: when the database cannot supply four, the endpoint completes them live from TCGdex (the newest set in the index that is old enough to have Cardmarket prices — eight weeks, measured — its cards read from the end, where the secret rares are) and persists them through the same path as opening a card. If even that yields fewer than four priced cards, the hero fills up with recent cards that have an image but no price yet, and simply omits the price tag. An empty answer is never cached, so a TCGdex outage costs one blank hero, not an hour of them.
 
 If TCGdex is down, the endpoint returns a clear 503 and the set is never left half-cached.
 
@@ -163,7 +165,7 @@ Being straight about what I would do differently, because a portfolio that only 
 
 - **Production runs PHP's built-in server, not nginx + php-fpm.** With workers and OPcache it holds up fine for a demo, and it keeps the Dockerfile at 20 readable lines. A real deployment would use FPM behind nginx, and the Dockerfile comment says so.
 - **Everything is on a free tier**, which is where the cold starts come from. The honest fix is a paid instance, not more code.
-- **No automated frontend tests.** The 92 tests are backend. Every phase of this project *was* verified end-to-end in a real browser with Playwright — the language switch, the SEO tags, the wake-up notice, the per-language card data — but those scripts were throwaway. Committing them as a Playwright suite in CI is the single biggest gap.
+- **No automated frontend tests.** The 96 tests are backend. Every phase of this project *was* verified end-to-end in a real browser with Playwright — the language switch, the SEO tags, the wake-up notice, the per-language card data — but those scripts were throwaway. Committing them as a Playwright suite in CI is the single biggest gap.
 - **Adding a third *interface* language is one dictionary. Adding a third *data* language is a migration** (`nombre_ro`, `imagen_ro`…). That is the price of choosing columns over a translations table, and I would make the same call again — but it is a real limit, not a detail.
 - **No queue.** Lazy hydration happens inside the request that triggered it. It is one cached TCGdex call, so it costs a few hundred milliseconds; at real traffic it should be a job.
 - **The cache driver is `database`.** Fine at this scale, and it survives deploys. Redis is the obvious next step.
@@ -186,14 +188,16 @@ php artisan jwt:secret
 # SQLite is the local default, and Laravel expects the file to already be there
 php -r "file_exists('database/database.sqlite') || touch('database/database.sqlite');"
 
-php artisan migrate --seed        # schema + a starter catalog, demo users, inventories and trades
+php artisan migrate --seed        # schema + demo users (no cards)
 php artisan tcgdex:sync-sets      # the series/sets index (~3 min the first time)
 php artisan serve                 # http://localhost:8000
 ```
 
-Or, equivalently, `composer setup` — it runs exactly those steps.
+Or, equivalently, `composer setup` — it runs exactly those steps, except `tcgdex:sync-sets`.
 
-`migrate --seed` fetches two curated sets from TCGdex so there is something to look at, and seeds demo users and trades. Those users have fixed passwords and **only exist locally** — `DatabaseSeeder` refuses to run outside the `local` environment. In production only the catalog is seeded and you sign up like anyone else.
+**Nothing seeds cards.** `tcgdex:sync-sets` is what makes series and sets browsable; the cards themselves arrive by cache-aside, the first time you open a set — the only way the catalog is ever populated. The home hero does not wait for that: with no priced cards in the database, `/api/cartas/destacadas` fetches its four cards from TCGdex live, skipping sets too new to be priced on Cardmarket, and falls back to unpriced cards rather than an empty hero (see [Architecture decisions](#a-20386-card-catalog-you-cannot-download)).
+
+`migrate --seed` only creates demo users. They have fixed passwords and **only exist locally** — `DatabaseSeeder` refuses to run outside the `local` environment. In production nothing is seeded and you sign up like anyone else.
 
 **Frontend** (must be served over HTTP, not `file://`)
 
@@ -209,7 +213,7 @@ Use this rather than Live Server or `npx serve`. It reproduces the two things `v
 
 ```bash
 cd api
-composer test                     # 92 tests, in-memory SQLite, TCGdex mocked with Http::fake
+composer test                     # 96 tests, in-memory SQLite, TCGdex mocked with Http::fake
 ```
 
 Use `composer test` rather than `php artisan test` — it clears the cached config first. With a cached config, Laravel ignores `phpunit.xml`'s `DB_DATABASE=:memory:`, the suite runs against your **development** database, and `RefreshDatabase` empties it. (`TestCase` now refuses to run in that situation and says why. It refuses because it happened.)

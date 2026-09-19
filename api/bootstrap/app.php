@@ -35,6 +35,11 @@ return Application::configure(basePath: dirname(__DIR__))
             \App\Http\Middleware\EstablecerIdioma::class,
         ]);
 
+        // Sin esta llamada el grupo api NO lleva throttle en Laravel 12. Aplica
+        // el limiter 'api' (AppServiceProvider) a todas las rutas; login, registro
+        // y buscar llevan además el suyo propio en routes/api.php.
+        $middleware->throttleApi();
+
         // En Render (y en general detrás de un proxy/load balancer) la app
         // recibe las peticiones a través del proxy, no del cliente directo.
         // Confiar en el proxy permite a Laravel detectar correctamente el

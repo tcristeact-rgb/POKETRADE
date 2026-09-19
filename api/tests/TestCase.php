@@ -3,6 +3,7 @@
 namespace Tests;
 
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 abstract class TestCase extends BaseTestCase
@@ -61,5 +62,24 @@ abstract class TestCase extends BaseTestCase
         parent::setUp();
 
         $this->withHeader('Accept-Language', 'es');
+
+        // Ningún test sale a internet: una petición sin Http::fake que la cubra
+        // revienta (StrayRequestException) en vez de llegar a TCGdex.
+        //
+        // Ojo: eso ya NO equivale a "TCGdex no contestó". TcgdexService::get()
+        // solo captura ConnectionException (lo demás es un bug nuestro y debe
+        // reventar), así que un test cuyo código bajo prueba pueda llamar a
+        // TCGdex tiene que decir qué contesta — con su propio Http::fake o con
+        // conTcgdexCaido() si lo que quiere es simular la caída.
+        Http::preventStrayRequests();
+    }
+
+    // Simula TCGdex caído: todo 503. El servicio devuelve null (no cachea) y la
+    // API responde 503 tcgdex_caido. Va en el test, no aquí, porque los stubs
+    // de Http::fake se evalúan en orden de registro y el primero que contesta
+    // gana: uno global en setUp() taparía los fakes propios de cada test.
+    protected function conTcgdexCaido(): void
+    {
+        Http::fake(['api.tcgdex.net/*' => Http::response(null, 503)]);
     }
 }

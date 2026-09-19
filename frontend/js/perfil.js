@@ -1,6 +1,6 @@
 // perfil.js — Edición de perfil y cambio de contraseña
 
-import { apiFetch, protegerRuta, obtenerUsuario, manejarErrorHTTP, parsearRespuesta, renderizarMenu, paginaUrl } from './auth.js';
+import { apiFetch, protegerRuta, obtenerUsuario, manejarErrorHTTP, parsearRespuesta, renderizarMenu, paginaUrl, cambiarPassword as cambiarPasswordApi } from './auth.js';
 import { t } from './i18n.js';
 import { alCargarDOM, mostrarAlerta } from './utils.js';
 
@@ -73,7 +73,7 @@ async function guardarPerfil() {
 
     try {
         const res = await apiFetch(`/usuario/perfil`, {
-            method: 'PUT',
+            method: 'PUT',
             body: JSON.stringify(campos)
         });
         const datos = await parsearRespuesta(res);
@@ -101,8 +101,8 @@ async function cambiarPassword() {
         mostrarAlerta(t('perfil.rellenaPassword'), 'error', 'alerta-password');
         return;
     }
-    if (nueva.length < 6) {
-        mostrarAlerta(t('perfil.passwordMin6'), 'error', 'alerta-password');
+    if (nueva.length < 8) {
+        mostrarAlerta(t('perfil.passwordMin8'), 'error', 'alerta-password');
         return;
     }
     if (nueva !== confirmar) {
@@ -111,12 +111,8 @@ async function cambiarPassword() {
     }
 
     try {
-        const res = await apiFetch(`/usuario/password`, {
-            method: 'PUT',
-            body: JSON.stringify({ password_actual: actual, password_nuevo: nueva })
-        });
-        const datos = await parsearRespuesta(res);
-        if (!res.ok) throw new Error(datos.error || manejarErrorHTTP(res.status));
+        // auth.js guarda el token nuevo que devuelve el backend: el antiguo ya no vale
+        await cambiarPasswordApi(actual, nueva);
 
         document.getElementById('password_actual').value    = '';
         document.getElementById('password_nueva').value     = '';

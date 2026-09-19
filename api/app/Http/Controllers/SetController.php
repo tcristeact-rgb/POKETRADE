@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Carta;
 use App\Models\Serie;
 use App\Models\Set;
+use App\Services\HidratadorDeCartas;
 use App\Services\TcgdexService;
 use App\Support\CatalogoTcg;
 use App\Support\Idiomas;
@@ -13,6 +14,12 @@ use Illuminate\Support\Facades\DB;
 
 class SetController extends Controller
 {
+    public function __construct(
+        private TcgdexService $tcgdex,
+        private HidratadorDeCartas $hidratador,
+    ) {
+    }
+
     // --- Listar sets de expansión ---
     // Endpoint: GET /api/sets
     // Acceso: público (sin token)
@@ -78,7 +85,7 @@ class SetController extends Controller
     //
     // Las cartas entran solo con nombre, número e imagen: el resto lo completa
     // CartaController::show al abrir cada carta.
-    public function cartas(Request $request, TcgdexService $tcgdex, $id)
+    public function cartas(Request $request, $id)
     {
         $set = Set::where('tcgdex_id', $id)
             ->when(ctype_digit((string) $id), fn ($q) => $q->orWhere('id', $id))
@@ -88,7 +95,7 @@ class SetController extends Controller
             return response()->json(['error' => __('mensajes.set_no_encontrado')], 404);
         }
 
-        $this->cachearSetSiHaceFalta($set, $tcgdex);
+        $this->cachearSetSiHaceFalta($set);
 
         if (!$set->synced_at) {
             return response()->json([
@@ -104,7 +111,7 @@ class SetController extends Controller
             $query->nombreParecidoA($request->nombre);
         }
 
-        $this->filtrarPorTipoYRareza($query, $set, $tcgdex,
+        $this->filtrarPorTipoYRareza($query, $set,
             trim((string) $request->query('tipo')),
             trim((string) $request->query('rareza')));
 
@@ -130,7 +137,7 @@ class SetController extends Controller
     //
     // Los filtros llegan como clave canónica ('fire'), no como texto: así el
     // mismo enlace filtrado funciona igual en español y en inglés.
-    private function filtrarPorTipoYRareza($query, Set $set, TcgdexService $tcgdex, string $tipo, string $rareza): void
+    private function filtrarPorTipoYRareza($query, Set $set, string $tipo, string $rareza): void
     {
         $tipoKey   = CatalogoTcg::claveTipo($tipo);
         $rarezaKey = CatalogoTcg::claveRareza($rareza);
@@ -140,7 +147,7 @@ class SetController extends Controller
         }
 
         // 500 cubre de sobra el set más grande (~450 cartas)
-        $coincidentes = $tcgdex->buscarCartas(array_filter([
+        $coincidentes = $this->tcgdex->buscarCartas(array_filter([
             'set.id'     => $set->tcgdex_id,
             'tipo_key'   => $tipoKey,
             'rareza_key' => $rarezaKey,
@@ -160,13 +167,13 @@ class SetController extends Controller
     }
 
     // Se asegura de que el set esté cacheado en el idioma de la petición.
-    private function cachearSetSiHaceFalta(Set $set, TcgdexService $tcgdex): void
+    private function cachearSetSiHaceFalta(Set $set): void
     {
         $idioma = Idiomas::activo();
 
         $declaradas = $set->cacheadoEn($idioma)
             ? null
-            : $this->cachearSet($set, $tcgdex, $idioma);
+            : $this->cachearSet($set, $idioma);
 
         // Los catálogos que no son el inglés van incompletos: hay sets que en
         // español existen solo como metadatos, sin una sola carta (neo1 declara
@@ -176,7 +183,7 @@ class SetController extends Controller
         $total = max($declaradas ?? 0, $set->numero_cartas);
 
         if (!$set->cacheadoEn(TcgdexService::COMPLETO) && $set->cartas()->count() < $total) {
-            $this->cachearSet($set, $tcgdex, TcgdexService::COMPLETO);
+            $this->cachearSet($set, TcgdexService::COMPLETO);
         }
     }
 
@@ -187,9 +194,9 @@ class SetController extends Controller
     // columnas de ese idioma: cachear "151" en inglés rellena nombre_en e
     // imagen_en de sus 207 cartas sin rozar el español, ni la rareza, ni el
     // precio, ni la descripción que ya tuvieran.
-    private function cachearSet(Set $set, TcgdexService $tcgdex, string $idioma): ?int
+    private function cachearSet(Set $set, string $idioma): ?int
     {
-        $datos = $tcgdex->obtenerSet($set->tcgdex_id, $idioma);
+        $datos = $this->tcgdex->obtenerSet($set->tcgdex_id, $idioma);
 
         // null = TCGdex no contestó. Ni se persiste ni se marca el intento: el
         // set queda sin cachear y la próxima visita vuelve a probar.
@@ -206,15 +213,8 @@ class SetController extends Controller
             return $datos['cardCount']['total'] ?? null;
         }
 
-        $filas = collect($datos['cards'])->map(fn ($carta) => [
-            'tcgdex_id'       => $carta['id'],
-            "nombre_{$idioma}" => $carta['name'],
-            "imagen_{$idioma}" => $carta['image'] ?? null,
-            'numero'          => $carta['localId'] ?? null,
-            'set_id'          => $set->tcgdex_id,
-            'created_at'      => now(),
-            'updated_at'      => now(),
-        ]);
+        $filas = collect($datos['cards'])
+            ->map(fn ($carta) => $this->hidratador->filaDeResumen($carta, $idioma, $set->tcgdex_id));
 
         DB::transaction(function () use ($set, $filas, $idioma) {
             // En bloques de 200 para no exceder el límite de parámetros

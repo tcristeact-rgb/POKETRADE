@@ -10,3 +10,14 @@ PokeTrade_Despliegue.zip
 
 # Configuración de editor (no debe versionarse)
 .vscode/
+
+# Secretos: variantes de .env y material criptográfico, en cualquier carpeta.
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+
+# Artefactos de la suite de Playwright (tests-e2e/)
+test-results/
+playwright-report/

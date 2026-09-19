@@ -10,7 +10,7 @@ return new class extends Migration
     {
         // --- Tabla cartas ---
         // Almacena todas las cartas Pokémon disponibles en la plataforma
-        // Los datos los siembra CartasSeeder desde la API de TCGdex
+        // Los datos llegan de la API de TCGdex, cacheados bajo demanda
         Schema::create('cartas', function (Blueprint $table) {
             $table->id(); // ID autoincremental, clave primaria
 

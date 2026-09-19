@@ -8,7 +8,6 @@
     "require": {
         "php": "^8.2",
         "laravel/framework": "^12.0",
-        "laravel/tinker": "^2.10.1",
         "tymon/jwt-auth": "^2.3"
     },
     "require-dev": {
@@ -16,6 +15,7 @@
         "laravel/pail": "^1.2.2",
         "laravel/pint": "^1.24",
         "laravel/sail": "^1.41",
+        "laravel/tinker": "^2.11",
         "mockery/mockery": "^1.6",
         "nunomaduro/collision": "^8.6",
         "phpunit/phpunit": "^11.5.50"
@@ -34,7 +34,7 @@
     },
     "scripts": {
         "setup": [
-            "composer install",
+            "@composer install",
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
             "@php artisan key:generate",
             "@php artisan jwt:secret --force",
@@ -45,6 +45,7 @@
             "@php artisan config:clear --ansi",
             "@php artisan test"
         ],
+        "security": "@composer audit --abandoned=report",
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

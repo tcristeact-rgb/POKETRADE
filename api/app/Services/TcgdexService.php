@@ -4,9 +4,11 @@ namespace App\Services;
 
 use App\Support\CatalogoTcg;
 use App\Support\Idiomas;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 // --- Cliente de la API pública TCGdex ---
 // Documentación: https://tcgdex.dev · Base: https://api.tcgdex.net/v2
@@ -72,7 +74,31 @@ class TcgdexService
             }
         }
 
+        // Fuera las cartas de series excluidas por config (Pocket,
+        // McDonald's...): TCGdex las devuelve igualmente porque el filtrado
+        // es nuestro, no suyo. Solo en la búsqueda global: acotada a un set
+        // (set.id), el set está en nuestro índice y no puede ser excluido, y
+        // así no se añaden peticiones a setsExcluidos() en ese camino.
+        if (!isset($filtros['set.id'])) {
+            $excluidos = array_flip($this->setsExcluidos());
+            $cartas    = $cartas->reject(fn ($c) => isset($excluidos[$this->setDeCarta($c)]));
+        }
+
         return $cartas->take($limite)->values()->all();
+    }
+
+    // Deriva el ID del set desde el resumen de una carta. El id es
+    // "{set}-{localId}" y el set puede contener guiones ("tk-xy-su-4"
+    // → set "tk-xy-su"), así que se recorta el sufijo del localId
+    public function setDeCarta(array $carta): string
+    {
+        $localId = (string) ($carta['localId'] ?? '');
+
+        if ($localId !== '' && str_ends_with($carta['id'], "-{$localId}")) {
+            return substr($carta['id'], 0, -strlen("-{$localId}"));
+        }
+
+        return strtok($carta['id'], '-');
     }
 
     // Una consulta de búsqueda en un idioma concreto, con caché corta.
@@ -227,6 +253,16 @@ class TcgdexService
     //
     // (Cache::remember no distingue un null guardado de una clave ausente, así
     // que devolver null es, de hecho, no cachear.)
+    //
+    // Cada null deja un Log::warning con la ruta, el idioma y la causa. Sin él,
+    // un TCGdex caído era un 503 para el usuario y NADA en el log de Render:
+    // imposible saber si el fallo era suyo o nuestro sin reproducirlo a mano.
+    //
+    // Con throw: false, Http nunca lanza RequestException (un 4xx vuelve como
+    // respuesta; un 5xx se reintenta y vuelve como respuesta). Lo único que sale
+    // del cliente como excepción es ConnectionException (timeout, DNS, TLS), y
+    // es lo único que se captura: cualquier otra cosa es un bug nuestro y debe
+    // reventar, no disfrazarse de "TCGdex no contestó".
     private function get(string $idioma, string $ruta, int $ttl = self::CACHE_TTL): ?array
     {
         return Cache::remember(
@@ -237,15 +273,46 @@ class TcgdexService
                     $res = Http::retry(3, 300, $this->reintentable(...), throw: false)
                         ->timeout(15)
                         ->get(self::BASE_URL . "/{$idioma}/{$ruta}");
+                } catch (ConnectionException $e) {
+                    Log::warning('TCGdex no responde', [
+                        'ruta'      => $ruta,
+                        'idioma'    => $idioma,
+                        'excepcion' => get_class($e),
+                        'mensaje'   => $e->getMessage(),
+                    ]);
 
-                    if ($res->successful()) {
-                        return $res->json();
-                    }
-
-                    return $res->status() === 404 ? [] : null;
-                } catch (\Throwable) {
                     return null;
                 }
+
+                if ($res->successful()) {
+                    // Un 200 sin JSON (la página de un WAF o CDN intermedio) no es
+                    // el recurso: es "no contestó". Sin is_array, un escalar hacía
+                    // saltar el TypeError del tipo de retorno fuera del try → 500.
+                    $json = $res->json();
+                    if (is_array($json)) {
+                        return $json;
+                    }
+
+                    Log::warning('TCGdex respondió sin JSON', [
+                        'ruta'   => $ruta,
+                        'idioma' => $idioma,
+                        'status' => $res->status(),
+                    ]);
+
+                    return null;
+                }
+
+                if ($res->status() === 404) {
+                    return [];
+                }
+
+                Log::warning('TCGdex respondió con error', [
+                    'ruta'   => $ruta,
+                    'idioma' => $idioma,
+                    'status' => $res->status(),
+                ]);
+
+                return null;
             }
         );
     }

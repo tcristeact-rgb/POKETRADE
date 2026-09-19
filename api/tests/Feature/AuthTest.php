@@ -22,7 +22,7 @@ class AuthTest extends TestCase
             'nombre'           => 'Daniel',
             'apellido'         => 'Leal',
             'email'            => 'daniel@test.com',
-            'password'         => '123456',
+            'password'         => '12345678',
             'fecha_nacimiento' => '2005-12-09',
             'nacionalidad'     => 'Española',
         ]);
@@ -45,7 +45,7 @@ class AuthTest extends TestCase
             'nombre'   => 'Daniel',
             'apellido' => 'Leal',
             'email'    => 'daniel@test.com',
-            'password' => bcrypt('123456'),
+            'password' => bcrypt('12345678'),
             'rol'      => 'cliente',
         ]);
 
@@ -54,7 +54,7 @@ class AuthTest extends TestCase
             'nombre'   => 'Otro',
             'apellido' => 'Usuario',
             'email'    => 'daniel@test.com', // Email ya existente
-            'password' => '123456',
+            'password' => '12345678',
         ]);
 
         // Debe devolver 422 (error de validación: email ya existe)
@@ -70,14 +70,14 @@ class AuthTest extends TestCase
             'nombre'   => 'Daniel',
             'apellido' => 'Leal',
             'email'    => 'daniel@test.com',
-            'password' => bcrypt('123456'),
+            'password' => bcrypt('12345678'),
             'rol'      => 'cliente',
         ]);
 
         // Hacemos la petición de login con las credenciales correctas
         $respuesta = $this->postJson('/api/auth/login', [
             'email'    => 'daniel@test.com',
-            'password' => '123456',
+            'password' => '12345678',
         ]);
 
         // Verificamos que la respuesta es 200 y contiene token y datos del usuario
