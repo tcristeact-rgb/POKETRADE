@@ -553,6 +553,7 @@ header .logo { color: var(--hdr-texto); }
 /* Buscador (los colores base siguen al tema dentro de la píldora;
    el drawer, siempre oscuro, los fija en blanco más abajo) */
 .buscador-contenedor {
+  position: relative;   /* contenedor de la lista de autocompletado */
   display: flex;
   align-items: center;
   background: var(--hdr-control-bg);
@@ -4159,3 +4160,39 @@ html.modal-abierto {
 
 /* Estado vacío del grid con botón para limpiar los filtros */
 .grid-mensaje .btn-primario { margin-top: 0.75rem; }
+
+/* ═══════════════════════════════════════════════════
+   AUTOCOMPLETADO — sugerencias de nombres bajo los buscadores
+   (autocompletado.js: header, drawer y filtro del catálogo)
+═══════════════════════════════════════════════════ */
+.autocompletado-lista {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 60;                 /* sobre el grid que hay bajo la barra sticky (50) */
+  margin: 0;
+  padding: 0.35rem;
+  list-style: none;
+  max-height: 18rem;
+  overflow-y: auto;
+  background: var(--fondo-card);
+  color: var(--texto);
+  border: 1px solid var(--borde);
+  border-radius: var(--radius);
+  box-shadow: var(--sombra);
+  font-size: var(--text-sm);
+  text-align: left;
+}
+.autocompletado-opcion {
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.autocompletado-opcion:hover,
+.autocompletado-opcion[aria-selected="true"] {
+  background: var(--primario-soft);
+  color: var(--primario-texto);
+}

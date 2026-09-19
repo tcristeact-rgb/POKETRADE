@@ -26,6 +26,7 @@ return [
     'set_no_encontrado'   => 'Set not found',
     'busqueda_sin_filtro' => 'Provide at least one filter: q, tipo or rareza',
     'busqueda_corta'      => 'The search needs at least 2 characters',
+    'idioma_no_soportado' => 'Unsupported language. Available: es, en',
 
     // The external catalogue (TCGdex) is down. Users see this when they open
     // a set that is not cached yet and the third-party API is unavailable.

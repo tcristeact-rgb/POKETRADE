@@ -34,6 +34,7 @@ Route::get('/cartas/filtros',    [CartaController::class, 'filtros']);
 // buscar es un proxy en vivo a TCGdex: lleva su propio límite por IP (throttle:buscar)
 Route::get('/cartas/buscar',     [CartaController::class, 'buscar'])->middleware('throttle:buscar');
 Route::get('/cartas/destacadas', [CartaController::class, 'destacadas']);
+Route::get('/cartas/nombres',    [CartaController::class, 'nombres']);
 Route::get('/cartas/{id}',       [CartaController::class, 'show']);
 
 // Expansiones — índice de series y sets del TCG, lectura pública

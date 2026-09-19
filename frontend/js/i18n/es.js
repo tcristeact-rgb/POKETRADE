@@ -53,6 +53,7 @@ export default {
     'header.buscarPlaceholder': 'Buscar carta...',
     'header.buscarCarta':       'Buscar carta',
     'header.buscar':            'Buscar',
+    'busqueda.sugerenciasAria': 'Sugerencias de búsqueda',
     'header.modoOscuro':        'Activar modo oscuro',
     'header.modoClaro':         'Activar modo claro',
     'header.abrirMenu':         'Abrir menú de navegación',

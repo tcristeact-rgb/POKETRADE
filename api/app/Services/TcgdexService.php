@@ -34,6 +34,9 @@ class TcgdexService
     // pero no tiene sentido retenerlas un día entero
     private const CACHE_TTL_BUSQUEDA = 600; // 10 minutos
 
+    // El índice de nombres para el autocompletado se reconstruye una vez al día
+    private const CACHE_TTL_NOMBRES = 86400;
+
     // El catálogo inglés es el completo: tiene todos los sets, incluidos los
     // clásicos que nunca se tradujeron. Es el respaldo de todo lo demás.
     public const COMPLETO = 'en';
@@ -222,6 +225,55 @@ class TcgdexService
     public function obtenerCarta(string $cartaId, string $idioma = 'es'): ?array
     {
         return $this->get($idioma, "cards/{$cartaId}");
+    }
+
+    // --- Nombres únicos de todas las cartas, para el autocompletado ---
+    //
+    // Es el índice que el frontend baja una vez (25 KB gzip) y filtra en
+    // memoria: sugerencias desde la primera letra sin una sola petición por
+    // tecla. Se deriva del catálogo completo (/cards, 2,3 MB) una vez al día;
+    // la respuesta cruda no se retiene (TTL corto), solo la lista.
+    //
+    // Para un idioma que no sea el completo se unen sus nombres con los del
+    // inglés: el catálogo mostrado también cae al inglés cuando no hay
+    // traducción, y buscarCartas() busca en los dos.
+    //
+    // Si TCGdex no contesta cuando toca refrescar, se sirve la última lista
+    // buena (copia sin caducidad); solo sin ninguna lista se devuelve null.
+    public function nombresDeCartas(string $idioma = 'es'): ?array
+    {
+        $claveUltimo = "tcgdex:nombres:{$idioma}:ultimo";
+
+        $nombres = Cache::remember("tcgdex:nombres:{$idioma}", self::CACHE_TTL_NOMBRES, function () use ($idioma, $claveUltimo) {
+            $catalogos = [$this->get($idioma, 'cards', 60)];
+            if ($idioma !== self::COMPLETO) {
+                $catalogos[] = $this->get(self::COMPLETO, 'cards', 60);
+            }
+
+            // Sin el catálogo principal no hay lista que valga: null no se
+            // cachea y el siguiente intento vuelve a preguntar
+            if ($catalogos[0] === null) {
+                return null;
+            }
+
+            $nombres = [];
+            foreach ($catalogos as $cartas) {
+                foreach ($cartas ?? [] as $carta) {
+                    if (!empty($carta['name'])) {
+                        $nombres[$carta['name']] = true;
+                    }
+                }
+            }
+
+            $nombres = array_keys($nombres);
+            sort($nombres, SORT_STRING | SORT_FLAG_CASE);
+
+            Cache::forever($claveUltimo, $nombres);
+
+            return $nombres;
+        });
+
+        return $nombres ?? Cache::get($claveUltimo);
     }
 
     // --- Listado de todos los sets disponibles ---

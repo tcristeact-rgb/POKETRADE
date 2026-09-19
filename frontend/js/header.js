@@ -242,14 +242,29 @@ function configurarBuscadores() {
   const btnH = document.getElementById('btn-buscar');
   const bDrw = document.getElementById('buscador-drawer');
   const btnD = document.getElementById('btn-buscar-drawer');
+  // Las sugerencias se cargan al primer foco (import dinámico): header.js
+  // está en el camino crítico del pintado y el autocompletado no. Con una
+  // sugerencia resaltada (aria-activedescendant), Enter la elige el módulo
+  // y aquí no se navega con el texto a medias.
+  activarAutocompletado(bHdr, lanzarBusqueda);
+  activarAutocompletado(bDrw, lanzarBusqueda);
+  const sinSugerencia = (input) => !input.getAttribute('aria-activedescendant');
   if (bHdr && btnH) {
-    bHdr.addEventListener('keydown', (e) => { if (e.key === 'Enter') lanzarBusqueda(bHdr.value); });
+    bHdr.addEventListener('keydown', (e) => { if (e.key === 'Enter' && sinSugerencia(bHdr)) lanzarBusqueda(bHdr.value); });
     btnH.addEventListener('click', () => lanzarBusqueda(bHdr.value));
   }
   if (bDrw && btnD) {
-    bDrw.addEventListener('keydown', (e) => { if (e.key === 'Enter') lanzarBusqueda(bDrw.value); });
+    bDrw.addEventListener('keydown', (e) => { if (e.key === 'Enter' && sinSugerencia(bDrw)) lanzarBusqueda(bDrw.value); });
     btnD.addEventListener('click', () => lanzarBusqueda(bDrw.value));
   }
+}
+
+// Monta el autocompletado la primera vez que el buscador recibe el foco
+export function activarAutocompletado(input, alElegir) {
+  if (!input) return;
+  input.addEventListener('focus', () => {
+    import('./autocompletado.js').then(({ montarAutocompletado }) => montarAutocompletado(input, { alElegir }));
+  }, { once: true });
 }
 
 // ── Conmutador de modo claro / oscuro ──────────────

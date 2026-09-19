@@ -49,6 +49,7 @@ export default {
     'header.buscarPlaceholder': 'Search for a card...',
     'header.buscarCarta':       'Search for a card',
     'header.buscar':            'Search',
+    'busqueda.sugerenciasAria': 'Search suggestions',
     'header.modoOscuro':        'Switch to dark mode',
     'header.modoClaro':         'Switch to light mode',
     'header.abrirMenu':         'Open navigation menu',

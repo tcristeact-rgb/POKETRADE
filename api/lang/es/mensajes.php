@@ -26,6 +26,7 @@ return [
     'set_no_encontrado'   => 'Set no encontrado',
     'busqueda_sin_filtro' => 'Indica al menos un filtro: q, tipo o rareza',
     'busqueda_corta'      => 'La búsqueda necesita al menos 2 caracteres',
+    'idioma_no_soportado' => 'Idioma no soportado. Los disponibles son: es, en',
 
     // El catálogo externo (TCGdex) no responde. Lo ve el usuario cuando abre
     // un set que aún no está cacheado y la API de terceros está caída.

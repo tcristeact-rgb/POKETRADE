@@ -10,6 +10,7 @@
 
 import { apiFetch } from './auth.js';
 import { debounce } from './utils.js';
+import { activarAutocompletado } from './header.js';
 
 // Debounce del input de nombre: la búsqueda global golpea a TCGdex,
 // no queremos una petición por tecla
@@ -38,6 +39,8 @@ export function iniciarFiltros({ alCambiar }) {
 
     // ── Controles → URL + aviso al catálogo ───────────
     inputNombre?.addEventListener('input', debounce(aplicar, DEBOUNCE_MS));
+    // Elegir una sugerencia aplica el filtro al momento, sin esperar al debounce
+    activarAutocompletado(inputNombre, aplicar);
     selectTipo?.addEventListener('change', aplicar);
     selectRareza?.addEventListener('change', aplicar);
     btnLimpiar?.addEventListener('click', limpiar);

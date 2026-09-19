@@ -159,6 +159,32 @@ class CartaController extends Controller
         return response()->json(['data' => $cartas]);
     }
 
+    // --- Índice de nombres para el autocompletado ---
+    // Endpoint: GET /api/cartas/nombres?idioma=es|en
+    // Acceso: público (sin token)
+    // Respuesta: array de nombres únicos y ordenados. Cacheable 24 h en el
+    // navegador (Cache-Control + ETag): el frontend lo baja una vez por sesión
+    // al primer foco del buscador y filtra en memoria.
+    public function nombres(Request $request)
+    {
+        $idioma = $request->query('idioma', Idiomas::activo());
+
+        if (!Idiomas::soportado($idioma)) {
+            return response()->json(['error' => __('mensajes.idioma_no_soportado')], 422);
+        }
+
+        $nombres = $this->tcgdex->nombresDeCartas($idioma);
+
+        if ($nombres === null) {
+            return response()->json(['error' => __('mensajes.tcgdex_caido')], 503);
+        }
+
+        return response()->json($nombres)
+            ->setPublic()
+            ->setMaxAge(86400)
+            ->setEtag(md5(json_encode($nombres)));
+    }
+
     // --- Búsqueda global en todo el catálogo del TCG ---
     // Endpoint: GET /api/cartas/buscar?q=&tipo=&rareza=
     // Acceso: público (sin token)
