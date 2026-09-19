@@ -82,8 +82,7 @@ async function registrarse(e) {
     apellido: document.getElementById('apellido').value.trim(),
     email: document.getElementById('email').value.trim(),
     password: document.getElementById('password').value,
-    fecha_nacimiento: document.getElementById('fecha_nacimiento').value,
-    nacionalidad: document.getElementById('nacionalidad').value.trim()
+    fecha_nacimiento: document.getElementById('fecha_nacimiento').value
   };
 
   // Bloqueo del botón: evita envíos duplicados por doble clic

@@ -58,7 +58,7 @@
     </div>
 
     <div class="hero-escaparate" id="hero-escaparate"
-         role="region" data-i18n-attr="aria-label:home.cartasDestacadas" aria-label="Cartas destacadas">
+         role="region" data-i18n-attr="aria-label:home.escaparate" aria-label="Escaparate">
       <button class="carrusel-flecha" id="carrusel-prev" type="button"
               data-i18n-attr="aria-label:comun.cartaAnterior" aria-label="Carta anterior" hidden>❮</button>
       <a class="carrusel-escena" id="carrusel-escena" href="pages/catalogo.html">
@@ -74,38 +74,47 @@
   </section>
 
   <!-- ═══════════════════════════════════════════════
-       ÚLTIMAS NOVEDADES
-       Grid de cartas. Flujo AJAX: fetch → JSON → DOM
+       CARTAS DESTACADAS
+       Carrusel infinito de cartas al azar (GET /cartas/aleatorias →
+       JSON → DOM). Las flechas mueven la pista una carta; al llegar
+       al final se sigue por el principio (rotación del DOM, sin
+       clones, ver inicio.js). Sin barra de scroll ni autoplay.
        Gestión de errores: red (sin conexión), HTTP 404, HTTP 500
   ════════════════════════════════════════════════ -->
-  <section class="novedades-seccion" aria-labelledby="titulo-novedades">
+  <section class="novedades-seccion" aria-labelledby="titulo-destacadas">
     <div class="seccion-header">
-      <h2 id="titulo-novedades" data-i18n="home.novedadesTitulo">Últimas novedades</h2>
-      <a href="pages/novedades.html" class="ver-todos"
+      <h2 id="titulo-destacadas" data-i18n="home.destacadasTitulo">Cartas destacadas</h2>
+      <a href="pages/catalogo.html" class="ver-todos"
          data-i18n="home.verTodos"
-         data-i18n-attr="aria-label:home.verTodasNovedades" aria-label="Ver todas las novedades">
+         data-i18n-attr="aria-label:home.verCatalogo" aria-label="Ver el catálogo completo">
         Ver todos →
       </a>
     </div>
 
     <!--
       Alerta de error de red / HTTP – oculta por defecto.
-      El botón "Reintentar" vuelve a llamar a cargarNovedades().
+      El botón "Reintentar" vuelve a llamar a cargarCarruselDestacadas().
     -->
-    <div id="error-novedades" class="alerta-error" hidden role="alert">
-      <p><img class="icono" src="img/icons/aviso.svg" alt="" /> <span id="error-novedades-msg" data-i18n="home.errorNovedades">No se pudieron cargar las novedades.</span></p>
-      <button id="btn-reintentar-novedades" type="button" data-i18n="comun.reintentar">Reintentar</button>
+    <div id="error-destacadas" class="alerta-error" hidden role="alert">
+      <p><img class="icono" src="img/icons/aviso.svg" alt="" /> <span id="error-destacadas-msg" data-i18n="home.errorDestacadas">No se pudieron cargar las cartas destacadas.</span></p>
+      <button id="btn-reintentar-destacadas" type="button" data-i18n="comun.reintentar">Reintentar</button>
     </div>
 
-    <!--
-      Grid de cartas – se rellena dinámicamente tras recibir el JSON.
-      Skeletons iniciales dan feedback visual durante la carga.
-    -->
-    <div class="grid-cartas" id="grid-novedades" aria-live="polite" aria-busy="true">
-      <div class="carta-card skeleton" aria-hidden="true"></div>
-      <div class="carta-card skeleton" aria-hidden="true"></div>
-      <div class="carta-card skeleton" aria-hidden="true"></div>
-      <div class="carta-card skeleton" aria-hidden="true"></div>
+    <div class="carrusel-cartas" id="carrusel-destacadas">
+      <button class="carrusel-flecha" id="destacadas-prev" type="button"
+              data-i18n-attr="aria-label:comun.cartaAnterior" aria-label="Carta anterior" hidden>❮</button>
+      <!-- Ventana: recorta la pista. La pista se rellena tras recibir el JSON;
+           los skeletons dan feedback durante la carga. -->
+      <div class="carrusel-cartas-ventana">
+        <div class="grid-cartas carrusel-cartas-pista" id="pista-destacadas" aria-live="polite" aria-busy="true">
+          <div class="carta-card skeleton" aria-hidden="true"></div>
+          <div class="carta-card skeleton" aria-hidden="true"></div>
+          <div class="carta-card skeleton" aria-hidden="true"></div>
+          <div class="carta-card skeleton" aria-hidden="true"></div>
+        </div>
+      </div>
+      <button class="carrusel-flecha" id="destacadas-next" type="button"
+              data-i18n-attr="aria-label:comun.cartaSiguiente" aria-label="Carta siguiente" hidden>❯</button>
     </div>
   </section>
 

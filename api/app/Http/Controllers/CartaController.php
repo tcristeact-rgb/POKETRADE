@@ -113,9 +113,25 @@ class CartaController extends Controller
 
         return response()->json([
             'tipos'   => CatalogoTcg::tipos(),
-            'rarezas' => CatalogoTcg::rarezas(),
+            'rarezas' => Rarezas::filtros(Carta::whereNotNull('rareza_key')->distinct()->pluck('rareza_key')),
             'sets'    => $sets,
         ]);
+    }
+
+    // --- Cartas al azar para el carrusel de la portada ---
+    // Endpoint: GET /api/cartas/aleatorias?cantidad=N
+    // Acceso: público (sin token)
+    // N cartas con imagen en orden aleatorio (12 por defecto, 24 como
+    // máximo). Sin caché a propósito: que cada visita enseñe otras es el
+    // objetivo. inRandomOrder() es RANDOM() tanto en SQLite como en
+    // PostgreSQL. Solo BD: aquí nunca se llama a TCGdex.
+    public function aleatorias(Request $request)
+    {
+        $cantidad = min(24, max(1, (int) $request->input('cantidad', 12)));
+
+        return response()->json(
+            Carta::conImagen()->inRandomOrder()->limit($cantidad)->get()
+        );
     }
 
     // --- Cartas destacadas para el hero del home ---

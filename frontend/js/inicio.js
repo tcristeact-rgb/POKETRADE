@@ -10,43 +10,161 @@ alCargarDOM(() => {
         ctaSeccion.hidden = true;
     }
 
-    cargarNovedades();
+    cargarCarruselDestacadas();
     cargarDestacadas();
 
-    const btnReintentar = document.getElementById('btn-reintentar-novedades');
-    if (btnReintentar) btnReintentar.addEventListener('click', cargarNovedades);
+    const btnReintentar = document.getElementById('btn-reintentar-destacadas');
+    if (btnReintentar) btnReintentar.addEventListener('click', cargarCarruselDestacadas);
 });
 
-// ─── Novedades: las 8 cartas más recientes del catálogo ────────────
+// ─── Cartas destacadas: carrusel infinito de cartas al azar ────────
+// GET /cartas/aleatorias → 12 cartas con imagen, distintas en cada
+// visita. Las flechas mueven la pista una carta; el bucle es INFINITO
+// por rotación del DOM, sin clones: al avanzar, la pista se desplaza
+// una carta y, al acabar la transición, la primera tarjeta pasa al
+// final y el desplazamiento vuelve a 0 sin animar. Al retroceder, la
+// última pasa al principio, la pista se coloca en -1 carta sin animar
+// y se anima hasta 0. Sin barra de scroll ni autoplay.
 
-async function cargarNovedades() {
-    const grid     = document.getElementById('grid-novedades');
-    const errorBox = document.getElementById('error-novedades');
-    const errorMsg = document.getElementById('error-novedades-msg');
+const CARTAS_CARRUSEL = 12;
+let carruselOcupado = false;
+let cerrarPasoCarrusel = null;   // remata el paso en curso si llega otro clic antes de acabar
 
-    if (!grid) return;
+async function cargarCarruselDestacadas() {
+    const pista    = document.getElementById('pista-destacadas');
+    const errorBox = document.getElementById('error-destacadas');
+    const errorMsg = document.getElementById('error-destacadas-msg');
 
-    grid.innerHTML = Array(4).fill('<div class="carta-card skeleton" aria-hidden="true"></div>').join('');
+    if (!pista) return;
+
+    pista.innerHTML = Array(4).fill('<div class="carta-card skeleton" aria-hidden="true"></div>').join('');
+    pista.setAttribute('aria-busy', 'true');
     errorBox.hidden = true;
+    ocultarFlechasCarrusel();
 
     try {
-        // Últimas cartas añadidas al catálogo, desde nuestra API
-        const res = await apiFetch(`/cartas?orden=recientes&por_pagina=8`);
+        const res = await apiFetch(`/cartas/aleatorias?cantidad=${CARTAS_CARRUSEL}`);
         if (!res.ok) throw new Error(t('comun.errorApi'));
-        const datos = await res.json();
+        const cartas = await res.json();
 
-        if (!datos.data.length) {
-            grid.innerHTML = `<p class="grid-mensaje">${escapeHtml(t('home.sinCartas'))}</p>`;
+        if (!cartas.length) {
+            pista.innerHTML = `<p class="grid-mensaje">${escapeHtml(t('home.sinCartas'))}</p>`;
             return;
         }
 
-        grid.innerHTML = datos.data.map(c => tarjetaCarta(c)).join('');
+        pista.innerHTML = cartas.map(c => tarjetaCarta(c)).join('');
+        montarCarruselDestacadas(pista);
 
     } catch (error) {
-        grid.innerHTML = '';
+        pista.innerHTML = '';
         errorBox.hidden = false;
-        errorMsg.textContent = t('home.errorNovedadesTarde');
+        errorMsg.textContent = t('home.errorDestacadasTarde');
+    } finally {
+        pista.setAttribute('aria-busy', 'false');
     }
+}
+
+function ocultarFlechasCarrusel() {
+    document.getElementById('destacadas-prev').hidden = true;
+    document.getElementById('destacadas-next').hidden = true;
+}
+
+// Ancho de una tarjeta más el hueco entre tarjetas: es lo que avanza
+// cada pulsación. Se mide en cada paso porque cambia con el viewport.
+function pasoCarrusel(pista) {
+    const primera = pista.firstElementChild;
+    if (!primera) return 0;
+    const hueco = parseFloat(getComputedStyle(pista).columnGap || getComputedStyle(pista).gap) || 0;
+    return primera.getBoundingClientRect().width + hueco;
+}
+
+function montarCarruselDestacadas(pista) {
+    const prev    = document.getElementById('destacadas-prev');
+    const next    = document.getElementById('destacadas-next');
+    const ventana = pista.parentElement;
+
+    // Si caben todas, no hay nada que mover
+    const ajustarFlechas = () => { prev.hidden = next.hidden = pista.scrollWidth <= ventana.clientWidth + 1; };
+    ajustarFlechas();
+
+    // Los listeners se montan una sola vez aunque "Reintentar" recargue la pista
+    if (pista.dataset.montado) return;
+    pista.dataset.montado = '1';
+
+    window.addEventListener('resize', ajustarFlechas);
+    prev.addEventListener('click', () => moverCarrusel(pista, -1));
+    next.addEventListener('click', () => moverCarrusel(pista, 1));
+
+    // Teclado: una tarjeta fuera de la ventana que recibe el foco pasa a
+    // ser la primera (sin animar), y se deshace el scroll que el navegador
+    // hace al enfocar dentro de un overflow: hidden.
+    pista.addEventListener('focusin', (e) => {
+        const tarjeta = e.target.closest('.carta-card');
+        if (!tarjeta || carruselOcupado) return;
+        const limites = ventana.getBoundingClientRect();
+        const caja    = tarjeta.getBoundingClientRect();
+        if (caja.left >= limites.left - 1 && caja.right <= limites.right + 1) return;
+        while (pista.firstElementChild !== tarjeta) pista.appendChild(pista.firstElementChild);
+        ventana.scrollLeft = 0;
+    });
+}
+
+// direccion: 1 → siguiente, -1 → anterior
+function moverCarrusel(pista, direccion) {
+    if (pista.children.length < 2) return;
+    // Un clic durante la animación no se pierde: se remata el paso
+    // anterior al instante y se empieza el nuevo
+    if (carruselOcupado) cerrarPasoCarrusel?.();
+    const paso = pasoCarrusel(pista);
+    if (!paso) return;
+
+    const sinAnimar = (fn) => {
+        pista.style.transition = 'none';
+        fn();
+        void pista.offsetWidth;          // fuerza el reflow antes de volver a animar
+        pista.style.transition = '';
+    };
+
+    if (REDUCIR_MOVIMIENTO.matches) {
+        sinAnimar(() => rotarPista(pista, direccion));
+        return;
+    }
+
+    carruselOcupado = true;
+    // Si por lo que sea no llega el transitionend (pestaña en segundo
+    // plano, transición anulada), el temporizador cierra el paso igual
+    let respaldo = null;
+    const terminar = (e) => {
+        if (e && e.target !== pista) return;   // transiciones de las tarjetas (hover), no de la pista
+        clearTimeout(respaldo);
+        pista.removeEventListener('transitionend', terminar);
+        sinAnimar(() => {
+            if (direccion === 1) rotarPista(pista, 1);
+            pista.style.transform = '';
+        });
+        carruselOcupado    = false;
+        cerrarPasoCarrusel = null;
+    };
+    cerrarPasoCarrusel = terminar;
+    pista.addEventListener('transitionend', terminar);
+    respaldo = setTimeout(terminar, 600);
+
+    if (direccion === 1) {
+        pista.style.transform = `translateX(${-paso}px)`;
+    } else {
+        sinAnimar(() => {
+            rotarPista(pista, -1);
+            pista.style.transform = `translateX(${-paso}px)`;
+        });
+        pista.style.transform = 'translateX(0)';
+    }
+}
+
+// Rota el DOM una posición: la primera tarjeta al final (1) o la última
+// al principio (-1). Es lo que hace el bucle infinito.
+function rotarPista(pista, direccion) {
+    if (direccion === 1) pista.appendChild(pista.firstElementChild);
+    else pista.prepend(pista.lastElementChild);
 }
 
 // ─── Escaparate del hero: carta destacada protagonista ─────────────

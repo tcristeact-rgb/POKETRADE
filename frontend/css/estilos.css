@@ -2075,26 +2075,47 @@ body.nav-drawer-abierto { overflow: hidden; }
 }
 .ver-todos:hover { gap: 0.55rem; opacity: 0.8; }
 
-/* Carrusel horizontal de novedades */
+/* Carrusel infinito de cartas destacadas: flecha · ventana · flecha.
+   La ventana recorta la pista (sin barra de scroll: el movimiento lo
+   hacen las flechas, ver inicio.js) y la pista se desplaza con
+   transform, que es lo único que se anima. */
+.carrusel-cartas {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+.carrusel-cartas-ventana {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  /* Hueco para que la sombra del hover de las tarjetas no se recorte */
+  padding: 0.5rem 0 0.75rem;
+  margin: -0.5rem 0 0;
+}
 .novedades-seccion .grid-cartas {
   display: flex;
   flex-wrap: nowrap;
   gap: 1.25rem;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  scroll-snap-type: x mandatory;
-  padding-bottom: 0.75rem;
-  scrollbar-width: thin;
-  scrollbar-color: var(--borde-hover) transparent;
+  transition: transform 350ms var(--ease-out);
+  will-change: transform;
 }
-.novedades-seccion .grid-cartas::-webkit-scrollbar       { height: 5px; }
-.novedades-seccion .grid-cartas::-webkit-scrollbar-track { background: transparent; }
-.novedades-seccion .grid-cartas::-webkit-scrollbar-thumb { background: var(--borde-hover); border-radius: 4px; }
 .novedades-seccion .grid-cartas .carta-card,
 .novedades-seccion .grid-cartas .skeleton {
   flex: 0 0 220px;
   min-width: 0;
-  scroll-snap-align: start;
+}
+/* Las flechas del hero son claras sobre fondo oscuro; aquí van sobre el
+   fondo de la página, en cualquiera de los dos temas */
+.carrusel-cartas .carrusel-flecha {
+  background: var(--fondo-card);
+  color: var(--texto);
+  border: 1px solid var(--borde-input);
+  box-shadow: var(--sombra-sm);
+}
+.carrusel-cartas .carrusel-flecha:hover { background: var(--primario-soft); }
+.carrusel-cartas .carrusel-flecha:focus-visible { outline-color: var(--anillo-foco); }
+@media (prefers-reduced-motion: reduce) {
+  .novedades-seccion .grid-cartas { transition: none; }
 }
 .novedades-seccion .grid-cartas .skeleton {
   background: linear-gradient(90deg, var(--superficie-img-2) 25%, var(--superficie-img) 50%, var(--superficie-img-2) 75%);
@@ -3816,6 +3837,8 @@ html.modal-abierto {
   .hero-botones a, .hero-botones button { width: 100%; max-width: 280px; }
   .novedades-seccion .grid-cartas .carta-card,
   .novedades-seccion .grid-cartas .skeleton { flex: 0 0 175px; }
+  .carrusel-cartas { gap: 0.4rem; }
+  .carrusel-cartas .carrusel-flecha { width: 36px; height: 36px; font-size: 0.9rem; }
   .cta-seccion { padding: 3.5rem 1rem; }
   .footer-grid { grid-template-columns: 1fr; }
 

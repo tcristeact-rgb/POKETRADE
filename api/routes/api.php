@@ -30,13 +30,15 @@ Route::post('/auth/verificar',       [AuthController::class, 'verificar'])->midd
 Route::post('/auth/reenviar-codigo', [AuthController::class, 'reenviarCodigo'])->middleware('throttle:login');
 
 // Catálogo — lectura pública
-// /cartas/filtros, /cartas/buscar y /cartas/destacadas van antes de
-// /cartas/{id} para que no se interpreten como un ID de carta
+// /cartas/filtros, /cartas/buscar, /cartas/destacadas, /cartas/aleatorias y
+// /cartas/nombres van antes de /cartas/{id} para que no se interpreten como
+// un ID de carta
 Route::get('/cartas',            [CartaController::class, 'index']);
 Route::get('/cartas/filtros',    [CartaController::class, 'filtros']);
 // buscar es un proxy en vivo a TCGdex: lleva su propio límite por IP (throttle:buscar)
 Route::get('/cartas/buscar',     [CartaController::class, 'buscar'])->middleware('throttle:buscar');
 Route::get('/cartas/destacadas', [CartaController::class, 'destacadas']);
+Route::get('/cartas/aleatorias', [CartaController::class, 'aleatorias']);
 Route::get('/cartas/nombres',    [CartaController::class, 'nombres']);
 Route::get('/cartas/{id}',       [CartaController::class, 'show']);
 

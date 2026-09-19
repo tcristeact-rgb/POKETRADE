@@ -277,7 +277,7 @@ export async function login(email, password) {
 // ─────────────────────────────────────────────────
 
 export async function registro(campos) {
-  // campos: { nombre, apellido, email, password, fecha_nacimiento, nacionalidad }
+  // campos: { nombre, apellido, email, password, fecha_nacimiento }
   let respuesta;
 
   try {
