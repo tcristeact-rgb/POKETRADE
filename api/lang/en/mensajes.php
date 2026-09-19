@@ -9,6 +9,13 @@ return [
     // --- Auth ---
     'registrado'      => 'Account created successfully',
     'credenciales'    => 'Incorrect email or password',
+    // Email verification by code (spec 2026-09-19-verificacion-de-correo)
+    'correo_no_verificado' => 'Your account is not verified yet. Enter the code we sent you by email.',
+    'correo_verificado'    => 'Email verified. You can sign in now.',
+    'codigo_incorrecto'    => 'The code is not correct.',
+    'codigo_caducado'      => 'The code has expired. Request a new one.',
+    'codigo_bloqueado'     => 'Too many attempts with this code. Request a new one.',
+    'codigo_reenviado'     => 'If that email is registered and pending verification, it will receive a new code.',
     'sesion_cerrada'  => 'You have been logged out',
     'acceso_denegado' => 'Access denied. Administrator permissions are required.',
 

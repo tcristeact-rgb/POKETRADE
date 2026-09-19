@@ -12,6 +12,7 @@ const raiz = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 export default defineConfig({
   testDir: './tests',
+  globalSetup: './global-setup.mjs',
   workers: 1,
   fullyParallel: false,
   retries: 0,

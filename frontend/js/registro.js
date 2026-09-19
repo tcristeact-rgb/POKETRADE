@@ -95,8 +95,8 @@ async function registrarse(e) {
   try {
     // Reutilizamos registro() de auth.js (una única definición de la petición)
     await registro(datos);
-    // Éxito: avisamos en el login mediante el parámetro ?registro=ok
-    window.location.href = 'login.html?registro=ok';
+    // Éxito: a verificar el correo con el código que acaba de salir
+    window.location.href = 'verificar.html?email=' + encodeURIComponent(datos.email);
   } catch (error) {
     errorMensaje.textContent = error.message || t('auth.errorRegistro');
     boton.disabled = false;

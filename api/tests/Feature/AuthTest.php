@@ -65,13 +65,15 @@ class AuthTest extends TestCase
     // Comprueba que un usuario puede hacer login y recibe un token JWT
     public function test_usuario_puede_hacer_login()
     {
-        // Creamos el usuario directamente en la BD
+        // Creamos el usuario directamente en la BD, ya verificado: sin
+        // verificar el correo el login responde 403 (ver VerificacionDeCorreoTest)
         User::create([
-            'nombre'   => 'Daniel',
-            'apellido' => 'Leal',
-            'email'    => 'daniel@test.com',
-            'password' => bcrypt('12345678'),
-            'rol'      => 'cliente',
+            'nombre'            => 'Daniel',
+            'apellido'          => 'Leal',
+            'email'             => 'daniel@test.com',
+            'password'          => bcrypt('12345678'),
+            'rol'               => 'cliente',
+            'email_verified_at' => now(),
         ]);
 
         // Hacemos la petición de login con las credenciales correctas

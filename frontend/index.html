@@ -69,17 +69,7 @@
       </a>
       <button class="carrusel-flecha" id="carrusel-next" type="button"
               data-i18n-attr="aria-label:comun.cartaSiguiente" aria-label="Carta siguiente" hidden>❯</button>
-      <div class="carrusel-puntos" id="carrusel-puntos" hidden>
-        <!-- Pausa/reanuda la rotación automática (WCAG 2.2.2: el contenido que
-             se mueve solo necesita un control; pausar con el puntero encima no
-             lo es). inicio.js regenera los puntos y conserva este botón al
-             final de la fila; con prefers-reduced-motion lo oculta, porque
-             entonces nada rota. -->
-        <button class="carrusel-pausa" id="carrusel-pausa" type="button"
-                data-i18n-attr="aria-label:home.pausarCarrusel" aria-label="Pausar el carrusel de cartas">
-          <span aria-hidden="true">❚❚</span>
-        </button>
-      </div>
+      <div class="carrusel-puntos" id="carrusel-puntos" hidden></div>
     </div>
   </section>
 
@@ -116,31 +106,6 @@
       <div class="carta-card skeleton" aria-hidden="true"></div>
       <div class="carta-card skeleton" aria-hidden="true"></div>
       <div class="carta-card skeleton" aria-hidden="true"></div>
-    </div>
-  </section>
-
-  <!-- ═══════════════════════════════════════════════
-       CÓMO FUNCIONA POKETRADE
-       3 pasos explicativos (Registro → Publicar → Intercambiar)
-  ════════════════════════════════════════════════ -->
-  <section class="como-funciona" aria-labelledby="titulo-como-funciona">
-    <h2 id="titulo-como-funciona" data-i18n="home.comoFunciona">¿Cómo funciona PokeTrade?</h2>
-    <div class="pasos">
-      <div class="paso">
-        <div class="paso-icono" aria-hidden="true"><img class="icono" src="img/icons/paso-1.svg" alt="" /></div>
-        <h3 data-i18n="home.paso1Titulo">Regístrate</h3>
-        <p data-i18n="home.paso1Texto">Crea tu cuenta gratis y añade las cartas de tu colección al inventario.</p>
-      </div>
-      <div class="paso">
-        <div class="paso-icono" aria-hidden="true"><img class="icono" src="img/icons/paso-2.svg" alt="" /></div>
-        <h3 data-i18n="home.paso2Titulo">Publica un tradeo</h3>
-        <p data-i18n="home.paso2Texto">Selecciona las cartas que ofreces y las que buscas a cambio.</p>
-      </div>
-      <div class="paso">
-        <div class="paso-icono" aria-hidden="true"><img class="icono" src="img/icons/paso-3.svg" alt="" /></div>
-        <h3 data-i18n="home.paso3Titulo">¡Intercambia!</h3>
-        <p data-i18n="home.paso3Texto">Conecta con otros coleccionistas y completa el intercambio.</p>
-      </div>
     </div>
   </section>
 

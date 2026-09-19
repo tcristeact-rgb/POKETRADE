@@ -60,7 +60,6 @@ let destacadas   = [];
 let indiceActivo = 0;
 let autoplay     = null;
 let huboSwipe    = false;
-let pausadoPorUsuario = false;   // el botón de pausa manda sobre puntero, foco y pestaña
 const REDUCIR_MOVIMIENTO = window.matchMedia('(prefers-reduced-motion: reduce)');
 const coloresGlow = new Map();   // id de carta → rgba del glow ya calculado
 
@@ -223,37 +222,13 @@ function montarControles() {
 
 function montarPuntos() {
     const puntos = document.getElementById('carrusel-puntos');
-    const pausa  = document.getElementById('carrusel-pausa');
-
     puntos.innerHTML = destacadas.map((c, i) =>
         `<button type="button" class="carrusel-punto"
                  aria-label="${escapeHtml(t('home.verCartaN', { n: String(i + 1), nombre: c.nombre }))}"></button>`).join('');
-    puntos.querySelectorAll('.carrusel-punto').forEach((boton, i) =>
+    puntos.querySelectorAll('button').forEach((boton, i) =>
         boton.addEventListener('click', () => {
             navegar(Math.sign(i - indiceActivo) || 1, i);
         }));
-
-    // El botón de pausa cierra la fila de puntos. Con movimiento reducido el
-    // carrusel no rota (ver iniciarAutoplay), así que no hay nada que pausar.
-    puntos.append(pausa);
-    pausa.hidden = REDUCIR_MOVIMIENTO.matches;
-    pausa.addEventListener('click', alternarPausa);
-    pintarEstadoPausa();
-}
-
-// Pausa explícita del usuario: a diferencia de la del puntero o el foco, no
-// se deshace sola. El texto accesible dice siempre lo que hará el botón.
-function alternarPausa() {
-    pausadoPorUsuario = !pausadoPorUsuario;
-    if (pausadoPorUsuario) pausarAutoplay();
-    else iniciarAutoplay();
-    pintarEstadoPausa();
-}
-
-function pintarEstadoPausa() {
-    const pausa = document.getElementById('carrusel-pausa');
-    pausa.setAttribute('aria-label', t(pausadoPorUsuario ? 'home.reanudarCarrusel' : 'home.pausarCarrusel'));
-    pausa.querySelector('span').textContent = pausadoPorUsuario ? '▶' : '❚❚';
 }
 
 // Navegación manual: mueve la carta y, si el autoplay estaba en
@@ -274,7 +249,6 @@ function pausarAutoplay() {
     autoplay = null;
 }
 function reanudarAutoplay() {
-    if (pausadoPorUsuario) return;
     iniciarAutoplay();
 }
 

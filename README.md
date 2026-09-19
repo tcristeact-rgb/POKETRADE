@@ -62,6 +62,7 @@ The browser never talks to TCGdex directly.
 - **Bilingual, Spanish and English** — interface, API errors, and the *card data itself*: names, descriptions and artwork.
 - **Light and dark theme**, with no duplicated CSS rules (see below).
 - **JWT authentication** — register, log in, protected routes, admin role.
+- **Email verification** — a 6-digit code sent on sign-up; no login until it is entered. Codes are stored hashed, expire in 15 minutes and lock after 5 wrong attempts. Sent through Brevo's free SMTP in production (no custom domain needed), written to the log locally.
 - **Accessible** — WCAG 2.1 AA: focus management, ARIA, full keyboard navigation, skip link.
 
 ---
@@ -196,6 +197,8 @@ php artisan serve                 # http://localhost:8000
 Or, equivalently, `composer setup` — it runs exactly those steps, except `tcgdex:sync-sets`.
 
 **Nothing seeds cards.** `tcgdex:sync-sets` is what makes series and sets browsable; the cards themselves arrive by cache-aside, the first time you open a set — the only way the catalog is ever populated. The home hero does not wait for that: with no priced cards in the database, `/api/cartas/destacadas` fetches its four cards from TCGdex live, skipping sets too new to be priced on Cardmarket, and falls back to unpriced cards rather than an empty hero (see [Architecture decisions](#a-20386-card-catalog-you-cannot-download)).
+
+**Email verification in local:** `MAIL_MAILER=log` is the default, so the sign-up code is not sent — it is written to `api/storage/logs/laravel.log` (look for the 6-digit line). The demo users from the seeder come pre-verified. In production, set the `MAIL_*` variables for Brevo SMTP documented in `.env.example`; emails go out in the same request, because there is no queue worker on Render.
 
 `migrate --seed` only creates demo users. They have fixed passwords and **only exist locally** — `DatabaseSeeder` refuses to run outside the `local` environment. In production nothing is seeded and you sign up like anyone else.
 

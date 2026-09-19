@@ -54,6 +54,18 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by($clave.'|'.$request->ip());
         });
 
+        // Verificar el código de correo: 10 por minuto por email+IP. Más holgado
+        // que login a propósito: la fuerza bruta la corta el tope de 5 intentos
+        // por código (VerificacionDeCorreo), y con el limiter de login (5/min,
+        // compartido con el registro que acaba de hacer) el usuario chocaría
+        // con un 429 antes que con el mensaje de "código bloqueado".
+        RateLimiter::for('verificar', function (Request $request) {
+            $email = $request->input('email');
+            $clave = is_string($email) ? strtolower(trim($email)) : '';
+
+            return Limit::perMinute(10)->by($clave.'|'.$request->ip());
+        });
+
         // /cartas/buscar es un proxy en vivo a TCGdex: cada petición sale a
         // internet. 30 por minuto y por IP acota el gasto sin estorbar a nadie
         // que busque a mano. Revisar cuando exista el autocompletado.

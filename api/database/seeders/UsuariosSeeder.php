@@ -30,6 +30,7 @@ class UsuariosSeeder extends Seeder
             'password'     => Hash::make('admin123'), // Contraseña encriptada con bcrypt
             'rol'          => 'admin',
             'nacionalidad' => 'Española',
+            'email_verified_at' => now(), // demo local: sin verificar no se puede iniciar sesión
         ]);
 
         // --- Usuario de prueba: Teo ---
@@ -41,6 +42,7 @@ class UsuariosSeeder extends Seeder
             'password'     => Hash::make('12345678'), // Contraseña encriptada
             'rol'          => 'cliente',
             'nacionalidad' => 'Rumana',
+            'email_verified_at' => now(), // demo local: sin verificar no se puede iniciar sesión
         ]);
 
         // --- Usuario de prueba: María ---
@@ -52,6 +54,7 @@ class UsuariosSeeder extends Seeder
             'password'     => Hash::make('12345678'), // Contraseña encriptada
             'rol'          => 'cliente',
             'nacionalidad' => 'Española',
+            'email_verified_at' => now(), // demo local: sin verificar no se puede iniciar sesión
         ]);
     }
 }

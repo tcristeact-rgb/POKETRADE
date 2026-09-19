@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Services\ResultadoVerificacion;
+use App\Services\VerificacionDeCorreo;
+use App\Support\Idiomas;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;      // Para autenticación y generación de token JWT
 use Illuminate\Support\Facades\Hash;      // Para encriptar contraseñas
@@ -10,6 +13,10 @@ use Illuminate\Support\Facades\Validator; // Para validar los datos recibidos
 
 class AuthController extends Controller
 {
+    public function __construct(private VerificacionDeCorreo $verificacion)
+    {
+    }
+
     // Hash bcrypt real (coste 12, el BCRYPT_ROUNDS de .env.example) contra el que
     // se compara la contraseña cuando el email NO existe. Sin esto, un login con
     // email desconocido responde en milisegundos y uno con email registrado tarda
@@ -54,6 +61,11 @@ class AuthController extends Controller
             'nacionalidad'     => $request->nacionalidad,
             'rol'              => 'cliente', // Todo usuario nuevo es cliente por defecto
         ]);
+
+        // El código de verificación sale en el idioma de la petición. Si el
+        // correo no se puede enviar, el registro sigue siendo válido (queda
+        // avisado en el log) y el usuario podrá pedir un reenvío.
+        $this->verificacion->enviarCodigo($usuario, Idiomas::activo());
 
         // Devolvemos 201 (creado) con mensaje de éxito e ID del nuevo usuario
         return response()->json([
@@ -103,6 +115,19 @@ class AuthController extends Controller
         // Obtenemos los datos del usuario autenticado
         $usuario = Auth::user();
 
+        // Sin verificar el correo no hay sesión. Se comprueba DESPUÉS de las
+        // credenciales: quien no conoce la contraseña no averigua si la cuenta
+        // está verificada. El token que attempt() acaba de emitir se descarta.
+        if (!$usuario->hasVerifiedEmail()) {
+            Auth::logout();
+
+            return response()->json([
+                'error'  => __('mensajes.correo_no_verificado'),
+                'codigo' => 'correo_no_verificado',
+                'email'  => $usuario->email,
+            ], 403);
+        }
+
         // Devolvemos el token JWT y los datos básicos del usuario
         // El frontend guardará este token para enviarlo en peticiones protegidas
         return response()->json([
@@ -114,6 +139,62 @@ class AuthController extends Controller
                 'email'    => $usuario->email,
             ]
         ]);
+    }
+
+    // --- Verificar el correo con el código recibido ---
+    // Endpoint: POST /api/auth/verificar
+    // Acceso: público (el usuario aún no puede iniciar sesión)
+    // Body: email, codigo (6 dígitos)
+    // Idempotente: una cuenta ya verificada responde 200
+    public function verificar(Request $request)
+    {
+        $validacion = Validator::make($request->all(), [
+            'email'  => 'required|string|email|max:255',
+            'codigo' => 'required|string|regex:/^[0-9]{6}$/',
+        ]);
+
+        if ($validacion->fails()) {
+            return response()->json(['error' => $validacion->errors()->first()], 422);
+        }
+
+        $usuario = User::where('email', $request->email)->first();
+
+        // Un email que no existe se trata como un código incorrecto: no se
+        // revela quién está registrado
+        $resultado = $usuario
+            ? $this->verificacion->verificar($usuario, $request->codigo)
+            : ResultadoVerificacion::Incorrecto;
+
+        if ($resultado !== ResultadoVerificacion::Ok) {
+            return response()->json(['error' => __($resultado->claveMensaje())], 422);
+        }
+
+        return response()->json(['mensaje' => __($resultado->claveMensaje())]);
+    }
+
+    // --- Reenviar el código de verificación ---
+    // Endpoint: POST /api/auth/reenviar-codigo
+    // Acceso: público
+    // Responde SIEMPRE 200 con el mismo mensaje, exista o no el email y esté
+    // o no verificado: no se revela quién está registrado. Solo envía si hay
+    // algo que verificar.
+    public function reenviarCodigo(Request $request)
+    {
+        $validacion = Validator::make($request->all(), [
+            'email' => 'required|string|email|max:255',
+        ]);
+
+        if ($validacion->fails()) {
+            return response()->json(['error' => $validacion->errors()->first()], 422);
+        }
+
+        $usuario = User::where('email', $request->email)->first();
+
+        if ($usuario && !$usuario->hasVerifiedEmail()) {
+            $this->verificacion->enviarCodigo($usuario, Idiomas::activo());
+        }
+
+        return response()->json(['mensaje' => __('mensajes.codigo_reenviado')]);
     }
 
     // --- Cerrar sesión ---

@@ -242,6 +242,14 @@ export async function login(email, password) {
   // Parsear JSON de forma segura antes de comprobar el status
   const datos = await parsearRespuesta(respuesta);
 
+  // Credenciales correctas pero correo sin verificar: no hay sesión. A la
+  // página del código, que ya explica por qué.
+  if (respuesta.status === 403 && datos.codigo === 'correo_no_verificado') {
+    window.location.href = paginaUrl('pages/verificar.html')
+      + '?email=' + encodeURIComponent(datos.email || email) + '&motivo=login';
+    return datos;
+  }
+
   if (!respuesta.ok) {
     throw new Error(datos.error || manejarErrorHTTP(respuesta.status));
   }
@@ -288,6 +296,36 @@ export async function registro(campos) {
   }
 
   return datos;
+}
+
+// ─────────────────────────────────────────────────
+// VERIFICACIÓN DEL CORREO (código de 6 dígitos)
+// ─────────────────────────────────────────────────
+
+async function peticionPublica(ruta, body) {
+  let respuesta;
+
+  try {
+    respuesta = await apiFetch(ruta, { method: 'POST', body: JSON.stringify(body) });
+  } catch (_) {
+    throw new Error(t('error.sinConexion'));
+  }
+
+  const datos = await parsearRespuesta(respuesta);
+
+  if (!respuesta.ok) {
+    throw new Error(datos.error || manejarErrorHTTP(respuesta.status));
+  }
+
+  return datos;
+}
+
+export function verificarCorreo(email, codigo) {
+  return peticionPublica('/auth/verificar', { email, codigo });
+}
+
+export function reenviarCodigo(email) {
+  return peticionPublica('/auth/reenviar-codigo', { email });
 }
 
 // ─────────────────────────────────────────────────

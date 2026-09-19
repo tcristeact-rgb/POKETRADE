@@ -8,6 +8,11 @@ lo que, si se rompe, deja la web inservible:
 2. El catálogo lista los sets de una serie.
 3. La búsqueda global del header navega a `catalogo.html?q=…`.
 4. El cambio de idioma ES → EN → ES funciona (`/en/`, `<html lang>`, textos).
+5. El autocompletado del buscador sugiere desde la primera letra sin pedir nada por tecla.
+6. Registrarse pide el código de verificación (leído de `api/storage/logs/laravel.log`,
+   porque en local `MAIL_MAILER=log`), el código verifica y entonces se puede entrar;
+   una cuenta sin verificar no puede iniciar sesión. `global-setup.mjs` borra los
+   usuarios de prueba antes de cada ejecución (con `node:sqlite`, sin dependencias).
 
 Todo lo demás lo cubren los tests de PHPUnit de `api/`.
 

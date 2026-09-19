@@ -21,11 +21,12 @@ class EndurecerAuthTest extends TestCase
     private function crearUsuario(string $email = 'ana@poketrade.es', string $password = 'secreta123'): User
     {
         return User::create([
-            'nombre'   => 'Ana',
-            'apellido' => 'Prueba',
-            'email'    => $email,
-            'password' => Hash::make($password),
-            'rol'      => 'cliente',
+            'nombre'            => 'Ana',
+            'apellido'          => 'Prueba',
+            'email'             => $email,
+            'password'          => Hash::make($password),
+            'rol'               => 'cliente',
+            'email_verified_at' => now(),   // sin verificar, el login responde 403
         ]);
     }
 

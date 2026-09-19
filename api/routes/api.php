@@ -25,6 +25,9 @@ Route::get('/health', SaludController::class);
 // Auth — throttle:login (5/min por email+IP) además del throttle general de la API
 Route::post('/auth/registro', [AuthController::class, 'registro'])->middleware('throttle:login');
 Route::post('/auth/login',    [AuthController::class, 'login'])->middleware('throttle:login');
+// Verificación de correo por código: públicas (el usuario aún no tiene sesión)
+Route::post('/auth/verificar',       [AuthController::class, 'verificar'])->middleware('throttle:verificar');
+Route::post('/auth/reenviar-codigo', [AuthController::class, 'reenviarCodigo'])->middleware('throttle:login');
 
 // Catálogo — lectura pública
 // /cartas/filtros, /cartas/buscar y /cartas/destacadas van antes de

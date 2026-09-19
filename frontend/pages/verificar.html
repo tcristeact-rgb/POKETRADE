@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script>try{var d=document.documentElement,s=localStorage,h=document.head;if(s.getItem('tema')==='oscuro')d.setAttribute('data-tema','oscuro');var p=location.pathname.split('/')[1]||'',pre=p.length===2&&p!=='es',raiz=pre||p===''||p==='pages'||p.slice(-5)==='.html',i=pre?p:(s.getItem('idioma')||'es');if(raiz&&!pre&&i!=='es'){location.replace('/'+i+location.pathname+location.search);}d.lang=i;if(i!=='es'){d.classList.add('i18n-pendiente');setTimeout(function(){d.classList.remove('i18n-pendiente');},1500);}function pista(r,u,c){var l=document.createElement('link');l.rel=r;l.href=u;if(c)l.crossOrigin='';h.appendChild(l);}pista('modulepreload',(location.pathname.indexOf('/pages/')>-1?'../':'')+'js/i18n/'+i+'.js');if(!/^(localhost|127\.)/.test(location.hostname))pista('preconnect','https://poketrade-api-3nwm.onrender.com',1);}catch(err){}</script>
-    <title data-i18n="meta.login.title">Iniciar sesión - PokeTrade</title>
-    <meta name="description" data-i18n-attr="content:meta.login.desc" content="Accede a tu cuenta de PokeTrade para gestionar tu colección, consultar cartas y continuar con tus tradeos." />
+    <title data-i18n="meta.verificar.title">Verificar correo - PokeTrade</title>
+    <meta name="description" data-i18n-attr="content:meta.verificar.desc" content="Introduce el código que te hemos enviado por correo para verificar tu cuenta de PokeTrade." />
     <link rel="icon" type="image/svg+xml" href="../img/favicon.svg">
     <link rel="stylesheet" href="../css/estilos.css">
 
@@ -31,16 +31,19 @@
 
     <main>
         <div class="formulario-contenedor">
-            <h1 data-i18n="auth.iniciarSesion">Iniciar sesión</h1>
-            <p id="aviso-registro" class="alerta exito" role="status" hidden data-i18n="auth.correoVerificado">
-                Correo verificado. Ya puedes iniciar sesión.
+            <h1 data-i18n="verificar.titulo">Verifica tu correo</h1>
+            <!-- Con ?motivo=login: el usuario intentó entrar con una cuenta sin
+                 verificar. Sin él: acaba de registrarse. -->
+            <p id="aviso-motivo" class="aviso-motivo" role="status" hidden data-i18n="verificar.motivoLogin">
+                Tu cuenta aún no está verificada. Introduce el código que te enviamos por correo para poder entrar.
             </p>
-            <!-- Por qué se pide la sesión (lo rellena login.js según la
-                 acción que el usuario intentaba hacer) -->
-            <p id="aviso-motivo" class="aviso-motivo" role="status" hidden></p>
+            <p class="formulario-pie formulario-intro" data-i18n="verificar.intro">
+                Te hemos enviado un código de 6 dígitos. Escríbelo aquí para activar tu cuenta.
+            </p>
             <p id="error-mensaje" class="error-texto" role="alert" aria-live="assertive"></p>
+            <p id="aviso-reenvio" class="alerta exito" role="status" hidden></p>
 
-            <form id="form-login" novalidate>
+            <form id="form-verificar" novalidate>
                 <div class="formulario-grupo">
                     <label for="email" data-i18n="auth.email">Email</label>
                     <input type="email" id="email" name="email"
@@ -49,18 +52,20 @@
                 </div>
 
                 <div class="formulario-grupo">
-                    <label for="password" data-i18n="auth.password">Contraseña</label>
-                    <input type="password" id="password" name="password"
-                           data-i18n-attr="placeholder:auth.passwordPlaceholder" placeholder="Tu contraseña"
-                           required autocomplete="current-password" />
+                    <label for="codigo" data-i18n="verificar.codigo">Código de verificación</label>
+                    <input type="text" id="codigo" name="codigo"
+                           inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
+                           autocomplete="one-time-code" placeholder="000000"
+                           required />
                 </div>
 
-                <button type="submit" class="btn-formulario" data-i18n="auth.entrar">Entrar</button>
+                <button type="submit" class="btn-formulario" data-i18n="verificar.verificar">Verificar</button>
             </form>
 
             <p class="formulario-pie">
-                <span data-i18n="auth.noTienesCuenta">¿No tienes cuenta?</span>
-                <a href="registro.html" data-i18n="auth.registrate">Regístrate</a>
+                <span data-i18n="verificar.noLlega">¿No te llega el correo?</span>
+                <a href="#" id="btn-reenviar" data-i18n="verificar.reenviar">Reenviar código</a>
+                <span id="reenvio-espera" hidden aria-live="polite"></span>
             </p>
         </div>
     </main>
@@ -68,6 +73,6 @@
     <div id="app-footer"></div>
 
     <script type="module" src="../js/header.js"></script>
-    <script type="module" src="../js/login.js"></script>
+    <script type="module" src="../js/verificar.js"></script>
 </body>
 </html>

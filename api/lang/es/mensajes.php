@@ -9,6 +9,13 @@ return [
     // --- Auth ---
     'registrado'         => 'Usuario registrado correctamente',
     'credenciales'       => 'Email o contraseña incorrectos',
+    // Verificación de correo por código (spec 2026-09-19-verificacion-de-correo)
+    'correo_no_verificado' => 'Tu cuenta aún no está verificada. Introduce el código que te enviamos por correo.',
+    'correo_verificado'    => 'Correo verificado. Ya puedes iniciar sesión.',
+    'codigo_incorrecto'    => 'El código no es correcto.',
+    'codigo_caducado'      => 'El código ha caducado. Pide uno nuevo.',
+    'codigo_bloqueado'     => 'Demasiados intentos con este código. Pide uno nuevo.',
+    'codigo_reenviado'     => 'Si ese correo está registrado y pendiente de verificar, recibirá un código nuevo.',
     'sesion_cerrada'     => 'Sesión cerrada correctamente',
     'acceso_denegado'    => 'Acceso denegado. Se requieren permisos de administrador.',
 

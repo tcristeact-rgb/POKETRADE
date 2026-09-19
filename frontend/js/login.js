@@ -17,7 +17,7 @@ alCargarDOM(() => {
   if (form) form.addEventListener('submit', iniciarSesion);
 
   // Aviso de éxito si el usuario llega tras registrarse
-  if (new URLSearchParams(window.location.search).get('registro') === 'ok') {
+  if (new URLSearchParams(window.location.search).get('verificado') === 'ok') {
     const aviso = document.getElementById('aviso-registro');
     if (aviso) aviso.hidden = false;
   }

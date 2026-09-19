@@ -1306,46 +1306,6 @@ html.servidor-despertando .aviso-carga { display: none; }
   flex-wrap: wrap;
 }
 
-/* ── Cómo funciona ── */
-.como-funciona {
-  padding: 4rem 2rem;
-  text-align: center;
-  background: var(--fondo-card);
-  border-top: 1px solid var(--borde);
-  border-bottom: 1px solid var(--borde);
-}
-.como-funciona h2 {
-  font-family: var(--font-heading);
-  font-size: var(--text-2xl);
-  font-weight: 700;
-  margin-bottom: 2.5rem;
-  color: var(--texto);
-}
-.pasos {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  max-width: var(--ancho-medio);
-  margin: 0 auto;
-}
-.paso {
-  padding: 2rem 1.5rem;
-  background: var(--fondo);
-  border: 1px solid var(--borde);
-  border-radius: var(--radius-lg);
-  transition: transform var(--trans), box-shadow var(--trans);
-}
-.paso:hover { transform: translateY(-3px); box-shadow: var(--sombra); }
-.paso-icono { display: flex; justify-content: center; font-size: 2.5rem; line-height: 1; margin-bottom: 0.75rem; }
-.paso h3 {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  margin-bottom: 0.5rem;
-  color: var(--primario-texto);
-  font-size: 1rem;
-}
-.paso p { font-size: var(--text-sm); color: var(--muted); }
-
 /* ══════════════════════════════════════════════════
    VACIO MSG
 ══════════════════════════════════════════════════ */
@@ -2037,27 +1997,6 @@ body.nav-drawer-abierto { overflow: hidden; }
   outline: 2px solid var(--primario);
   outline-offset: -2px;
   border-radius: 50%;
-}
-/* Pausa/reanuda el autoplay (WCAG 2.2.2). Mismo trato que las flechas:
-   44×44 (2.5.8), translúcido sobre el hero y el mismo anillo de foco. */
-.carrusel-pausa {
-  width: 44px;
-  height: 44px;
-  margin-left: 0.5rem;
-  padding: 0;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.12);
-  color: #e8edf2;
-  font-size: 0.85rem;
-  line-height: 1;
-  cursor: pointer;
-  transition: background var(--trans-fast);
-}
-.carrusel-pausa:hover { background: rgba(255, 255, 255, 0.24); }
-.carrusel-pausa:focus-visible {
-  outline: 3px solid var(--primario);
-  outline-offset: 2px;
 }
 
 /* Breakpoints del escaparate: split 55/45 → 50/50 → apilado con la
@@ -3751,6 +3690,9 @@ html.modal-abierto {
 ══════════════════════════════════════════════════ */
 @media (max-width: 900px) {
   .footer-grid { grid-template-columns: 1fr 1fr; }
+  /* Sin las 4 columnas, la mezcla de escritorio (texto centrado, enlaces a
+     la izquierda) se ve como columnas descolocadas: todas centradas */
+  .footer-col { text-align: center; }
 }
 @media (max-width: 768px) {
   .hero h1 { font-size: 2rem; }
@@ -3818,7 +3760,6 @@ html.modal-abierto {
   .hero-botones a, .hero-botones button { width: 100%; max-width: 280px; }
   .novedades-seccion .grid-cartas .carta-card,
   .novedades-seccion .grid-cartas .skeleton { flex: 0 0 175px; }
-  .pasos { grid-template-columns: 1fr; }
   .cta-seccion { padding: 3.5rem 1rem; }
   .footer-grid { grid-template-columns: 1fr; }
 
