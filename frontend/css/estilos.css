@@ -222,7 +222,7 @@
   --borde:           #333333;
   --borde-hover:     #4D4D4D;
   --borde-input:     #757575;   /* 4,07:1 sobre --fondo, 3,58 sobre --fondo-card */
-  --exito:           #16a34a;   /* texto: 5,00:1 sobre --fondo-card; #15803d daría 3,29 */
+  --exito:           #22c55e;   /* texto: 7,23:1 sobre --fondo-card y 5,85 sobre --exito-soft (con #16a34a, 4,05) */
   --exito-soft:      rgba(22, 163, 74, 0.16);
   --exito-borde:     rgba(22, 163, 74, 0.40);
   --error-soft:      rgba(220, 38, 38, 0.16);

@@ -6,7 +6,7 @@
 ![Laravel](https://img.shields.io/badge/Laravel-12-FF2D20?logo=laravel&logoColor=white)
 ![PHP](https://img.shields.io/badge/PHP-8.2-777BB4?logo=php&logoColor=white)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Supabase-4169E1?logo=postgresql&logoColor=white)
-![Tests](https://img.shields.io/badge/tests-96%20passing-4c1)
+![Tests](https://img.shields.io/badge/tests-125%20%2B%204%20e2e-4c1)
 
 ### ▶︎ [poketrade-beryl.vercel.app](https://poketrade-beryl.vercel.app)
 
@@ -40,7 +40,7 @@ The card catalog is real: it comes from [TCGdex](https://tcgdex.dev), a public A
 | Frontend | Vanilla JavaScript (ES modules) · HTML5 · CSS3 — **no framework, no build step** |
 | Database | PostgreSQL / Supabase (production) · SQLite (local) |
 | Card data | TCGdex v2, cached on demand |
-| Tests | PHPUnit — 96 tests, in-memory SQLite, TCGdex mocked |
+| Tests | PHPUnit — 125 tests, in-memory SQLite, TCGdex mocked · Playwright — 4 end-to-end critical paths in `tests-e2e/` |
 | Deployment | Render (API, Docker) · Vercel (frontend) · Supabase (database) |
 
 ```
@@ -165,7 +165,7 @@ Being straight about what I would do differently, because a portfolio that only 
 
 - **Production runs PHP's built-in server, not nginx + php-fpm.** With workers and OPcache it holds up fine for a demo, and it keeps the Dockerfile at 20 readable lines. A real deployment would use FPM behind nginx, and the Dockerfile comment says so.
 - **Everything is on a free tier**, which is where the cold starts come from. The honest fix is a paid instance, not more code.
-- **No automated frontend tests.** The 96 tests are backend. Every phase of this project *was* verified end-to-end in a real browser with Playwright — the language switch, the SEO tags, the wake-up notice, the per-language card data — but those scripts were throwaway. Committing them as a Playwright suite in CI is the single biggest gap.
+- **Frontend tests are minimal.** The 125 PHPUnit tests are backend. `tests-e2e/` holds a Playwright suite that drives the real site (API + static server) through four critical paths — home hero, catalogue, global search, language switch — and nothing else. It runs locally (`cd tests-e2e && npm test`), not in CI yet, and it depends on the local database having the sets index synced.
 - **Adding a third *interface* language is one dictionary. Adding a third *data* language is a migration** (`nombre_ro`, `imagen_ro`…). That is the price of choosing columns over a translations table, and I would make the same call again — but it is a real limit, not a detail.
 - **No queue.** Lazy hydration happens inside the request that triggered it. It is one cached TCGdex call, so it costs a few hundred milliseconds; at real traffic it should be a job.
 - **The cache driver is `database`.** Fine at this scale, and it survives deploys. Redis is the obvious next step.
@@ -213,7 +213,7 @@ Use this rather than Live Server or `npx serve`. It reproduces the two things `v
 
 ```bash
 cd api
-composer test                     # 96 tests, in-memory SQLite, TCGdex mocked with Http::fake
+composer test                     # 125 tests, in-memory SQLite, TCGdex mocked with Http::fake
 ```
 
 Use `composer test` rather than `php artisan test` — it clears the cached config first. With a cached config, Laravel ignores `phpunit.xml`'s `DB_DATABASE=:memory:`, the suite runs against your **development** database, and `RefreshDatabase` empties it. (`TestCase` now refuses to run in that situation and says why. It refuses because it happened.)
@@ -222,7 +222,7 @@ They are integration tests on purpose: each one goes through the real HTTP layer
 
 ## Roadmap
 
-- A Playwright suite in CI (see [Trade-offs](#trade-offs-and-limitations) — it is the top of the list).
+- Run the Playwright suite in CI, with a seeded database so it does not depend on the developer's local state (see [Trade-offs](#trade-offs-and-limitations)).
 - 3D card showcase on the home hero.
 - Search with live suggestions.
 - More languages. TCGdex serves French, Italian, German and Portuguese; the interface needs one dictionary each, the card data needs a migration.
