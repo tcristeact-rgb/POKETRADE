@@ -2,13 +2,16 @@
 
 import { apiFetch, protegerRuta, manejarErrorHTTP, parsearRespuesta } from './auth.js';
 import { t } from './i18n.js';
-import { alCargarDOM, buscarCartasCatalogo, debounce, escapeHtml, mostrarAlerta, dorsoCarta, abrirModalAccesible, cerrarModalAccesible } from './utils.js';
+import { alCargarDOM, buscarCartasCatalogo, debounce, escapeHtml, mostrarAlerta, dorsoCarta, abrirModalAccesible, cerrarModalAccesible, formatearPrecio } from './utils.js';
+import { abrirLightbox } from './lightbox.js';
 
 protegerRuta('inventario');
 
 const MAX_MODAL_VISIBLE = 60;
 
 let resultadosModal      = [];   // Resultados de la búsqueda actual
+let itemsInventario      = [];   // Lo que trajo GET /inventario: de aquí sale el detalle
+let itemDetalleAbierto   = null; // id del item cuyo modal de detalle está abierto
 let cartaSeleccionadaId  = null;
 let cantidadSeleccionada = 1;
 
@@ -36,7 +39,15 @@ alCargarDOM(() => {
         const el = e.target.closest('[data-accion]');
         if (!el) return;
         if (el.dataset.accion === 'eliminar') eliminarItem(Number(el.dataset.itemId));
+        else if (el.dataset.accion === 'detalle') abrirDetalle(Number(el.dataset.itemId));
         else if (el.dataset.accion === 'abrir-modal') abrirModal();
+    });
+
+    // Modal de detalle: los dos botones de cerrar y el clic fuera de la caja
+    document.getElementById('btn-cerrar-detalle-inv')?.addEventListener('click', cerrarDetalle);
+    document.getElementById('btn-cerrar-detalle-inv-pie')?.addEventListener('click', cerrarDetalle);
+    document.getElementById('modal-detalle-inv')?.addEventListener('click', (e) => {
+        if (e.target === e.currentTarget) cerrarDetalle();
     });
 
     // Delegación: selección de carta en el modal (ratón y teclado)
@@ -62,6 +73,7 @@ async function cargarInventario() {
         const res = await apiFetch(`/inventario`);
         if (!res.ok) throw new Error(manejarErrorHTTP(res.status));
         const items = await res.json();
+        itemsInventario = items;
         renderizarInventario(items);
     } catch (e) {
         grid.innerHTML = `<p class="error-texto">${escapeHtml(t('inv.errorCargar', { mensaje: e.message }))}</p>`;
@@ -80,17 +92,22 @@ function renderizarInventario(items) {
         return;
     }
 
+    // La imagen, el nombre y las etiquetas van dentro de un botón que abre el
+    // detalle; el de eliminar queda fuera (un control nunca dentro de otro)
     grid.innerHTML = items.map(item => {
         const nombre = item.carta?.nombre || t('carta.breadcrumb');
         return `
         <div class="carta-inventario">
             <span class="badge-cantidad">${item.cantidad}</span>
-            ${item.carta?.imagen_low || item.carta?.imagen_url
-                ? `<img src="${escapeHtml(item.carta.imagen_low || item.carta.imagen_url)}" alt="${escapeHtml(nombre)}" />`
-                : dorsoCarta()}
-            <h3>${escapeHtml(nombre)}</h3>
-            <span class="carta-tipo">${escapeHtml(item.carta?.tipo || '—')}</span>
-            <span class="carta-rareza">${escapeHtml(item.carta?.rareza || '')}</span>
+            <button class="carta-inventario-abrir" type="button" data-accion="detalle" data-item-id="${item.id}"
+                    aria-label="${escapeHtml(t('inv.verDetalle', { nombre }))}">
+                ${item.carta?.imagen_low || item.carta?.imagen_url
+                    ? `<img src="${escapeHtml(item.carta.imagen_low || item.carta.imagen_url)}" alt="" />`
+                    : dorsoCarta()}
+                <h3>${escapeHtml(nombre)}</h3>
+                <span class="carta-tipo">${escapeHtml(item.carta?.tipo || '—')}</span>
+                <span class="carta-rareza">${escapeHtml(item.carta?.rareza || '')}</span>
+            </button>
             <button class="btn-eliminar" type="button" data-accion="eliminar" data-item-id="${item.id}"
                     aria-label="${escapeHtml(t('inv.eliminarAria', { nombre }))}">${escapeHtml(t('comun.eliminar'))}</button>
         </div>`;
@@ -101,14 +118,76 @@ async function eliminarItem(id) {
     if (!confirm(t('inv.confirmarEliminar'))) return;
     try {
         const res = await apiFetch(`/inventario/${id}`, {
-            method: 'DELETE',
+            method: 'DELETE',
+
         });
         if (!res.ok) throw new Error(manejarErrorHTTP(res.status));
         mostrarAlerta(t('inv.eliminada'), 'exito');
+        if (itemDetalleAbierto === id) cerrarDetalle();
         cargarInventario();
     } catch (e) {
         mostrarAlerta(t('comun.error', { mensaje: e.message }), 'error');
     }
+}
+
+// ─── Modal: detalle resumido de una carta del inventario ──────────
+// Todo sale de itemsInventario: cero peticiones. El lightbox se apila
+// encima (abrirModalAccesible lleva una pila de modales).
+
+function abrirDetalle(itemId) {
+    const item = itemsInventario.find(i => i.id === itemId);
+    if (!item?.carta) return;
+    const carta  = item.carta;
+    const nombre = carta.nombre || t('carta.breadcrumb');
+
+    document.getElementById('detalle-inv-titulo').textContent = nombre;
+    document.getElementById('detalle-inv-ficha').href = `detalle-carta.html?id=${carta.id}`;
+
+    const imagen = carta.imagen_high || carta.imagen_low || carta.imagen_url;
+    const precio = formatearPrecio(carta.precio_cardmarket);
+    const atributos = [
+        [t('carta.tipo'),        carta.tipo],
+        [t('carta.rareza'),      carta.rareza],
+        [t('carta.set'),         carta.set_expansion],
+        [t('inv.numero'),        carta.numero],
+        [t('carta.ps'),          carta.hp ? t('carta.psValor', { n: String(carta.hp) }) : null],
+        [t('carta.ilustracion'), carta.ilustrador],
+        [t('carta.precioMedio'), precio ? `${precio} ${t('carta.fuentePrecio')}` : null],
+    ].filter(([, valor]) => valor);
+
+    document.getElementById('detalle-inv-cuerpo').innerHTML = `
+        <div class="detalle-inv">
+            ${imagen
+                ? `<button type="button" class="detalle-inv-imagen" id="detalle-inv-zoom"
+                           aria-label="${escapeHtml(t('carta.ampliar', { nombre }))}">
+                       <img src="${escapeHtml(imagen)}" alt="" />
+                   </button>`
+                : `<div class="detalle-inv-imagen">${dorsoCarta()}</div>`}
+            <div class="detalle-inv-texto">
+                <dl class="detalle-inv-atributos">
+                    ${atributos.map(([etiqueta, valor]) =>
+                        `<dt>${escapeHtml(etiqueta)}</dt><dd>${escapeHtml(String(valor))}</dd>`).join('')}
+                </dl>
+                <p class="detalle-inv-cantidad">${escapeHtml(t('inv.enTuInventario', { n: String(item.cantidad) }))}</p>
+                ${carta.descripcion ? `<p class="detalle-inv-descripcion">${escapeHtml(carta.descripcion)}</p>` : ''}
+            </div>
+        </div>`;
+
+    document.getElementById('detalle-inv-zoom')
+        ?.addEventListener('click', () => abrirLightbox([carta]));
+
+    itemDetalleAbierto = itemId;
+    const overlay = document.getElementById('modal-detalle-inv');
+    overlay.hidden = false;
+    abrirModalAccesible(overlay, cerrarDetalle);
+}
+
+function cerrarDetalle() {
+    const overlay = document.getElementById('modal-detalle-inv');
+    if (overlay.hidden) return;
+    overlay.hidden = true;
+    itemDetalleAbierto = null;
+    cerrarModalAccesible();   // devuelve el foco a la tarjeta que lo abrió
 }
 
 // ─── Modal: catálogo ──────────────────────────────────
@@ -175,7 +254,8 @@ async function confirmarAnadir() {
     try {
         // La carta ya existe en el catálogo del backend: basta con su ID
         const res = await apiFetch(`/inventario`, {
-            method: 'POST',
+            method: 'POST',
+
             body: JSON.stringify({
                 carta_id: cartaSeleccionadaId,
                 cantidad: cantidadSeleccionada

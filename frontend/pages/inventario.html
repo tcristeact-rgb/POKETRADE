@@ -78,6 +78,25 @@
         </div>
     </div>
 
+    <!-- Modal: detalle resumido de una carta del inventario. Se rellena con
+         los datos que ya trajo GET /inventario: cero peticiones al abrir. -->
+    <div id="modal-detalle-inv" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="detalle-inv-titulo" hidden>
+        <div class="modal-caja">
+            <div class="modal-header">
+                <h3 id="detalle-inv-titulo"></h3>
+                <button class="btn-cerrar-modal" id="btn-cerrar-detalle-inv" type="button"
+                        data-i18n-attr="aria-label:comun.cerrar" aria-label="Cerrar">✕</button>
+            </div>
+            <div class="modal-contenido">
+                <div id="detalle-inv-cuerpo"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancelar-modal" id="btn-cerrar-detalle-inv-pie" type="button" data-i18n="comun.cerrar">Cerrar</button>
+                <a id="detalle-inv-ficha" class="btn-secundario" href="#" data-i18n="inv.verFicha">Ver ficha completa</a>
+            </div>
+        </div>
+    </div>
+
     <div id="app-footer"></div>
 
     <script type="module" src="../js/header.js"></script>
