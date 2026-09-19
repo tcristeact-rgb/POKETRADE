@@ -103,18 +103,21 @@ resultado: completo
   el perfil, limiter propio).
 - `migrate` sobre la BD de desarrollo: `DONE`, 3 de 3 usuarios verificados.
 
+## Transporte en producción
+
+Brevo configurado en Render el 2026-09-19 (variables `MAIL_*` en Environment
+del Web Service de la API, remitente verificado `dorapon.soporte@gmail.com`),
+tras probarlo en local con una autenticación SMTP y un registro real con
+código recibido. Un tropiezo que conviene saber: Brevo rechazaba con
+`525 5.7.1 Unauthorized IP address` hasta desactivar la restricción por IP en
+Security → Authorised IPs (Render no garantiza IP fija de salida, así que es
+lo correcto; está anotado en `.env.example`).
+
+En local, con `MAIL_MAILER=smtp` los correos salen de verdad y el test e2e de
+verificación (que lee el código de `laravel.log`) no puede pasar: para correr
+la suite e2e hay que volver a `MAIL_MAILER=log`.
+
 ## Pendiente
 
-- **Transporte**: Brevo configurado y probado en local el 2026-09-19 con el
-  remitente verificado `dorapon.soporte@gmail.com`: prueba de autenticación
-  SMTP (`start()` del transporte) y un registro real con código recibido. Un
-  tropiezo que conviene saber: Brevo rechazaba con `525 5.7.1 Unauthorized IP
-  address` hasta desactivar la restricción por IP en Security → Authorised
-  IPs (Render no garantiza IP fija de salida, así que es lo correcto).
-  **Falta poner las mismas `MAIL_*` en Render**: hasta entonces en producción
-  `MAIL_MAILER=log`, no sale ningún correo y ningún registro nuevo puede
-  iniciar sesión.
-- En local, con `MAIL_MAILER=smtp` los correos salen de verdad y el test e2e
-  de verificación (que lee el código de `laravel.log`) no puede pasar: para
-  correr la suite e2e hay que volver a `MAIL_MAILER=log`.
-- Recuperación de contraseña, que reutilizará servicio y página.
+- Nada. La recuperación de contraseña, si se hace, será otra spec y
+  reutilizará el servicio y la página.
