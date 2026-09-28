@@ -36,6 +36,10 @@
     ],
 
     "rewrites": [
+        {
+            "source": "/api/:ruta*",
+            "destination": "https://poketrade-api-3nwm.onrender.com/api/:ruta*"
+        },
         { "source": "/en", "destination": "/index.html" },
         { "source": "/en/", "destination": "/index.html" },
         { "source": "/en/:ruta*", "destination": "/:ruta*" }

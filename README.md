@@ -10,7 +10,7 @@
 
 ### ▶︎ [poketrade-beryl.vercel.app](https://poketrade-beryl.vercel.app)
 
-> **The first load can take up to a minute.** The API sits on Render's free tier, which shuts the container down after a while with no traffic, and the next visitor pays for it waking back up. The app tells you so on screen, with a clock, instead of showing a mute skeleton — see [Cold starts](#cold-starts-shortened-and-explained). Everything after that is instant.
+> The API sits on Render's free tier, which shuts the container down after 15 minutes with no traffic. A scheduled ping keeps it awake and the catalogue is served from Vercel's CDN — see [Cold starts](#cold-starts-shortened-and-explained). If the container does fall asleep anyway, the app says so on screen, with a clock, instead of showing a mute skeleton.
 >
 > Available in **Spanish and English** (the selector is in the header).
 
@@ -40,7 +40,7 @@ The card catalog is real: it comes from [TCGdex](https://tcgdex.dev), a public A
 | Frontend | Vanilla JavaScript (ES modules) · HTML5 · CSS3 — **no framework, no build step** |
 | Database | PostgreSQL / Supabase (production) · SQLite (local) |
 | Card data | TCGdex v2, cached on demand |
-| Tests | PHPUnit — 125 tests, in-memory SQLite, TCGdex mocked · Playwright — 4 end-to-end critical paths in `tests-e2e/` |
+| Tests | PHPUnit — 190 tests, in-memory SQLite, TCGdex mocked · Playwright — 4 end-to-end critical paths in `tests-e2e/` |
 | Deployment | Render (API, Docker) · Vercel (frontend) · Supabase (database) |
 
 ```
@@ -142,6 +142,11 @@ It used to chain four `artisan` calls, and each one boots the whole framework (~
 
 The rest is Render starting the container, and no amount of code fixes that. So the app **says so**: after 3 seconds, a notice explains what is happening, with a clock — because a spinner is indistinguishable from a hung page, and a counter is not. It lives inside `apiFetch()`, so every call in the app has it, along with a 90-second timeout and an automatic retry on the `502/503/504` Render's proxy returns while the container is still coming up (GET and HEAD only: retrying a `POST /tradeos` could publish the trade twice).
 
+That notice is now the safety net, not the plan. Two things keep visitors from ever seeing it:
+
+- **The container never sleeps.** `.github/workflows/keep-alive.yml` hits `/api/health` every 5 minutes, straight at Render — not through Vercel, whose cache could answer and let the container doze off anyway. It spends ~744 of the free tier's 750 monthly hours, on purpose.
+- **The catalogue is served from the edge.** `vercel.json` rewrites `/api/*` to Render, so the API lives on the frontend's own origin (no CORS, no preflights) and Vercel's CDN sits in front of it. The read-only catalogue routes answer with `Cache-Control: public, s-maxage=3600, stale-while-revalidate=86400` (the `CachePublica` middleware), only on 2xx — a TCGdex outage never gets frozen at the edge. `Vary: Accept-Language` keeps Spanish and English apart. Trades, the inventory and the home page's random cards are never cached.
+
 ### Load performance
 
 Measured in a real browser on throttled slow 4G (150 ms RTT, 4× CPU slowdown), where round trips actually cost something. Three things were wrong, and **none of them was "too many bytes"** — brotli takes the 123 KB stylesheet down to 20 KB.
@@ -165,8 +170,8 @@ The API itself was never the problem: 1–6 queries per endpoint, no N+1.
 Being straight about what I would do differently, because a portfolio that only lists wins is not telling you much.
 
 - **Production runs PHP's built-in server, not nginx + php-fpm.** With workers and OPcache it holds up fine for a demo, and it keeps the Dockerfile at 20 readable lines. A real deployment would use FPM behind nginx, and the Dockerfile comment says so.
-- **Everything is on a free tier**, which is where the cold starts come from. The honest fix is a paid instance, not more code.
-- **Frontend tests are minimal.** The 125 PHPUnit tests are backend. `tests-e2e/` holds a Playwright suite that drives the real site (API + static server) through four critical paths — home hero, catalogue, global search, language switch — and nothing else. It runs locally (`cd tests-e2e && npm test`), not in CI yet, and it depends on the local database having the sets index synced.
+- **Everything is on a free tier**, which is where the cold starts come from. The keep-alive ping works around it, but it depends on GitHub's cron (which can run late, and switches itself off after 60 days without commits). The honest fix is a paid instance.
+- **Frontend tests are minimal.** The 190 PHPUnit tests are backend. `tests-e2e/` holds a Playwright suite that drives the real site (API + static server) through four critical paths — home hero, catalogue, global search, language switch — and nothing else. It runs locally (`cd tests-e2e && npm test`), not in CI yet, and it depends on the local database having the sets index synced.
 - **Adding a third *interface* language is one dictionary. Adding a third *data* language is a migration** (`nombre_ro`, `imagen_ro`…). That is the price of choosing columns over a translations table, and I would make the same call again — but it is a real limit, not a detail.
 - **No queue.** Lazy hydration happens inside the request that triggered it. It is one cached TCGdex call, so it costs a few hundred milliseconds; at real traffic it should be a job.
 - **The cache driver is `database`.** Fine at this scale, and it survives deploys. Redis is the obvious next step.
@@ -216,7 +221,7 @@ Use this rather than Live Server or `npx serve`. It reproduces the two things `v
 
 ```bash
 cd api
-composer test                     # 125 tests, in-memory SQLite, TCGdex mocked with Http::fake
+composer test                     # 190 tests, in-memory SQLite, TCGdex mocked with Http::fake
 ```
 
 Use `composer test` rather than `php artisan test` — it clears the cached config first. With a cached config, Laravel ignores `phpunit.xml`'s `DB_DATABASE=:memory:`, the suite runs against your **development** database, and `RefreshDatabase` empties it. (`TestCase` now refuses to run in that situation and says why. It refuses because it happened.)

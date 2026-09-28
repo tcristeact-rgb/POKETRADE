@@ -33,23 +33,29 @@ Route::post('/auth/reenviar-codigo', [AuthController::class, 'reenviarCodigo'])-
 // /cartas/filtros, /cartas/buscar, /cartas/destacadas, /cartas/aleatorias y
 // /cartas/nombres van antes de /cartas/{id} para que no se interpreten como
 // un ID de carta
-Route::get('/cartas',            [CartaController::class, 'index']);
-Route::get('/cartas/filtros',    [CartaController::class, 'filtros']);
+//
+// cache.publica deja que la CDN de Vercel sirva la respuesta desde el borde
+// (ver CachePublica). /cartas/aleatorias no lo lleva: la portada promete cartas
+// distintas en cada visita
+Route::get('/cartas',            [CartaController::class, 'index'])->middleware('cache.publica');
+Route::get('/cartas/filtros',    [CartaController::class, 'filtros'])->middleware('cache.publica');
 // buscar es un proxy en vivo a TCGdex: lleva su propio límite por IP (throttle:buscar)
-Route::get('/cartas/buscar',     [CartaController::class, 'buscar'])->middleware('throttle:buscar');
-Route::get('/cartas/destacadas', [CartaController::class, 'destacadas']);
+Route::get('/cartas/buscar',     [CartaController::class, 'buscar'])->middleware(['throttle:buscar', 'cache.publica']);
+Route::get('/cartas/destacadas', [CartaController::class, 'destacadas'])->middleware('cache.publica');
 Route::get('/cartas/aleatorias', [CartaController::class, 'aleatorias']);
-Route::get('/cartas/nombres',    [CartaController::class, 'nombres']);
-Route::get('/cartas/{id}',       [CartaController::class, 'show']);
+Route::get('/cartas/nombres',    [CartaController::class, 'nombres'])->middleware('cache.publica');
+Route::get('/cartas/{id}',       [CartaController::class, 'show'])->middleware('cache.publica');
 
 // Expansiones — índice de series y sets del TCG, lectura pública
 // (el índice lo siembra el comando: php artisan tcgdex:sync-sets)
-Route::get('/series',      [SerieController::class, 'index']);
-Route::get('/series/{id}', [SerieController::class, 'show']);
-Route::get('/sets',        [SetController::class, 'index']);
-Route::get('/sets/{id}',   [SetController::class, 'show']);
-// La ruta que dispara el cacheo bajo demanda de las cartas del set
-Route::get('/sets/{id}/cartas', [SetController::class, 'cartas']);
+Route::middleware('cache.publica')->group(function () {
+    Route::get('/series',      [SerieController::class, 'index']);
+    Route::get('/series/{id}', [SerieController::class, 'show']);
+    Route::get('/sets',        [SetController::class, 'index']);
+    Route::get('/sets/{id}',   [SetController::class, 'show']);
+    // La ruta que dispara el cacheo bajo demanda de las cartas del set
+    Route::get('/sets/{id}/cartas', [SetController::class, 'cartas']);
+});
 
 // Tradeos — lectura pública
 Route::get('/tradeos',      [TradeoController::class, 'index']);

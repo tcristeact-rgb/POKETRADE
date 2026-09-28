@@ -83,7 +83,11 @@ class NombresDeCartasTest extends TestCase
 
         $res = $this->getJson('/api/cartas/nombres?idioma=en');
 
-        $res->assertHeader('Cache-Control', 'max-age=86400, public');
+        // Además lleva s-maxage para la CDN (ver CachePublicaTest): aquí solo
+        // importa que el navegador lo guarde 24 h
+        $cacheControl = $res->headers->get('Cache-Control');
+        $this->assertStringContainsString('max-age=86400', $cacheControl);
+        $this->assertStringContainsString('public', $cacheControl);
         $this->assertNotEmpty($res->headers->get('ETag'));
     }
 

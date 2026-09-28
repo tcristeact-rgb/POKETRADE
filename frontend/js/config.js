@@ -7,7 +7,11 @@
 //      (override manual para apuntar a otro backend sin tocar código).
 //   2. Según el dominio:
 //        - localhost / 127.0.0.1 → backend local (desarrollo).
-//        - cualquier otro dominio (Vercel) → backend en Render (producción).
+//        - cualquier otro dominio (Vercel) → '/api', en el MISMO origen que
+//          el frontend. vercel.json lo reescribe hacia el backend de Render,
+//          y así la CDN de Vercel puede servir desde el borde las respuestas
+//          del catálogo que la API marca como cacheables (ver CachePublica),
+//          sin CORS ni preflights de por medio.
 // ===================================================
 
 // En local servimos el frontend con Live Server o `npx serve`, que usan
@@ -18,4 +22,4 @@ export const API_URL =
   (typeof window !== 'undefined' && window.POKETRADE_API_URL) ||
   (esLocal
     ? 'http://localhost:8000/api'
-    : 'https://poketrade-api-3nwm.onrender.com/api');
+    : '/api');

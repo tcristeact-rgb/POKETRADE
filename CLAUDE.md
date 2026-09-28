@@ -9,7 +9,7 @@ alimenta de la API pública de TCGdex (20.386 cartas, 167 sets, 18 series).
 - **Frontend**: JavaScript vanilla (módulos ES), HTML5, CSS3. **Sin framework y sin paso de build** — en `frontend/`
 - **Base de datos**: PostgreSQL (Supabase) en producción, SQLite en local
 - **Datos de cartas**: TCGdex v2, cacheado bajo demanda con caducidad de 24h
-- **Tests**: PHPUnit — 164 tests, SQLite en memoria, TCGdex mockeado con `Http::fake`
+- **Tests**: PHPUnit — 190 tests, SQLite en memoria, TCGdex mockeado con `Http::fake`
 - **Despliegue**: Render (API, Docker), Vercel (frontend), Supabase (BD)
 
 ## Estructura
@@ -27,7 +27,7 @@ Desde `api/`:
 
 ```
 composer setup     # install + .env + key:generate + jwt:secret + sqlite + migrate --seed
-composer test      # 164 tests. Limpia la config cacheada primero
+composer test      # 190 tests. Limpia la config cacheada primero
 php artisan serve
 ```
 
@@ -53,6 +53,7 @@ falta el paso de setup.
 - Catálogo con carga cache-aside: solo se persisten los sets a los que se accede. No precargues el catálogo entero.
 - `/api/cartas/buscar` es un **proxy en vivo a TCGdex**, no una consulta a la BD local. Cada llamada sale a internet: trátalo como caro.
 - Las rutas literales (`/cartas/filtros`, `/cartas/buscar`, `/cartas/destacadas`) van **antes** de `/cartas/{id}` en `routes/api.php`, o se interpretan como un ID.
+- En producción el frontend llama a `/api` en su propio origen y Vercel lo reescribe hacia Render. Las rutas públicas de solo lectura del catálogo llevan el middleware `cache.publica` y la CDN de Vercel las sirve desde su caché. **Nada que dependa del usuario o cambie con su actividad lleva `cache.publica`**. Si una ruta nueva devuelve el mismo contenido a cualquiera, añádelo y amplía `CachePublicaTest`.
 
 ## Flujo de trabajo: specs y decisiones
 

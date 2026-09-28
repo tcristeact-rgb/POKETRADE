@@ -46,9 +46,11 @@ return Application::configure(basePath: dirname(__DIR__))
         // esquema HTTPS y la IP real del cliente desde las cabeceras X-Forwarded-*.
         $middleware->trustProxies(at: '*');
 
-        // Alias del middleware de administrador, usado en routes/api.php
+        // Alias usados en routes/api.php: el de administrador y el que deja a la
+        // CDN de Vercel cachear las rutas públicas del catálogo
         $middleware->alias([
-            'es.admin' => \App\Http\Middleware\EsAdmin::class,
+            'es.admin'      => \App\Http\Middleware\EsAdmin::class,
+            'cache.publica' => \App\Http\Middleware\CachePublica::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
