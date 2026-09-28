@@ -2374,24 +2374,66 @@ html.modal-abierto {
   background: var(--primario);
   color: var(--sobre-primario);
 }
-/* Vista por expansión: una sección por set, cada una con su grid */
+/* Vista por expansión: una fila desplegable (<details>) por set.
+   Plegadas es un índice de expansiones; al abrir, su grid debajo */
 .grupos-inventario {
   display: flex;
   flex-direction: column;
-  gap: 2.25rem;
+  gap: 0.75rem;
 }
+.grupo-set {
+  background: var(--fondo-card);
+  border: 1px solid var(--borde);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--sombra-sm);
+  transition: border-color var(--trans);
+}
+.grupo-set[open] { border-color: var(--borde-hover); }
+.grupo-set-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1.1rem;
+  cursor: pointer;
+  list-style: none;
+  border-radius: var(--radius-lg);
+  transition: background var(--trans-fast);
+}
+.grupo-set-cabecera::-webkit-details-marker { display: none; }
+.grupo-set-cabecera:hover { background: var(--primario-soft); }
+.grupo-set-cabecera:focus-visible {
+  outline: 2px solid var(--primario-texto);
+  outline-offset: 2px;
+}
+.grupo-set[open] > .grupo-set-cabecera {
+  border-bottom: 1px solid var(--borde);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+}
+.grupo-set > .grid-inventario { padding: 1.1rem; }
 .grupo-set-titulo {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.6rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.5rem;
-  border-bottom: 1px solid var(--borde);
+  margin: 0;
   font-family: var(--font-heading);
   font-size: var(--text-lg);
   color: var(--texto);
 }
+/* Flecha: un chevron dibujado con bordes; apunta abajo y gira al abrir */
+.grupo-set-flecha {
+  flex-shrink: 0;
+  width: 0.6rem;
+  height: 0.6rem;
+  margin: 0 0.3rem 0.25rem;
+  border-right: 2px solid var(--texto-sec);
+  border-bottom: 2px solid var(--texto-sec);
+  transform: rotate(45deg);
+  transition: transform var(--trans);
+}
+.grupo-set[open] .grupo-set-flecha { transform: rotate(225deg); margin-bottom: -0.25rem; }
 .grupo-set-simbolo {
   width: 28px;
   height: 28px;

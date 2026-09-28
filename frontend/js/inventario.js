@@ -29,6 +29,11 @@ function leerVista() {
     catch { return 'todas'; }
 }
 
+// Filas de la vista por expansión que el usuario ha desplegado (por
+// tcgdex_id del set; '' = sin expansión). Solo en memoria: sobreviven a
+// los re-pintados de la página, no a una visita nueva
+const setsAbiertos = new Set();
+
 alCargarDOM(() => {
     cargarInventario();
     cargarCatalogoModal();
@@ -48,6 +53,17 @@ alCargarDOM(() => {
         if (e.target instanceof HTMLImageElement && e.target.classList.contains('grupo-set-simbolo')) {
             e.target.hidden = true;
         }
+    }, true);
+
+    // Filas desplegables: se anota lo que abre o cierra el usuario. Con
+    // texto buscado no, porque ahí las abre la búsqueda (y un <details>
+    // pintado con open también dispara toggle). Captura: toggle no burbujea
+    document.getElementById('grid-inventario')?.addEventListener('toggle', (e) => {
+        const fila = e.target;
+        if (!(fila instanceof HTMLDetailsElement) || !fila.classList.contains('grupo-set')) return;
+        if (document.getElementById('inv-buscar').value.trim()) return;
+        if (fila.open) setsAbiertos.add(fila.dataset.set);
+        else setsAbiertos.delete(fila.dataset.set);
     }, true);
 
     // Botones estáticos. La búsqueda del modal va al backend (el
@@ -159,18 +175,24 @@ function renderizarInventario() {
     }
 
     if (vista === 'sets') {
+        // Una fila desplegable por set. Buscando, las que tienen
+        // coincidencias salen abiertas; si no, solo las que abrió el usuario
         grid.className = 'grupos-inventario';
-        grid.innerHTML = agruparPorSet(visibles).map(({ set, nombre, items }, i) => {
-            const copias = items.reduce((suma, item) => suma + item.cantidad, 0);
+        grid.innerHTML = agruparPorSet(visibles).map(({ clave, set, nombre, items }) => {
+            const copias  = items.reduce((suma, item) => suma + item.cantidad, 0);
+            const abierta = texto !== '' || setsAbiertos.has(clave);
             return `
-            <section class="grupo-set" aria-labelledby="grupo-set-${i}">
-                <h2 class="grupo-set-titulo" id="grupo-set-${i}">
-                    ${set?.simbolo ? `<img class="grupo-set-simbolo" src="${escapeHtml(set.simbolo)}" alt="" loading="lazy" />` : ''}
-                    <span class="grupo-set-nombre">${escapeHtml(nombre)}</span>
-                    <span class="grupo-set-resumen">${escapeHtml(t('inv.grupoCartas', { n: items.length }))} · ${escapeHtml(t('inv.grupoCopias', { n: copias }))}</span>
-                </h2>
+            <details class="grupo-set" data-set="${escapeHtml(clave)}"${abierta ? ' open' : ''}>
+                <summary class="grupo-set-cabecera">
+                    <h2 class="grupo-set-titulo">
+                        ${set?.simbolo ? `<img class="grupo-set-simbolo" src="${escapeHtml(set.simbolo)}" alt="" loading="lazy" />` : ''}
+                        <span class="grupo-set-nombre">${escapeHtml(nombre)}</span>
+                        <span class="grupo-set-resumen">${escapeHtml(t('inv.grupoCartas', { n: items.length }))} · ${escapeHtml(t('inv.grupoCopias', { n: copias }))}</span>
+                    </h2>
+                    <span class="grupo-set-flecha" aria-hidden="true"></span>
+                </summary>
                 <div class="grid-inventario">${items.map(tarjetaInventario).join('')}</div>
-            </section>`;
+            </details>`;
         }).join('');
     } else {
         grid.className = 'grid-inventario';
@@ -224,7 +246,7 @@ function agruparPorSet(items) {
         const set   = item.carta?.set ?? null;
         const clave = set?.tcgdex_id ?? '';
         if (!grupos.has(clave)) {
-            grupos.set(clave, { set, nombre: set?.nombre || item.carta?.set_expansion || t('inv.sinExpansion'), items: [] });
+            grupos.set(clave, { clave, set, nombre: set?.nombre || item.carta?.set_expansion || t('inv.sinExpansion'), items: [] });
         }
         grupos.get(clave).items.push(item);
     }
