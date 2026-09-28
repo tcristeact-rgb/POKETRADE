@@ -48,7 +48,7 @@
     <div class="modal-overlay" id="modal-overlay" hidden>
         <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-inv-titulo">
             <div class="inv-modal-header">
-                <h2 id="modal-inv-titulo" data-i18n="inv.modalTitulo">Añadir carta al inventario</h2>
+                <h2 id="modal-inv-titulo" data-i18n="inv.modalTitulo">Añadir cartas al inventario</h2>
                 <button class="btn-cerrar-modal" id="btn-cerrar-modal-inv" type="button"
                         data-i18n-attr="aria-label:inv.cerrarVentana" aria-label="Cerrar ventana">✕</button>
             </div>
@@ -64,15 +64,10 @@
                 <p data-i18n="inv.cargandoCartas">Cargando cartas...</p>
             </div>
 
+            <!-- Selección múltiple: una fila por carta, cada una con su cantidad.
+                 Lo rellena inventario.js; sobrevive a los cambios de búsqueda. -->
             <div id="seleccion-panel" class="seleccion-panel" hidden>
-                <p><strong id="nombre-seleccionada"></strong></p>
-                <div class="cantidad-control">
-                    <button id="btn-cantidad-menos" type="button"
-                            data-i18n-attr="aria-label:inv.disminuir" aria-label="Disminuir cantidad">−</button>
-                    <span id="cantidad-valor" aria-live="polite">1</span>
-                    <button id="btn-cantidad-mas" type="button"
-                            data-i18n-attr="aria-label:inv.aumentar" aria-label="Aumentar cantidad">+</button>
-                </div>
+                <ul id="lista-seleccion" class="lista-seleccion"></ul>
                 <button class="btn-formulario" id="btn-confirmar-anadir" type="button" data-i18n="inv.anadirAlInventario">Añadir al inventario</button>
             </div>
         </div>

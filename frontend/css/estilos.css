@@ -2499,6 +2499,40 @@ html.modal-abierto {
   gap: 0.85rem;
   margin: 0.85rem 0;
 }
+/* Selección múltiple del modal: una fila por carta con su cantidad */
+.lista-seleccion {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  max-height: 14rem;
+  overflow-y: auto;
+}
+.fila-seleccion {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid var(--borde);
+}
+.fila-seleccion-nombre {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  color: var(--texto);
+  overflow-wrap: anywhere;
+}
+.fila-seleccion .cantidad-control { margin: 0; }
+.btn-quitar-seleccion {
+  background: none;
+  border: 1px solid var(--borde);
+  border-radius: var(--radius-sm);
+  width: 34px;
+  height: 34px;
+  color: var(--muted);
+  cursor: pointer;
+  transition: color var(--trans), border-color var(--trans);
+}
+.btn-quitar-seleccion:hover { color: var(--texto); border-color: var(--texto); }
 .cantidad-control button {
   background: var(--primario);
   color: var(--sobre-primario);

@@ -12,8 +12,11 @@ const MAX_MODAL_VISIBLE = 60;
 let resultadosModal      = [];   // Resultados de la búsqueda actual
 let itemsInventario      = [];   // Lo que trajo GET /inventario: de aquí sale el detalle
 let itemDetalleAbierto   = null; // id del item cuyo modal de detalle está abierto
-let cartaSeleccionadaId  = null;
-let cantidadSeleccionada = 1;
+// Cartas elegidas en el modal: id → { carta, cantidad }. Guarda la carta
+// entera porque sobrevive a los cambios de búsqueda y deja de estar en
+// resultadosModal
+const seleccion = new Map();
+let anadiendo = false;           // evita un doble envío mientras se guardan
 
 alCargarDOM(() => {
     cargarInventario();
@@ -25,9 +28,21 @@ alCargarDOM(() => {
     document.getElementById('btn-abrir-modal')?.addEventListener('click', abrirModal);
     document.getElementById('btn-cerrar-modal-inv')?.addEventListener('click', cerrarModal);
     document.getElementById('modal-buscar')?.addEventListener('input', debounce(filtrarModal, 300));
-    document.getElementById('btn-cantidad-menos')?.addEventListener('click', () => cambiarCantidad(-1));
-    document.getElementById('btn-cantidad-mas')?.addEventListener('click', () => cambiarCantidad(1));
     document.getElementById('btn-confirmar-anadir')?.addEventListener('click', confirmarAnadir);
+
+    // Delegación: cantidad y quitar en las filas de la selección
+    document.getElementById('lista-seleccion')?.addEventListener('click', (e) => {
+        const el = e.target.closest('[data-accion]');
+        if (!el) return;
+        const id = Number(el.dataset.cartaId);
+        if (el.dataset.accion === 'menos') cambiarCantidad(id, -1);
+        else if (el.dataset.accion === 'mas') cambiarCantidad(id, 1);
+        else if (el.dataset.accion === 'quitar') {
+            alternarCarta(id);
+            // La fila con el foco ha desaparecido: que no caiga al body
+            document.getElementById(seleccion.size ? 'btn-confirmar-anadir' : 'modal-buscar')?.focus();
+        }
+    });
 
     // Cerrar el modal al hacer clic fuera de la caja
     document.getElementById('modal-overlay')?.addEventListener('click', (e) => {
@@ -54,12 +69,12 @@ alCargarDOM(() => {
     const lista = document.getElementById('lista-cartas-modal');
     lista?.addEventListener('click', (e) => {
         const card = e.target.closest('[data-carta-id]');
-        if (card) seleccionarCarta(Number(card.dataset.cartaId), card);
+        if (card) alternarCarta(Number(card.dataset.cartaId));
     });
     lista?.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return;
         const card = e.target.closest('[data-carta-id]');
-        if (card) { e.preventDefault(); seleccionarCarta(Number(card.dataset.cartaId), card); }
+        if (card) { e.preventDefault(); alternarCarta(Number(card.dataset.cartaId)); }
     });
 });
 
@@ -214,8 +229,8 @@ function renderizarModal(cartas) {
     }
 
     lista.innerHTML = cartas.map(carta => `
-        <div class="carta-seleccionable" role="button" tabindex="0"
-             data-carta-id="${carta.id}"
+        <div class="carta-seleccionable${seleccion.has(carta.id) ? ' seleccionada' : ''}" role="button" tabindex="0"
+             data-carta-id="${carta.id}" aria-pressed="${seleccion.has(carta.id)}"
              aria-label="${escapeHtml(t('inv.seleccionarAria', { nombre: carta.nombre }))}">
             ${carta.imagen_url
                 ? `<img src="${escapeHtml(carta.imagen_url)}" alt="${escapeHtml(carta.nombre)}" />`
@@ -230,52 +245,105 @@ function filtrarModal() {
     cargarCatalogoModal(document.getElementById('modal-buscar').value.trim());
 }
 
-function seleccionarCarta(id, el) {
-    // La carta seleccionada siempre está en los resultados visibles
-    const carta = resultadosModal.find(c => c.id === id);
-    cartaSeleccionadaId  = id;
-    cantidadSeleccionada = 1;
-    document.getElementById('nombre-seleccionada').textContent =
-        carta?.nombre || t('inv.cartaNum', { id: String(id) });
-    document.getElementById('cantidad-valor').textContent = 1;
-    document.getElementById('seleccion-panel').hidden = false;
-
-    document.querySelectorAll('.carta-seleccionable').forEach(c => c.classList.remove('seleccionada'));
-    if (el) el.classList.add('seleccionada');
-}
-
-function cambiarCantidad(delta) {
-    cantidadSeleccionada = Math.max(1, Math.min(99, cantidadSeleccionada + delta));
-    document.getElementById('cantidad-valor').textContent = cantidadSeleccionada;
-}
-
-async function confirmarAnadir() {
-    if (!cartaSeleccionadaId) return;
-    try {
-        // La carta ya existe en el catálogo del backend: basta con su ID
-        const res = await apiFetch(`/inventario`, {
-            method: 'POST',
-
-            body: JSON.stringify({
-                carta_id: cartaSeleccionadaId,
-                cantidad: cantidadSeleccionada
-            })
-        });
-        const datos = await parsearRespuesta(res);
-        if (!res.ok) throw new Error(datos.error || manejarErrorHTTP(res.status));
-        cerrarModal();
-        mostrarAlerta(t('carta.anadida'), 'exito');
-        cargarInventario();
-    } catch (e) {
-        mostrarAlerta(t('comun.error', { mensaje: e.message }), 'error');
+// Clic en una carta del catálogo (o en "quitar" de su fila): entra en la
+// selección con cantidad 1, o sale de ella si ya estaba
+function alternarCarta(id) {
+    if (seleccion.has(id)) {
+        seleccion.delete(id);
+    } else {
+        // Al entrar, la carta siempre está en los resultados visibles
+        const carta = resultadosModal.find(c => c.id === id);
+        if (!carta) return;
+        seleccion.set(id, { carta, cantidad: 1 });
     }
+
+    const tarjeta = document.querySelector(`.carta-seleccionable[data-carta-id="${id}"]`);
+    if (tarjeta) {
+        tarjeta.classList.toggle('seleccionada', seleccion.has(id));
+        tarjeta.setAttribute('aria-pressed', String(seleccion.has(id)));
+    }
+    renderizarSeleccion();
+}
+
+function cambiarCantidad(id, delta) {
+    const entrada = seleccion.get(id);
+    if (!entrada) return;
+    entrada.cantidad = Math.max(1, Math.min(99, entrada.cantidad + delta));
+    const valor = document.querySelector(`#lista-seleccion [data-cantidad-de="${id}"]`);
+    if (valor) valor.textContent = entrada.cantidad;
+}
+
+function renderizarSeleccion() {
+    const panel = document.getElementById('seleccion-panel');
+    panel.hidden = seleccion.size === 0;
+    if (!seleccion.size) return;
+
+    document.getElementById('lista-seleccion').innerHTML = [...seleccion.values()].map(({ carta, cantidad }) => {
+        const nombre = carta.nombre || t('inv.cartaNum', { id: String(carta.id) });
+        return `
+        <li class="fila-seleccion">
+            <span class="fila-seleccion-nombre">${escapeHtml(nombre)}</span>
+            <div class="cantidad-control">
+                <button type="button" data-accion="menos" data-carta-id="${carta.id}"
+                        aria-label="${escapeHtml(t('inv.disminuir', { nombre }))}">−</button>
+                <span data-cantidad-de="${carta.id}" aria-live="polite">${cantidad}</span>
+                <button type="button" data-accion="mas" data-carta-id="${carta.id}"
+                        aria-label="${escapeHtml(t('inv.aumentar', { nombre }))}">+</button>
+            </div>
+            <button class="btn-quitar-seleccion" type="button" data-accion="quitar" data-carta-id="${carta.id}"
+                    aria-label="${escapeHtml(t('inv.quitarSeleccion', { nombre }))}">✕</button>
+        </li>`;
+    }).join('');
+
+    document.getElementById('btn-confirmar-anadir').textContent =
+        t('inv.anadirSeleccion', { n: seleccion.size });
+}
+
+// Una petición por carta, en serie: el endpoint añade de una en una y así
+// cada carta valida su propio tope. Las que fallan se quedan seleccionadas
+// para poder corregirlas y reintentar; las que entran salen de la selección.
+async function confirmarAnadir() {
+    if (!seleccion.size || anadiendo) return;
+    anadiendo = true;
+    const boton = document.getElementById('btn-confirmar-anadir');
+    boton.disabled = true;
+
+    let anadidas = 0;
+    const fallos = [];
+    for (const [id, { carta, cantidad }] of seleccion) {
+        try {
+            // La carta ya existe en el catálogo del backend: basta con su ID
+            const res = await apiFetch(`/inventario`, {
+                method: 'POST',
+                body: JSON.stringify({ carta_id: id, cantidad })
+            });
+            const datos = await parsearRespuesta(res);
+            if (!res.ok) throw new Error(datos.error || manejarErrorHTTP(res.status));
+            seleccion.delete(id);
+            anadidas++;
+        } catch (e) {
+            fallos.push(`${carta.nombre || t('inv.cartaNum', { id: String(id) })}: ${e.message}`);
+        }
+    }
+
+    anadiendo = false;
+    boton.disabled = false;
+    if (anadidas) cargarInventario();
+
+    if (!fallos.length) {
+        if (!document.getElementById('modal-overlay').hidden) cerrarModal();
+        mostrarAlerta(t('inv.anadidas', { n: anadidas }), 'exito');
+        return;
+    }
+    renderizarModal(resultadosModal);
+    renderizarSeleccion();
+    mostrarAlerta(t('inv.errorAnadir', { n: anadidas, detalle: fallos.join(' · ') }), 'error');
 }
 
 function abrirModal() {
     const overlay = document.getElementById('modal-overlay');
     overlay.hidden = false;
-    document.getElementById('seleccion-panel').hidden = true;
-    cartaSeleccionadaId = null;
+    renderizarSeleccion();
     // Accesibilidad: foco al modal, retención de Tab y cierre con Escape
     abrirModalAccesible(overlay, cerrarModal);
 }
@@ -283,6 +351,7 @@ function abrirModal() {
 function cerrarModal() {
     document.getElementById('modal-overlay').hidden = true;
     document.getElementById('modal-buscar').value = '';
+    seleccion.clear();
     cargarCatalogoModal();
     // Accesibilidad: devuelve el foco al botón que abrió el modal
     cerrarModalAccesible();
