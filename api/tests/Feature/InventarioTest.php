@@ -51,6 +51,22 @@ class InventarioTest extends TestCase
             ->assertJsonPath('1.cantidad', 2);
     }
 
+    // Spec 2026-09-28-inventario-por-expansion-y-busqueda: la vista agrupada
+    // ordena los sets por fecha de lanzamiento y pinta su símbolo
+    public function test_el_listado_trae_el_set_entero_para_agrupar_por_expansion(): void
+    {
+        $usuario = $this->usuarioConCartas(2);
+        Set::where('tcgdex_id', 'sv01')->update(['fecha_lanzamiento' => '2023-03-31']);
+
+        $res = $this->actingAs($usuario, 'api')->getJson('/api/inventario');
+
+        $res->assertOk()
+            ->assertJsonPath('0.carta.set.nombre', 'Set 1')
+            ->assertJsonPath('0.carta.set.fecha_lanzamiento', '2023-03-31')
+            ->assertJsonPath('1.carta.set.fecha_lanzamiento', null)
+            ->assertJsonStructure([['carta' => ['set' => ['tcgdex_id', 'nombre', 'simbolo', 'fecha_lanzamiento']]]]);
+    }
+
     public function test_el_numero_de_consultas_no_crece_con_el_numero_de_cartas(): void
     {
         $usuario = $this->usuarioConCartas(5);

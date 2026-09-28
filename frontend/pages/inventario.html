@@ -38,6 +38,22 @@
 
             <div id="alerta" class="alerta"></div>
 
+            <!-- Barra del inventario: buscar en lo que ya tienes y elegir
+                 vista. Todo en el navegador, sin peticiones. Oculta mientras
+                 no haya cartas; la muestra inventario.js. -->
+            <div id="barra-inventario" class="filtros filtros-catalogo filtros-inventario" role="search"
+                 data-i18n-attr="aria-label:inv.barraAria" aria-label="Buscar y ordenar tu inventario" hidden>
+                <input type="search" id="inv-buscar"
+                       data-i18n-attr="placeholder:inv.buscarPropioPlaceholder;aria-label:inv.buscarPropioAria"
+                       placeholder="Buscar en tu inventario..."
+                       aria-label="Buscar cartas en tu inventario" />
+                <div class="vista-toggle" role="group" data-i18n-attr="aria-label:inv.vistaAria" aria-label="Vista del inventario">
+                    <button type="button" data-vista="todas" aria-pressed="true" data-i18n="inv.vistaTodas">Todas</button>
+                    <button type="button" data-vista="sets" aria-pressed="false" data-i18n="inv.vistaPorSet">Por expansión</button>
+                </div>
+                <span id="inv-contador" class="contador-resultados" aria-live="polite"></span>
+            </div>
+
             <div id="grid-inventario" class="grid-inventario">
                 <p data-i18n="inv.cargando">Cargando inventario...</p>
             </div>

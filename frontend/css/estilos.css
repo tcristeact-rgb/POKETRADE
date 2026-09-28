@@ -2345,6 +2345,65 @@ html.modal-abierto {
   grid-template-columns: repeat(auto-fill, minmax(185px, 1fr));
   gap: 1.25rem;
 }
+/* Barra del inventario (buscar + vista): reutiliza .filtros-catalogo;
+   el contador se va a la derecha como en el marketplace */
+.filtros-inventario .contador-resultados { margin-left: auto; }
+.vista-toggle {
+  display: inline-flex;
+  border: 1.5px solid var(--borde-input);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+.vista-toggle button {
+  background: var(--fondo);
+  color: var(--texto-sec);
+  border: none;
+  padding: 0.55rem 0.95rem;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  /* En móvil la barra estira el grupo a todo el ancho: que lo llenen */
+  flex: 1;
+  transition: background var(--trans-fast), color var(--trans-fast);
+}
+.vista-toggle button + button { border-left: 1.5px solid var(--borde-input); }
+.vista-toggle button:hover { color: var(--primario-texto); }
+.vista-toggle button[aria-pressed="true"] {
+  background: var(--primario);
+  color: var(--sobre-primario);
+}
+/* Vista por expansión: una sección por set, cada una con su grid */
+.grupos-inventario {
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+}
+.grupo-set-titulo {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--borde);
+  font-family: var(--font-heading);
+  font-size: var(--text-lg);
+  color: var(--texto);
+}
+.grupo-set-simbolo {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+.grupo-set-resumen {
+  margin-left: auto;
+  font-family: var(--font-body);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--muted);
+}
 .carta-inventario {
   background: var(--fondo-card);
   border: 1px solid var(--borde);

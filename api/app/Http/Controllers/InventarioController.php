@@ -22,6 +22,12 @@ class InventarioController extends Controller
             ->where('user_id', auth()->id()) // Solo las cartas del usuario autenticado
             ->get();
 
+        // El set de cada carta ya viene cargado (Carta::$with) pero oculto:
+        // el inventario lo necesita entero para agrupar por expansión en
+        // orden cronológico (fecha_lanzamiento) y pintar su símbolo.
+        // Sin consultas nuevas. Spec: 2026-09-28-inventario-por-expansion-y-busqueda
+        $inventario->each(fn (Inventario $entrada) => $entrada->carta?->makeVisible('set'));
+
         return response()->json($inventario);
     }
 

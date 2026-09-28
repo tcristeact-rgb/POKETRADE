@@ -18,9 +18,37 @@ let itemDetalleAbierto   = null; // id del item cuyo modal de detalle está abie
 const seleccion = new Map();
 let anadiendo = false;           // evita un doble envío mientras se guardan
 
+// Vista del inventario: 'todas' (grid plano) o 'sets' (agrupado por
+// expansión). Preferencia de este navegador: si localStorage no está
+// disponible se queda en 'todas' y la página funciona igual
+const CLAVE_VISTA = 'inventario.vista';
+let vista = leerVista();
+
+function leerVista() {
+    try { return localStorage.getItem(CLAVE_VISTA) === 'sets' ? 'sets' : 'todas'; }
+    catch { return 'todas'; }
+}
+
 alCargarDOM(() => {
     cargarInventario();
     cargarCatalogoModal();
+
+    // Barra del inventario: búsqueda y vista se resuelven sobre
+    // itemsInventario, sin peticiones
+    document.getElementById('inv-buscar')?.addEventListener('input', renderizarInventario);
+    document.querySelector('.vista-toggle')?.addEventListener('click', (e) => {
+        const boton = e.target.closest('[data-vista]');
+        if (boton) cambiarVista(boton.dataset.vista);
+    });
+    marcarVista();
+
+    // Hay sets sin símbolo en TCGdex (responde 400): se oculta y el nombre
+    // basta, como en el catálogo. Fase de captura: error no burbujea
+    document.getElementById('grid-inventario')?.addEventListener('error', (e) => {
+        if (e.target instanceof HTMLImageElement && e.target.classList.contains('grupo-set-simbolo')) {
+            e.target.hidden = true;
+        }
+    }, true);
 
     // Botones estáticos. La búsqueda del modal va al backend (el
     // catálogo por expansiones ya no cabe entero en el navegador),
@@ -56,6 +84,7 @@ alCargarDOM(() => {
         if (el.dataset.accion === 'eliminar') eliminarItem(Number(el.dataset.itemId));
         else if (el.dataset.accion === 'detalle') abrirDetalle(Number(el.dataset.itemId));
         else if (el.dataset.accion === 'abrir-modal') abrirModal();
+        else if (el.dataset.accion === 'limpiar-busqueda') limpiarBusqueda();
     });
 
     // Modal de detalle: los dos botones de cerrar y el clic fuera de la caja
@@ -82,23 +111,29 @@ alCargarDOM(() => {
 
 async function cargarInventario() {
     const grid = document.getElementById('grid-inventario');
+    grid.className = 'grid-inventario';
     grid.innerHTML = Array(10)
         .fill('<div class="carta-inventario skeleton" aria-hidden="true"></div>').join('');
     try {
         const res = await apiFetch(`/inventario`);
         if (!res.ok) throw new Error(manejarErrorHTTP(res.status));
-        const items = await res.json();
-        itemsInventario = items;
-        renderizarInventario(items);
+        itemsInventario = await res.json();
+        renderizarInventario();
     } catch (e) {
         grid.innerHTML = `<p class="error-texto">${escapeHtml(t('inv.errorCargar', { mensaje: e.message }))}</p>`;
     }
 }
 
-function renderizarInventario(items) {
-    const grid = document.getElementById('grid-inventario');
+// Pinta itemsInventario según la vista y el texto del buscador. Se llama
+// al cargar, al escribir y al cambiar de vista: nunca pide nada a la API
+function renderizarInventario() {
+    const grid  = document.getElementById('grid-inventario');
+    const barra = document.getElementById('barra-inventario');
+    const total = itemsInventario.length;
 
-    if (!items.length) {
+    barra.hidden = total === 0;
+    if (!total) {
+        grid.className = 'grid-inventario';
         grid.innerHTML = `
             <div class="vacio-msg">
                 <p>${escapeHtml(t('inv.vacio'))}</p>
@@ -107,11 +142,47 @@ function renderizarInventario(items) {
         return;
     }
 
-    // La imagen, el nombre y las etiquetas van dentro de un botón que abre el
-    // detalle; el de eliminar queda fuera (un control nunca dentro de otro)
-    grid.innerHTML = items.map(item => {
-        const nombre = item.carta?.nombre || t('carta.breadcrumb');
-        return `
+    const texto    = document.getElementById('inv-buscar').value.trim();
+    const visibles = filtrarInventario(itemsInventario, texto);
+    document.getElementById('inv-contador').textContent = texto
+        ? t('inv.contadorFiltrado', { m: visibles.length, n: total })
+        : t('inv.contador', { n: total });
+
+    if (!visibles.length) {
+        grid.className = 'grid-inventario';
+        grid.innerHTML = `
+            <div class="vacio-msg">
+                <p>${escapeHtml(t('inv.sinCoincidencias', { texto }))}</p>
+                <button class="btn-secundario" type="button" data-accion="limpiar-busqueda">${escapeHtml(t('inv.limpiarBusqueda'))}</button>
+            </div>`;
+        return;
+    }
+
+    if (vista === 'sets') {
+        grid.className = 'grupos-inventario';
+        grid.innerHTML = agruparPorSet(visibles).map(({ set, nombre, items }, i) => {
+            const copias = items.reduce((suma, item) => suma + item.cantidad, 0);
+            return `
+            <section class="grupo-set" aria-labelledby="grupo-set-${i}">
+                <h2 class="grupo-set-titulo" id="grupo-set-${i}">
+                    ${set?.simbolo ? `<img class="grupo-set-simbolo" src="${escapeHtml(set.simbolo)}" alt="" loading="lazy" />` : ''}
+                    <span class="grupo-set-nombre">${escapeHtml(nombre)}</span>
+                    <span class="grupo-set-resumen">${escapeHtml(t('inv.grupoCartas', { n: items.length }))} · ${escapeHtml(t('inv.grupoCopias', { n: copias }))}</span>
+                </h2>
+                <div class="grid-inventario">${items.map(tarjetaInventario).join('')}</div>
+            </section>`;
+        }).join('');
+    } else {
+        grid.className = 'grid-inventario';
+        grid.innerHTML = visibles.map(tarjetaInventario).join('');
+    }
+}
+
+// La imagen, el nombre y las etiquetas van dentro de un botón que abre el
+// detalle; el de eliminar queda fuera (un control nunca dentro de otro)
+function tarjetaInventario(item) {
+    const nombre = item.carta?.nombre || t('carta.breadcrumb');
+    return `
         <div class="carta-inventario">
             <span class="badge-cantidad">${item.cantidad}</span>
             <button class="carta-inventario-abrir" type="button" data-accion="detalle" data-item-id="${item.id}"
@@ -126,7 +197,74 @@ function renderizarInventario(items) {
             <button class="btn-eliminar" type="button" data-accion="eliminar" data-item-id="${item.id}"
                     aria-label="${escapeHtml(t('inv.eliminarAria', { nombre }))}">${escapeHtml(t('comun.eliminar'))}</button>
         </div>`;
-    }).join('');
+}
+
+// Sin mayúsculas ni tildes: "pokemon" encuentra "Pokémon"
+function normalizar(texto) {
+    return String(texto ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+}
+
+// Cada palabra del texto tiene que aparecer en el nombre, la expansión, el
+// tipo, la rareza o el número: "pikachu 151" deja los Pikachu del 151
+function filtrarInventario(items, texto) {
+    const palabras = normalizar(texto).split(/\s+/).filter(Boolean);
+    if (!palabras.length) return items;
+    return items.filter(({ carta }) => {
+        const campos = normalizar([carta?.nombre, carta?.set_expansion, carta?.tipo, carta?.rareza, carta?.numero].join(' '));
+        return palabras.every(p => campos.includes(p));
+    });
+}
+
+// Un grupo por set: del más reciente al más antiguo (los sin fecha, detrás
+// y por nombre; las cartas sin set, al final). Dentro, por número natural:
+// 2 antes que 10, y los "TG05" no rompen nada
+function agruparPorSet(items) {
+    const grupos = new Map();
+    for (const item of items) {
+        const set   = item.carta?.set ?? null;
+        const clave = set?.tcgdex_id ?? '';
+        if (!grupos.has(clave)) {
+            grupos.set(clave, { set, nombre: set?.nombre || item.carta?.set_expansion || t('inv.sinExpansion'), items: [] });
+        }
+        grupos.get(clave).items.push(item);
+    }
+
+    const porNumero = (a, b) =>
+        String(a.carta?.numero ?? '').localeCompare(String(b.carta?.numero ?? ''), undefined, { numeric: true });
+    const lista = [...grupos.values()];
+    lista.forEach(g => g.items.sort(porNumero));
+
+    return lista.sort((a, b) => {
+        if (!a.set !== !b.set) return a.set ? -1 : 1;
+        const fa = a.set?.fecha_lanzamiento ?? '';
+        const fb = b.set?.fecha_lanzamiento ?? '';
+        if (fa !== fb) {
+            if (!fa) return 1;
+            if (!fb) return -1;
+            return fb.localeCompare(fa);
+        }
+        return a.nombre.localeCompare(b.nombre);
+    });
+}
+
+function cambiarVista(nueva) {
+    if (nueva === vista) return;
+    vista = nueva;
+    try { localStorage.setItem(CLAVE_VISTA, vista); } catch { /* solo se pierde el recuerdo */ }
+    marcarVista();
+    renderizarInventario();
+}
+
+function marcarVista() {
+    document.querySelectorAll('.vista-toggle [data-vista]').forEach(boton =>
+        boton.setAttribute('aria-pressed', String(boton.dataset.vista === vista)));
+}
+
+function limpiarBusqueda() {
+    const input = document.getElementById('inv-buscar');
+    input.value = '';
+    renderizarInventario();
+    input.focus();
 }
 
 async function eliminarItem(id) {
