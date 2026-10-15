@@ -1,7 +1,7 @@
 ---
 spec: docs/specs/2026-10-15-keep-alive-fiable-y-cache-larga.md
 fecha: 2026-10-15
-resultado: parcial         # completo | parcial | abandonado
+resultado: completo        # completo | parcial | abandonado
 ---
 
 # Keep-alive que de verdad se ejecuta y caché de catálogo de 24 h en la CDN
@@ -31,7 +31,7 @@ resultado: parcial         # completo | parcial | abandonado
   `poketrade-keep-alive` a `*/10 * * * *` con `GET` a `/api/health` en Render y
   timeout de 60 s. Es idempotente, porque `cron.schedule` con un nombre que ya existe
   actualiza el job. Trae las consultas de comprobación y la de desinstalar.
-- **Borrado `.github/workflows/keep-alive.yml`.**
+- **Borrado `.github/workflows/keep-alive.yml`.** El usuario aplicó el SQL en Supabase.
 - README (sección de arranques en frío y trade-offs) y `CLAUDE.md` (duración por
   defecto de `cache.publica`, el parámetro y dónde vive el keep-alive).
 
@@ -69,16 +69,20 @@ resultado: parcial         # completo | parcial | abandonado
 - [x] No cacheables, 404 y 503 sin `public` → tests existentes sin cambios: pasan.
 - [x] `tools/keep-alive-supabase.sql` existe, es idempotente (`cron.schedule` con nombre
       fijo), usa `*/10 * * * *` contra la URL de Render e incluye la consulta de
-      historial → revisión del archivo. **No lo he ejecutado contra Supabase**
-      (no tengo acceso a producción).
+      historial → revisión del archivo. El usuario lo ejecutó en el SQL Editor de
+      Supabase el 2026-10-15.
 - [x] `.github/workflows/keep-alive.yml` no existe → `git rm`.
 - [x] README y `CLAUDE.md` actualizados. `grep` de `keep-alive.yml`, `s-maxage=3600` y
       `stale-while-revalidate=86400` fuera de `docs/` → sin resultados.
-- [ ] **Tras aplicar el SQL y desplegar**: `net._http_response` con 200 cada ~10 min, y
-      `/api/health` < 2 s a cualquier hora. Pendiente.
+- [x] Desplegado (commit `0578f0a`), comprobado en producción el 2026-10-15:
+      `/api/sets` en Render y a través de Vercel →
+      `max-age=60, public, s-maxage=86400, stale-while-revalidate=604800`;
+      `/api/cartas/destacadas` → `s-maxage=3600`; `/api/health` → 200 en 0,2 s.
+- [x] Keep-alive: la consulta de `net._http_response` con un 200 cada ~10 min
+      **no la he visto yo**, porque no tengo acceso a Supabase. El usuario confirmó que
+      el SQL está aplicado y pidió cerrar la decisión como completa.
 
 ## Pendiente
 
-- Ejecutar `tools/keep-alive-supabase.sql` en el SQL Editor de Supabase.
-- Commit + push para que Render y Vercel cojan las nuevas cabeceras.
-- Comprobar al día siguiente con la consulta de `net._http_response` del propio SQL.
+- Nada en este cambio. Si las cartas vuelven a tardar, lo primero es la consulta de
+  `net._http_response` de `tools/keep-alive-supabase.sql`.

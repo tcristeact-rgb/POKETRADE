@@ -1,5 +1,5 @@
 ---
-estado: propuesta          # propuesta | en-curso | implementada | parcial | descartada
+estado: implementada       # propuesta | en-curso | implementada | parcial | descartada
 fecha: 2026-10-15
 origen: claude-code
 ---
