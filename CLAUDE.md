@@ -53,7 +53,8 @@ falta el paso de setup.
 - Catálogo con carga cache-aside: solo se persisten los sets a los que se accede. No precargues el catálogo entero.
 - `/api/cartas/buscar` es un **proxy en vivo a TCGdex**, no una consulta a la BD local. Cada llamada sale a internet: trátalo como caro.
 - Las rutas literales (`/cartas/filtros`, `/cartas/buscar`, `/cartas/destacadas`) van **antes** de `/cartas/{id}` en `routes/api.php`, o se interpretan como un ID.
-- En producción el frontend llama a `/api` en su propio origen y Vercel lo reescribe hacia Render. Las rutas públicas de solo lectura del catálogo llevan el middleware `cache.publica` y la CDN de Vercel las sirve desde su caché. **Nada que dependa del usuario o cambie con su actividad lleva `cache.publica`**. Si una ruta nueva devuelve el mismo contenido a cualquiera, añádelo y amplía `CachePublicaTest`.
+- En producción el frontend llama a `/api` en su propio origen y Vercel lo reescribe hacia Render. Las rutas públicas de solo lectura del catálogo llevan el middleware `cache.publica` y la CDN de Vercel las sirve desde su caché. **Nada que dependa del usuario o cambie con su actividad lleva `cache.publica`**. Si una ruta nueva devuelve el mismo contenido a cualquiera, añádelo y amplía `CachePublicaTest`. Por defecto la CDN guarda 24 h (`s-maxage=86400`, `stale-while-revalidate` de 7 días). Si el contenido rota antes, pásale el tiempo: `cache.publica:3600`.
+- El keep-alive de Render es un job de `pg_cron` en Supabase (`tools/keep-alive-supabase.sql`), no un workflow de GitHub: el `schedule` de Actions se retrasa horas.
 
 ## Flujo de trabajo: specs y decisiones
 

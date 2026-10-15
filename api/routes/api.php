@@ -41,7 +41,8 @@ Route::get('/cartas',            [CartaController::class, 'index'])->middleware(
 Route::get('/cartas/filtros',    [CartaController::class, 'filtros'])->middleware('cache.publica');
 // buscar es un proxy en vivo a TCGdex: lleva su propio límite por IP (throttle:buscar)
 Route::get('/cartas/buscar',     [CartaController::class, 'buscar'])->middleware(['throttle:buscar', 'cache.publica']);
-Route::get('/cartas/destacadas', [CartaController::class, 'destacadas'])->middleware('cache.publica');
+// destacadas rota cada hora (ver CartaController::destacadas): la CDN no la guarda más
+Route::get('/cartas/destacadas', [CartaController::class, 'destacadas'])->middleware('cache.publica:3600');
 Route::get('/cartas/aleatorias', [CartaController::class, 'aleatorias']);
 Route::get('/cartas/nombres',    [CartaController::class, 'nombres'])->middleware('cache.publica');
 Route::get('/cartas/{id}',       [CartaController::class, 'show'])->middleware('cache.publica');

@@ -39,14 +39,14 @@ class CachePublicaTest extends TestCase
         ]);
     }
 
-    private function assertCacheablePorLaCdn($respuesta, string $ruta): void
+    private function assertCacheablePorLaCdn($respuesta, string $ruta, int $sMaxAge = 86400): void
     {
         $respuesta->assertOk();
 
         $cacheControl = (string) $respuesta->headers->get('Cache-Control');
         $this->assertStringContainsString('public', $cacheControl, "{$ruta} no es public");
-        $this->assertStringContainsString('s-maxage=3600', $cacheControl, "{$ruta} no lleva s-maxage=3600");
-        $this->assertStringContainsString('stale-while-revalidate=86400', $cacheControl, "{$ruta} no lleva stale-while-revalidate");
+        $this->assertMatchesRegularExpression("/(^|[ ,])s-maxage={$sMaxAge}(,|$)/", $cacheControl, "{$ruta} no lleva s-maxage={$sMaxAge}");
+        $this->assertStringContainsString('stale-while-revalidate=604800', $cacheControl, "{$ruta} no lleva stale-while-revalidate=604800");
         $this->assertStringContainsString('Accept-Language', (string) $respuesta->headers->get('Vary'), "{$ruta} no varía por idioma");
     }
 
@@ -72,7 +72,6 @@ class CachePublicaTest extends TestCase
             '/api/sets/sv03.5/cartas',
             '/api/cartas',
             '/api/cartas/filtros',
-            '/api/cartas/destacadas',
             '/api/cartas/nombres',
             '/api/cartas/buscar?q=pikachu',
             "/api/cartas/{$carta->id}",
@@ -81,6 +80,15 @@ class CachePublicaTest extends TestCase
         foreach ($rutas as $ruta) {
             $this->assertCacheablePorLaCdn($this->getJson($ruta), $ruta);
         }
+    }
+
+    // Las destacadas rotan cada hora: la CDN no puede quedarse un día con las mismas
+    public function test_las_destacadas_solo_se_guardan_una_hora_en_la_cdn(): void
+    {
+        $this->crearCatalogo();
+        Http::fake(['api.tcgdex.net/*' => Http::response([])]);
+
+        $this->assertCacheablePorLaCdn($this->getJson('/api/cartas/destacadas'), '/api/cartas/destacadas', 3600);
     }
 
     public function test_el_navegador_guarda_un_minuto_salvo_que_el_controlador_diga_otra_cosa(): void

@@ -13,14 +13,19 @@ use Symfony\Component\HttpFoundation\Response;
 // sirve desde el borde lo que ya vio, sin despertar a Render ni cruzar hasta
 // Supabase:
 //
-//   max-age=60                   → el navegador lo reutiliza un minuto
-//   s-maxage=3600                → la CDN, una hora
-//   stale-while-revalidate=86400 → pasada la hora, la CDN sigue sirviendo la
-//                                  copia vieja al instante mientras pide la nueva
+//   max-age=60                    → el navegador lo reutiliza un minuto
+//   s-maxage=86400                → la CDN, un día: la misma caducidad que ya
+//                                   tienen las cartas en el servidor
+//   stale-while-revalidate=604800 → pasado el día, la CDN sigue sirviendo la
+//                                   copia vieja al instante mientras pide la
+//                                   nueva, aunque Render esté arrancando
+//
+// Una ruta cuyo contenido rota más deprisa pide menos con un parámetro:
+// cache.publica:3600 (lo usa /cartas/destacadas, que cambia cada hora).
 //
 // Solo se marcan las respuestas 2xx de un GET. Un 404 o un 503 de TCGdex caído
-// no puede quedarse congelado una hora en la CDN: se queda con el
-// "no-cache, private" de siempre y el siguiente intento vuelve a preguntar.
+// no puede quedarse congelado en la CDN: se queda con el "no-cache, private" de
+// siempre y el siguiente intento vuelve a preguntar.
 //
 // El idioma no hace falta tratarlo aquí: EstablecerIdioma ya añade
 // Vary: Accept-Language, que separa la variante española de la inglesa.
@@ -30,7 +35,10 @@ use Symfony\Component\HttpFoundation\Response;
 // inventario, las cartas aleatorias de la portada) no lo lleva.
 class CachePublica
 {
-    public function handle(Request $request, Closure $next): Response
+    public const S_MAXAGE = 86400;
+    public const STALE_WHILE_REVALIDATE = 604800;
+
+    public function handle(Request $request, Closure $next, ?string $sMaxAge = null): Response
     {
         $respuesta = $next($request);
 
@@ -43,8 +51,8 @@ class CachePublica
                 $respuesta->setMaxAge(60);
             }
 
-            $respuesta->setSharedMaxAge(3600);
-            $respuesta->setStaleWhileRevalidate(86400);
+            $respuesta->setSharedMaxAge($sMaxAge !== null ? (int) $sMaxAge : self::S_MAXAGE);
+            $respuesta->setStaleWhileRevalidate(self::STALE_WHILE_REVALIDATE);
         }
 
         return $respuesta;
